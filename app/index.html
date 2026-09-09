@@ -7,28 +7,76 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Rack</h1>
 
-  <button id="new-game">New game</button>
+  <section id="screen-setup" class="screen">
+    <h1>Players</h1>
 
-  <div id="message"></div>
-  <div id="selection-sum"></div>
+    <ul id="roster-list"></ul>
 
-  <div id="rack"></div>
+    <form id="add-player-form">
+      <input id="player-name-input" type="text" placeholder="Player name" maxlength="20" autocomplete="off">
+      <div id="color-swatches"></div>
+      <button type="submit" class="secondary">Add player</button>
+    </form>
 
-  <div id="dice-choice">
-    <button id="choice-one">1 die</button>
-    <button id="choice-two">2 dice</button>
-  </div>
+    <fieldset>
+      <legend>Settings</legend>
+      <div class="setting-row">
+        <span>Rack size</span>
+        <div class="toggle-group" id="rack-size-toggle">
+          <button type="button" class="toggle-btn" data-rack-size="9">9</button>
+          <button type="button" class="toggle-btn" data-rack-size="12">12</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>Placement</span>
+        <select id="placement-mode">
+          <option value="winner-only">Winner only</option>
+          <option value="top-two">Top two</option>
+          <option value="all-places">All places</option>
+        </select>
+      </div>
+    </fieldset>
 
-  <div id="dice-area"></div>
+    <button id="start-game" class="primary" disabled>Start game</button>
+  </section>
 
-  <div class="action-row">
-    <button id="roll" class="primary">Roll</button>
-    <button id="confirm" class="primary">Confirm</button>
-  </div>
+  <section id="screen-turncard" class="screen full-bleed" hidden>
+    <button id="settings-from-turncard" class="corner-btn">Settings</button>
+    <div class="turncard-center">
+      <div id="turncard-name"></div>
+      <div id="turncard-instruction">Place the phone flat on the table</div>
+      <div id="turncard-hint">Tap anywhere to continue</div>
+    </div>
+  </section>
+
+  <section id="screen-play" class="screen" hidden>
+    <h1 id="play-player-name"></h1>
+
+    <div id="play-message"></div>
+    <div id="play-selection-sum"></div>
+
+    <div id="play-rack"></div>
+
+    <div id="play-dice-choice"></div>
+    <div id="play-dice-area"></div>
+
+    <div class="action-row">
+      <button id="play-roll" class="primary">Roll</button>
+      <button id="play-confirm" class="primary">Confirm</button>
+    </div>
+    <button id="play-pass" class="primary" hidden>Next player</button>
+  </section>
+
+  <section id="screen-end" class="screen" hidden>
+    <h1>Game over</h1>
+    <ol id="finish-list"></ol>
+    <button id="end-new-game" class="primary">New game</button>
+  </section>
 
   <script src="theme.js"></script>
-  <script src="game.js"></script>
+  <script src="storage.js"></script>
+  <script src="rules.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

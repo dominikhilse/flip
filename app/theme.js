@@ -1,6 +1,7 @@
-// Tile theme config. This is the only place tile colours are defined.
-// Swap these values to re-skin tiles; nothing else in the game reads a colour literal.
-// Rack sizes up to 12 are supported here even though M1 only uses tiles 1-9.
+// Colour config. This is the only place tile and player colours are defined.
+// Swap these values to re-skin the game; nothing else reads a colour literal.
+// Tile rack sizes up to 12 are supported here even though the current rack
+// size setting only offers 9 or 12.
 window.THEME = {
   tileColors: {
     1: '#e63946',
@@ -18,5 +19,13 @@ window.THEME = {
   },
   tileTextColor: '#ffffff',
   closedTileColor: '#2b2b2b',
-  closedTileTextColor: '#666666'
+  closedTileTextColor: '#666666',
+
+  // Palette players choose their colour from during setup.
+  playerColors: [
+    '#e63946', '#f3722c', '#f9c74f', '#43aa8b',
+    '#277da1', '#9d4edd', '#c9184a', '#2b9348',
+    '#e85d75', '#4d908e'
+  ],
+  playerNameTextColor: '#ffffff'
 };
