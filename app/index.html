@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion sensor harness</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #111111;
+    color: #eeeeee;
+    font-family: -apple-system, system-ui, sans-serif;
+  }
+  body {
+    padding: 1rem;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 1rem;
+  }
+  button#start {
+    display: block;
+    width: 100%;
+    padding: 1em;
+    font-size: 1.1rem;
+    color: #111111;
+    background: #ffffff;
+    border: 3px solid #ffffff;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+  }
+  button#start:active { background: #cccccc; }
+  #status {
+    font-size: 0.85rem;
+    color: #aaaaaa;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  #flat-indicator {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    padding: 0.6em;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: #333333;
+    color: #888888;
+  }
+  #flat-indicator.flat {
+    background: #1c6e2e;
+    color: #ffffff;
+  }
+  #flat-indicator.not-flat {
+    background: #7a1c1c;
+    color: #ffffff;
+  }
+  table.readout {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+  table.readout td {
+    padding: 0.25em 0.4em;
+    border-bottom: 1px solid #333333;
+  }
+  table.readout td:first-child {
+    color: #999999;
+  }
+  table.readout td:last-child {
+    text-align: right;
+    font-family: ui-monospace, monospace;
+  }
+  fieldset {
+    border: 1px solid #333333;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+  }
+  legend {
+    padding: 0 0.4em;
+    font-size: 0.85rem;
+    color: #aaaaaa;
+  }
+  .slider-row {
+    margin-bottom: 0.75rem;
+  }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-row label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 0.25em;
+  }
+  .slider-row input[type="range"] {
+    width: 100%;
+  }
+  #orientation {
+    font-size: 0.85rem;
+    color: #cccccc;
+    margin-bottom: 1rem;
+  }
+  h2 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #aaaaaa;
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  #log {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.85rem;
+    font-family: ui-monospace, monospace;
+    max-height: 40vh;
+    overflow-y: auto;
+    border: 1px solid #333333;
+    border-radius: 6px;
+  }
+  #log li {
+    padding: 0.35em 0.6em;
+    border-bottom: 1px solid #222222;
+  }
+  #log li:last-child { border-bottom: none; }
+  #log li.flat { color: #6fce85; }
+  #log li.not-flat { color: #e08a8a; }
+</style>
+</head>
+<body>
+  <h1>Motion sensor harness</h1>
+
+  <button id="start">Tap to start</button>
+  <div id="status"></div>
+
+  <div id="flat-indicator">—</div>
+
+  <table class="readout">
+    <tr><td>gravity x</td><td id="gx">—</td></tr>
+    <tr><td>gravity y</td><td id="gy">—</td></tr>
+    <tr><td>gravity z</td><td id="gz">—</td></tr>
+    <tr><td>tilt angle (° from flat)</td><td id="angle">—</td></tr>
+    <tr><td>motion magnitude</td><td id="motion">—</td></tr>
+  </table>
+
+  <fieldset>
+    <legend>Thresholds (adjust live)</legend>
+    <div class="slider-row">
+      <label><span>Flat angle threshold</span><span id="angle-val">15°</span></label>
+      <input type="range" id="angle-threshold" min="1" max="45" step="1" value="15">
+    </div>
+    <div class="slider-row">
+      <label><span>Still magnitude threshold</span><span id="still-val">1.5 m/s²</span></label>
+      <input type="range" id="still-threshold" min="0.1" max="5" step="0.1" value="1.5">
+    </div>
+    <div class="slider-row">
+      <label><span>Debounce duration</span><span id="debounce-val">300 ms</span></label>
+      <input type="range" id="debounce-duration" min="0" max="2000" step="50" value="300">
+    </div>
+  </fieldset>
+
+  <div id="orientation">screen.orientation: — · deviceorientation α/β/γ: —</div>
+
+  <h2>Last 20 transitions</h2>
+  <ul id="log"></ul>
+
+<script>
+(function () {
+  'use strict';
+
+  var startBtn = document.getElementById('start');
+  var statusEl = document.getElementById('status');
+  var indicatorEl = document.getElementById('flat-indicator');
+  var gxEl = document.getElementById('gx');
+  var gyEl = document.getElementById('gy');
+  var gzEl = document.getElementById('gz');
+  var angleEl = document.getElementById('angle');
+  var motionEl = document.getElementById('motion');
+  var orientationEl = document.getElementById('orientation');
+  var logEl = document.getElementById('log');
+
+  var angleThresholdInput = document.getElementById('angle-threshold');
+  var stillThresholdInput = document.getElementById('still-threshold');
+  var debounceInput = document.getElementById('debounce-duration');
+  var angleValEl = document.getElementById('angle-val');
+  var stillValEl = document.getElementById('still-val');
+  var debounceValEl = document.getElementById('debounce-val');
+
+  angleThresholdInput.addEventListener('input', function () {
+    angleValEl.textContent = angleThresholdInput.value + '°';
+  });
+  stillThresholdInput.addEventListener('input', function () {
+    stillValEl.textContent = stillThresholdInput.value + ' m/s²';
+  });
+  debounceInput.addEventListener('input', function () {
+    debounceValEl.textContent = debounceInput.value + ' ms';
+  });
+
+  var lastGravity = null;
+  var stableSince = null;
+  var candidateFlat = null;
+  var currentFlat = null; // null = unknown, true/false once determined
+  var transitions = [];
+
+  function fmt(n) {
+    return (Math.round(n * 100) / 100).toFixed(2);
+  }
+
+  function pushTransition(isFlat) {
+    var now = new Date();
+    var hh = String(now.getHours()).padStart(2, '0');
+    var mm = String(now.getMinutes()).padStart(2, '0');
+    var ss = String(now.getSeconds()).padStart(2, '0');
+    var ms = String(now.getMilliseconds()).padStart(3, '0');
+    transitions.unshift({
+      time: hh + ':' + mm + ':' + ss + '.' + ms,
+      flat: isFlat
+    });
+    if (transitions.length > 20) transitions.length = 20;
+    renderLog();
+  }
+
+  function renderLog() {
+    logEl.innerHTML = '';
+    transitions.forEach(function (t) {
+      var li = document.createElement('li');
+      li.className = t.flat ? 'flat' : 'not-flat';
+      li.textContent = t.time + '  →  ' + (t.flat ? 'FLAT' : 'NOT FLAT');
+      logEl.appendChild(li);
+    });
+  }
+
+  function onMotion(event) {
+    var g = event.accelerationIncludingGravity;
+    if (!g || g.x === null) return;
+
+    gxEl.textContent = fmt(g.x);
+    gyEl.textContent = fmt(g.y);
+    gzEl.textContent = fmt(g.z);
+
+    var magnitude = Math.sqrt(g.x * g.x + g.y * g.y + g.z * g.z);
+    var angleFromFlat = magnitude > 0
+      ? Math.acos(Math.min(1, Math.abs(g.z) / magnitude)) * (180 / Math.PI)
+      : 90;
+    angleEl.textContent = fmt(angleFromFlat) + '°';
+
+    var motionMagnitude;
+    var a = event.acceleration;
+    if (a && a.x !== null) {
+      motionMagnitude = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+    } else if (lastGravity) {
+      motionMagnitude = Math.sqrt(
+        Math.pow(g.x - lastGravity.x, 2) +
+        Math.pow(g.y - lastGravity.y, 2) +
+        Math.pow(g.z - lastGravity.z, 2)
+      );
+    } else {
+      motionMagnitude = 0;
+    }
+    motionEl.textContent = fmt(motionMagnitude);
+    lastGravity = g;
+
+    var angleThreshold = parseFloat(angleThresholdInput.value);
+    var stillThreshold = parseFloat(stillThresholdInput.value);
+    var debounceMs = parseFloat(debounceInput.value);
+
+    var meetsFlat = angleFromFlat <= angleThreshold && motionMagnitude <= stillThreshold;
+    var now = performance.now();
+
+    if (meetsFlat !== candidateFlat) {
+      candidateFlat = meetsFlat;
+      stableSince = now;
+    }
+
+    if (candidateFlat !== null && (now - stableSince) >= debounceMs) {
+      if (currentFlat !== candidateFlat) {
+        currentFlat = candidateFlat;
+        indicatorEl.textContent = currentFlat ? 'FLAT' : 'NOT FLAT';
+        indicatorEl.className = currentFlat ? 'flat' : 'not-flat';
+        pushTransition(currentFlat);
+      }
+    }
+  }
+
+  function onOrientation(event) {
+    var screenType = (screen.orientation && screen.orientation.type) || 'unavailable';
+    var a = event.alpha === null ? '—' : Math.round(event.alpha);
+    var b = event.beta === null ? '—' : Math.round(event.beta);
+    var c = event.gamma === null ? '—' : Math.round(event.gamma);
+    orientationEl.textContent = 'screen.orientation: ' + screenType +
+      ' · deviceorientation α/β/γ: ' + a + ' / ' + b + ' / ' + c;
+  }
+
+  function startListening() {
+    window.addEventListener('devicemotion', onMotion);
+    window.addEventListener('deviceorientation', onOrientation);
+    statusEl.textContent = 'Listening. Move the phone.';
+  }
+
+  function requestAndStart() {
+    var needsMotionPermission = typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function';
+    var needsOrientationPermission = typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function';
+
+    if (!needsMotionPermission && !needsOrientationPermission) {
+      startListening();
+      return;
+    }
+
+    var motionPromise = needsMotionPermission
+      ? DeviceMotionEvent.requestPermission()
+      : Promise.resolve('granted');
+    var orientationPromise = needsOrientationPermission
+      ? DeviceOrientationEvent.requestPermission()
+      : Promise.resolve('granted');
+
+    Promise.all([motionPromise, orientationPromise])
+      .then(function (results) {
+        if (results[0] === 'granted' && results[1] === 'granted') {
+          startListening();
+        } else {
+          statusEl.textContent = 'Permission denied: ' + results.join(', ');
+        }
+      })
+      .catch(function (err) {
+        statusEl.textContent = 'Permission request failed: ' + err.message;
+      });
+  }
+
+  startBtn.addEventListener('click', requestAndStart);
+})();
+</script>
+</body>
+</html>
