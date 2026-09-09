@@ -8,7 +8,13 @@
 </head>
 <body>
 
-  <section id="screen-setup" class="screen">
+  <section id="screen-launch" class="screen full-bleed">
+    <div class="turncard-center">
+      <div id="launch-hint">Tap to start</div>
+    </div>
+  </section>
+
+  <section id="screen-setup" class="screen" hidden>
     <h1>Players</h1>
 
     <ul id="roster-list"></ul>
@@ -77,6 +83,8 @@
   <script src="theme.js"></script>
   <script src="storage.js"></script>
   <script src="rules.js"></script>
+  <script src="config.js"></script>
+  <script src="motion.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

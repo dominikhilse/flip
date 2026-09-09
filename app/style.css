@@ -204,6 +204,11 @@ legend {
   border-radius: 6px;
 }
 
+#launch-hint {
+  font-size: 1.2rem;
+  color: #ffffff;
+}
+
 /* Play screen */
 
 #play-rack {

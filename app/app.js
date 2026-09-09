@@ -11,11 +11,13 @@
 
   // ---- DOM refs ----
   var screens = {
+    launch: document.getElementById('screen-launch'),
     setup: document.getElementById('screen-setup'),
     turncard: document.getElementById('screen-turncard'),
     play: document.getElementById('screen-play'),
     end: document.getElementById('screen-end')
   };
+  var activeScreen = 'launch';
 
   var rosterListEl = document.getElementById('roster-list');
   var addPlayerForm = document.getElementById('add-player-form');
@@ -43,6 +45,7 @@
   var endNewGameBtn = document.getElementById('end-new-game');
 
   function showScreen(name) {
+    activeScreen = name;
     Object.keys(screens).forEach(function (key) {
       screens[key].hidden = key !== name;
     });
@@ -174,27 +177,57 @@
       currentRoll: null,
       selected: new Set()
     };
-    showTurnCard();
+    beginTurn();
   }
 
   function currentPlayer() {
     return game.players[game.turnIndex];
   }
 
-  function showTurnCard() {
-    var p = currentPlayer();
+  function showTurnCardFor(p) {
     turncardScreenEl.style.background = p.color;
     turncardNameEl.textContent = p.name;
     showScreen('turncard');
   }
 
-  turncardScreenEl.addEventListener('click', function (e) {
-    if (e.target === settingsFromTurncardBtn) return;
+  // Called whenever a new turn starts (game start, or after a turn resolves).
+  // Resets the per-turn transient state - this is what distinguishes a fresh
+  // handoff from a mid-turn pickup pause (see onFlatChange below), which
+  // shows the same turn card without touching currentRoll/selected.
+  function beginTurn() {
     game.currentRoll = null;
     game.selected = new Set();
+    showTurnCardFor(currentPlayer());
+  }
+
+  // The single path for leaving the turn card and returning to the rack.
+  // A tap on the turn card and the phone becoming flat-and-still both call
+  // this same function - per the architecture in the plan, there must be
+  // exactly one way to advance past the turn card, so motion is purely an
+  // accelerator on top of the tap path rather than a separate mechanism.
+  function goToRack() {
     showScreen('play');
     renderPlay();
+  }
+
+  turncardScreenEl.addEventListener('click', function (e) {
+    if (e.target === settingsFromTurncardBtn) return;
+    goToRack();
   });
+
+  // While on the rack mid-turn, picking the phone up shows the turn card
+  // (without resetting any state) instead of advancing a turn; setting it
+  // back down flat returns to the same rack via the same goToRack() path
+  // used for a genuine handoff. Motion only ever acts while a game screen
+  // (turn card or rack) is showing - on setup/launch/end screens it is a
+  // no-op, so it never interferes outside of active play.
+  function onFlatChange(isFlat) {
+    if (isFlat) {
+      if (activeScreen === 'turncard') goToRack();
+    } else {
+      if (activeScreen === 'play') showTurnCardFor(currentPlayer());
+    }
+  }
 
   settingsFromTurncardBtn.addEventListener('click', function (e) {
     e.stopPropagation();
@@ -318,7 +351,7 @@
       return;
     }
     advanceTurn();
-    showTurnCard();
+    beginTurn();
   }
 
   function renderPlayRack() {
@@ -439,7 +472,22 @@
     showScreen('setup');
   });
 
+  // ---- Launch screen (motion permission gate) ----
+
+  screens.launch.addEventListener('click', function () {
+    MOTION.requestPermission().then(function (granted) {
+      if (granted) {
+        MOTION.startListening(onFlatChange);
+      }
+      // Attempted regardless of motion permission - orientation lock is a
+      // separate API. Expected to silently no-op on iOS Safari outside an
+      // installed PWA; see motion.js.
+      MOTION.lockLandscape();
+      renderSetup();
+      showScreen('setup');
+    });
+  });
+
   // ---- Boot ----
-  renderSetup();
-  showScreen('setup');
+  showScreen('launch');
 })();
