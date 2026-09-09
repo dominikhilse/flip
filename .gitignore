@@ -1,3 +1,6 @@
+# Claude Code local dev-server config (not part of the deliverable)
+.claude/
+
 # Logs
 logs
 *.log
