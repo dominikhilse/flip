@@ -360,10 +360,6 @@ legend {
   color: var(--fg);
   font-size: 0.9rem;
 }
-#play-dice-choice button.active {
-  background: var(--fg);
-  color: var(--bg);
-}
 
 .action-row {
   display: flex;

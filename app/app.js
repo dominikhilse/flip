@@ -32,11 +32,14 @@
   var overpayNoteEl = document.getElementById('overpay-note');
   var boostCheckboxEl = document.getElementById('boost-checkbox');
   var boostNoteEl = document.getElementById('boost-note');
+  var diceCountToggleEl = document.getElementById('dice-count-toggle');
+  var diceCountNoteEl = document.getElementById('dice-count-note');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleEl = document.getElementById('theme-toggle');
   var startGameBtn = document.getElementById('start-game');
   var backToGameBtn = document.getElementById('back-to-game');
+  var endGameBtn = document.getElementById('end-game');
 
   var turncardNameEl = document.getElementById('turncard-name');
   var turncardScreenEl = screens.turncard;
@@ -69,14 +72,19 @@
   }
 
   // Whether overpay-relaxed rules are in effect right now - a persistent
-  // mode-state signal, not a per-roll flash. D mode is a standing
-  // ruleset: the flip stays on for the whole time the game is in D, through
-  // stalls and everything else, and off again the instant it reverts to A.
-  // A spent boost is the one genuinely per-roll case - it relaxes only the
-  // roll it was spent on, so the flip tracks it for exactly that long.
+  // mode-state signal, not a per-roll flash. D mode is a standing ruleset:
+  // the flip stays on for as long as the game is in D AND overpay is
+  // actually available to the current player right now - which excludes
+  // the one carve-out where it isn't: the last remaining tile is always
+  // exact-only, even under D, so the flip momentarily drops while a player
+  // is down to that single tile. A spent boost is the one genuinely
+  // per-roll case - it relaxes only the roll it was spent on, so the flip
+  // tracks it for exactly that long.
   function overpayFlipActive() {
     if (!game) return false;
-    if (game.overpayMode === 'D') return true;
+    if (game.overpayMode === 'D') {
+      return RULES.openValues(currentPlayer().rack).length !== 1;
+    }
     return !!(game.currentRoll && game.currentRoll.boostSpent);
   }
 
@@ -177,6 +185,16 @@
     boostCheckboxEl.closest('.setting-row').classList.toggle('disabled', boostCheckboxEl.disabled);
     boostNoteEl.hidden = !midGame;
 
+    // Neither button is "active" while settings.diceCount is 0 - genuinely
+    // undecided until someone chooses, either here or by being the first
+    // player to reach the live in-game question (see onChooseDice).
+    var diceCountBtns = diceCountToggleEl.querySelectorAll('.toggle-btn');
+    diceCountBtns.forEach(function (btn) {
+      var count = parseInt(btn.getAttribute('data-dice-count'), 10);
+      btn.classList.toggle('active', settings.diceCount === count);
+    });
+    diceCountNoteEl.hidden = !midGame;
+
     // Motion, tap-to-proceed, and theme are input/cosmetic preferences, not
     // rules - they apply immediately (see queueSettingChange), so unlike
     // the settings above they carry no "applies next lap" note.
@@ -189,6 +207,7 @@
     var midGame = game !== null;
     startGameBtn.hidden = midGame;
     backToGameBtn.hidden = !midGame;
+    endGameBtn.hidden = !midGame;
     startGameBtn.disabled = roster.length < 2;
   }
 
@@ -243,6 +262,20 @@
 
   boostCheckboxEl.addEventListener('change', function () {
     queueSettingChange('boostEnabled', boostCheckboxEl.checked);
+  });
+
+  diceCountToggleEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    queueSettingChange('diceCount', parseInt(btn.getAttribute('data-dice-count'), 10));
+    renderSettingsControls();
+  });
+
+  endGameBtn.addEventListener('click', function () {
+    if (!game) return;
+    game = null;
+    renderSetup();
+    showScreen('setup');
   });
 
   // Motion and tap-to-proceed can never both be off at once (§3.9) - forcing
@@ -300,7 +333,7 @@
   // and the rest under another. A "lap" is anchored to seat order: it always
   // starts at the earliest not-yet-finished player (normally P1), not at
   // whoever happened to be mid-turn when the change was requested.
-  var LAP_ANCHORED_SETTING_KEYS = ['placementMode', 'overpayMode', 'boostEnabled'];
+  var LAP_ANCHORED_SETTING_KEYS = ['placementMode', 'overpayMode', 'boostEnabled', 'diceCount'];
 
   // Pure input-path preferences that affect live game behaviour (read via
   // game.motionEnabled/game.tapToProceed) - no fairness reason to defer
@@ -351,11 +384,10 @@
         rack: RULES.createRack(settings.rackSize),
         finished: false,
         place: null,
-        diceCount: 2,
-        diceCountChosenByPlayer: false,
         // Boost mode (§3.6, M6) - typed holding, never a bare integer, so a
         // future boost type is additive rather than a schema change.
         boosts: { overpay: 0 },
+        pendingBoostCredits: 0, // earned, not yet delivered - see deliverPendingBoost
         rollHistory: [], // last N clean/not-clean rolls while boost mode is active
         pendingBoostAnnouncement: false
       };
@@ -366,6 +398,7 @@
       placementMode: settings.placementMode,
       overpayMode: settings.overpayMode,
       boostEnabled: settings.boostEnabled,
+      diceCount: settings.diceCount, // 0 = still undecided this game
       motionEnabled: settings.motionEnabled,
       tapToProceed: settings.tapToProceed,
       pendingSettings: null,
@@ -391,6 +424,7 @@
   // handoff from a mid-turn pickup pause (see onFlatChange below), which
   // shows the same turn card without touching currentRoll/selected.
   function beginTurn() {
+    deliverPendingBoost(currentPlayer());
     game.currentRoll = null;
     game.selected = new Set();
     showTurnCardFor(currentPlayer());
@@ -495,9 +529,29 @@
     return game.overpayMode === 'A' && game.boostEnabled;
   }
 
+  // Awards land as a credit, not immediately in boosts.overpay - crediting a
+  // boost the instant a player's own turn ends left them told "you earned
+  // one" with no way to actually spend it until their next turn anyway, so
+  // the credit is banked here and only delivered (see deliverPendingBoost)
+  // at the start of the turn where it can first be used. Multiple credits
+  // can stack before delivery (e.g. a dry streak plus a trailing award) -
+  // that's fine, better than a boost nobody could act on.
   function awardBoost(p) {
-    if (p.boosts.overpay >= CONFIG.boostMaxHeld) return; // discarded past the cap (D-20)
-    p.boosts.overpay++;
+    p.pendingBoostCredits++;
+  }
+
+  // Called at the top of every turn (see beginTurn). Turns banked credits
+  // into spendable boosts, capped at boostMaxHeld (D-20) - excess credits
+  // are simply discarded, same as the old at-award cap. If the game has
+  // moved on to a mode where boosts aren't offered (overpayMode flipped to
+  // 'D' since the credit was earned), the credit is moot - drop it quietly
+  // rather than resurrecting it if the mode ever flips back.
+  function deliverPendingBoost(p) {
+    if (!p.pendingBoostCredits) return;
+    var credits = p.pendingBoostCredits;
+    p.pendingBoostCredits = 0;
+    if (!boostModeActive()) return;
+    p.boosts.overpay = Math.min(CONFIG.boostMaxHeld, p.boosts.overpay + credits);
     p.pendingBoostAnnouncement = true;
   }
 
@@ -522,11 +576,31 @@
     });
   }
 
+  // ---- Dice count (once unlocked) ----
+  // A single-die-unlocked rack (all open tiles <= 6) can be played with 1 or
+  // 2 dice - a whole-game setting, decided once by whichever player first
+  // reaches the unlocked state (see renderPlayDiceChoice/onChooseDice), not
+  // re-asked every turn. Regardless of that setting, a rack down to only the
+  // "1" tile is a guaranteed dead end under 2 dice (minimum roll is 2, and
+  // the last tile is always exact-only) - always force 1 die there.
+  function lastTileIsOne(p) {
+    var openVals = RULES.openValues(p.rack);
+    return openVals.length === 1 && openVals[0] === 1;
+  }
+
+  function diceChoicePending(p) {
+    return RULES.singleDieUnlocked(p.rack) && !lastTileIsOne(p) && !game.diceCount;
+  }
+
+  function effectiveDiceCount(p) {
+    if (!RULES.singleDieUnlocked(p.rack)) return 2;
+    if (lastTileIsOne(p)) return 1;
+    return game.diceCount; // decided by now - Roll is disabled otherwise
+  }
+
   function onRoll() {
     var p = currentPlayer();
-    var unlocked = RULES.singleDieUnlocked(p.rack);
-    var countToUse = unlocked ? p.diceCount : 2;
-    var dice = RULES.rollDice(countToUse);
+    var dice = RULES.rollDice(effectiveDiceCount(p));
     var total = RULES.sum(dice);
     var openVals = RULES.openValues(p.rack);
     var stalled = !RULES.anyLegalMoveExists(openVals, total, game.overpayMode);
@@ -548,10 +622,15 @@
     renderPlay();
   }
 
+  // The live in-game question, asked once per game to whichever player
+  // first reaches the unlocked state (see diceChoicePending) - the answer
+  // applies immediately (nothing was decided before this, so there's no
+  // fairness reason to defer it like a settings-screen change) and is
+  // persisted so it's also next game's starting default.
   function onChooseDice(count) {
-    var p = currentPlayer();
-    p.diceCount = count;
-    p.diceCountChosenByPlayer = true;
+    game.diceCount = count;
+    settings.diceCount = count;
+    STORAGE.saveSettings(settings);
     renderPlay();
   }
 
@@ -595,8 +674,6 @@
       p.place = game.finishedOrder.length + 1;
       game.finishedOrder.push(p.id);
       if (boostModeActive()) awardTrailingBoosts();
-    } else if (RULES.singleDieUnlocked(p.rack) && !p.diceCountChosenByPlayer) {
-      p.diceCount = 1;
     }
 
     if (boostModeActive() && !boostSpentThisTurn) maybeAwardDryStreakBoost(p);
@@ -749,10 +826,12 @@
     playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' / ' + game.currentRoll.total;
   }
 
+  // Shown once per game, to whichever player first has a pending choice
+  // (see diceChoicePending) - not a toggle reflecting a current value, just
+  // a one-time question, so neither button is pre-marked "active".
   function renderPlayDiceChoice() {
     var p = currentPlayer();
-    var unlocked = RULES.singleDieUnlocked(p.rack);
-    var show = unlocked && !game.currentRoll;
+    var show = diceChoicePending(p) && !game.currentRoll;
     if (!show) {
       playDiceChoiceEl.classList.remove('visible');
       playDiceChoiceEl.innerHTML = '';
@@ -760,8 +839,8 @@
     }
     playDiceChoiceEl.classList.add('visible');
     playDiceChoiceEl.innerHTML =
-      '<button type="button" id="choice-one" class="' + (p.diceCount === 1 ? 'active' : '') + '">1 die</button>' +
-      '<button type="button" id="choice-two" class="' + (p.diceCount === 2 ? 'active' : '') + '">2 dice</button>';
+      '<button type="button" id="choice-one">1 die</button>' +
+      '<button type="button" id="choice-two">2 dice</button>';
     document.getElementById('choice-one').addEventListener('click', function () { onChooseDice(1); });
     document.getElementById('choice-two').addEventListener('click', function () { onChooseDice(2); });
   }
@@ -774,7 +853,7 @@
     playPassBtn.hidden = !stalled;
     playConfirmBtn.hidden = stalled || boostOfferPending;
 
-    playRollBtn.disabled = game.currentRoll !== null;
+    playRollBtn.disabled = game.currentRoll !== null || diceChoicePending(currentPlayer());
 
     if (!game.currentRoll || game.currentRoll.stalled || boostOfferPending) {
       playConfirmBtn.disabled = true;
