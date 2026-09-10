@@ -22,10 +22,11 @@ window.THEME = {
   closedTileTextColor: '#666666',
 
   // Palette players choose their colour from during setup.
+  // Player 4: more teal. Player 5: royal blue. Player 10: sky blue.
   playerColors: [
-    '#e63946', '#f3722c', '#f9c74f', '#43aa8b',
-    '#277da1', '#9d4edd', '#c9184a', '#2b9348',
-    '#e85d75', '#4d908e'
+    '#e63946', '#f3722c', '#f9c74f', '#14b8a6',
+    '#4169e1', '#9d4edd', '#c9184a', '#2b9348',
+    '#e85d75', '#38bdf8'
   ],
   playerNameTextColor: '#ffffff'
 };

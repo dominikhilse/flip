@@ -16,7 +16,8 @@
     // D-29: default ON in development (this prototype), OFF in the final
     // build - there is no build step to branch on, so this is the
     // development default; flip it when the product actually ships.
-    tapToProceed: true
+    tapToProceed: true,
+    theme: 'dark' // 'dark' | 'light'
   };
 
   function loadRoster() {
@@ -47,7 +48,8 @@
         overpayMode: parsed.overpayMode === 'D' ? 'D' : DEFAULT_SETTINGS.overpayMode,
         boostEnabled: parsed.boostEnabled === true,
         motionEnabled: parsed.motionEnabled !== false,
-        tapToProceed: parsed.tapToProceed !== false
+        tapToProceed: parsed.tapToProceed !== false,
+        theme: parsed.theme === 'light' ? 'light' : DEFAULT_SETTINGS.theme
       };
     } catch (e) {
       return Object.assign({}, DEFAULT_SETTINGS);

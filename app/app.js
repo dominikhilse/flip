@@ -33,9 +33,8 @@
   var boostCheckboxEl = document.getElementById('boost-checkbox');
   var boostNoteEl = document.getElementById('boost-note');
   var motionToggleEl = document.getElementById('motion-toggle');
-  var motionNoteEl = document.getElementById('motion-note');
   var tapToggleEl = document.getElementById('tap-toggle');
-  var tapNoteEl = document.getElementById('tap-note');
+  var themeToggleEl = document.getElementById('theme-toggle');
   var startGameBtn = document.getElementById('start-game');
   var backToGameBtn = document.getElementById('back-to-game');
 
@@ -67,6 +66,27 @@
     Object.keys(screens).forEach(function (key) {
       screens[key].hidden = key !== name;
     });
+  }
+
+  // Whether the CURRENT roll is being resolved under overpay-relaxed rules
+  // right now - either overpayMode is 'D', or this roll's boost was spent.
+  // Deliberately excludes the stalled/offer-pending states: the flip is
+  // meant to mark "you can make a loose move right now", not "you might".
+  function overpayFlipActive() {
+    if (!game || !game.currentRoll) return false;
+    var r = game.currentRoll;
+    if (r.stalled || r.boostOfferPending) return false;
+    return r.boostSpent || game.overpayMode === 'D';
+  }
+
+  // Theme is purely cosmetic (never stored on `game`) but doubles as the
+  // overpay "visual highlight" the design track hasn't nailed down yet: the
+  // effective theme is the user's preference XORed with overpayFlipActive,
+  // so the whole page inverts for the moment an overpay move is available.
+  function applyTheme() {
+    var wantsLight = settings.theme === 'light';
+    var showLight = wantsLight !== overpayFlipActive();
+    document.body.classList.toggle('theme-light', showLight);
   }
 
   // ---- Setup screen ----
@@ -156,11 +176,12 @@
     boostCheckboxEl.closest('.setting-row').classList.toggle('disabled', boostCheckboxEl.disabled);
     boostNoteEl.hidden = !midGame;
 
+    // Motion, tap-to-proceed, and theme are input/cosmetic preferences, not
+    // rules - they apply immediately (see queueSettingChange), so unlike
+    // the settings above they carry no "applies next lap" note.
     motionToggleEl.checked = settings.motionEnabled;
-    motionNoteEl.hidden = !midGame;
-
     tapToggleEl.checked = settings.tapToProceed;
-    tapNoteEl.hidden = !midGame;
+    themeToggleEl.checked = settings.theme === 'light';
   }
 
   function renderPrimaryAction() {
@@ -183,6 +204,7 @@
     renderRosterEditability();
     renderSettingsControls();
     renderPrimaryAction();
+    applyTheme();
   }
 
   addPlayerForm.addEventListener('submit', function (e) {
@@ -255,6 +277,11 @@
     renderSettingsControls();
   });
 
+  themeToggleEl.addEventListener('change', function () {
+    queueSettingChange('theme', themeToggleEl.checked ? 'light' : 'dark');
+    applyTheme();
+  });
+
   startGameBtn.addEventListener('click', function () {
     if (roster.length < 2) return;
     startNewGame();
@@ -267,41 +294,51 @@
 
   // ---- Game orchestration ----
 
-  // Live-at-end-of-lap settings (§3.10) that may be changed mid-game. Rack
-  // size and the roster are blocked-until-next-game and never go through
-  // this path - they're only editable while game === null.
-  var LIVE_SETTING_KEYS = ['placementMode', 'overpayMode', 'boostEnabled', 'motionEnabled', 'tapToProceed'];
+  // Rule-affecting settings (§3.10) - deferred to the top of the next lap
+  // when changed mid-game, so nobody plays part of a lap under one ruleset
+  // and the rest under another. A "lap" is anchored to seat order: it always
+  // starts at the earliest not-yet-finished player (normally P1), not at
+  // whoever happened to be mid-turn when the change was requested.
+  var LAP_ANCHORED_SETTING_KEYS = ['placementMode', 'overpayMode', 'boostEnabled'];
 
-  function activePlayerIds() {
-    return game.players.filter(function (p) { return !p.finished; }).map(function (p) { return p.id; });
+  // Pure input-path preferences that affect live game behaviour (read via
+  // game.motionEnabled/game.tapToProceed) - no fairness reason to defer
+  // these, so they take effect immediately, live, even mid-turn.
+  var IMMEDIATE_SETTING_KEYS = ['motionEnabled', 'tapToProceed'];
+
+  function firstActiveSeatIndex() {
+    return game.players.findIndex(function (p) { return !p.finished; });
   }
 
   // Persists the new preference immediately (it always governs future games
-  // and future laps). If a game is in progress, the *live* effect on that
-  // game is deferred to the next lap boundary instead of applied instantly -
-  // the fairness rule in §3.10: everyone plays one more turn under the old
-  // ruleset before the new one takes hold.
+  // and future laps). motionEnabled/tapToProceed also apply to the live
+  // game instantly - they're input-path, not rules, so there's no fairness
+  // reason to wait. Rule-affecting keys are queued instead: the live effect
+  // on the current game waits for the next lap boundary. theme is purely
+  // cosmetic and never touches game state at all - see applyTheme().
   function queueSettingChange(key, value) {
     settings[key] = value;
     STORAGE.saveSettings(settings);
-    if (!game || LIVE_SETTING_KEYS.indexOf(key) === -1) return;
-    if (!game.pendingSettings) {
-      game.pendingSettings = { changes: {}, waitingOn: new Set(activePlayerIds()) };
+    if (key === 'theme' || !game) return;
+    if (IMMEDIATE_SETTING_KEYS.indexOf(key) !== -1) {
+      game[key] = value;
+      return;
     }
+    if (LAP_ANCHORED_SETTING_KEYS.indexOf(key) === -1) return;
+    if (!game.pendingSettings) game.pendingSettings = { changes: {} };
     game.pendingSettings.changes[key] = value;
   }
 
-  // Called once a player's current turn has resolved (a confirmed move or a
-  // stall/pass both count as "completing the turn they were currently on").
-  // A pending lap-boundary change applies the moment every player who was
-  // still active when it was requested has completed one more turn.
-  function notePlayerCompletedTurn(playerId) {
+  // Called after advanceTurn() on every turn resolution. A pending
+  // lap-anchored change applies the moment the rotation lands back on the
+  // start of a lap (the earliest active seat) - i.e. everyone who was mid-
+  // lap plays out that lap under the old ruleset first, seat order P1..Pn,
+  // regardless of which seat requested the change.
+  function applyPendingSettingsAtLapStart() {
     if (!game.pendingSettings) return;
-    game.pendingSettings.waitingOn.delete(playerId);
-    if (game.pendingSettings.waitingOn.size === 0) {
-      Object.assign(game, game.pendingSettings.changes);
-      game.pendingSettings = null;
-    }
+    if (game.turnIndex !== firstActiveSeatIndex()) return;
+    Object.assign(game, game.pendingSettings.changes);
+    game.pendingSettings = null;
   }
 
   function startNewGame() {
@@ -615,12 +652,12 @@
   }
 
   function proceedAfterTurn() {
-    notePlayerCompletedTurn(currentPlayer().id);
     if (checkGameEnd()) {
       endGame();
       return;
     }
     advanceTurn();
+    applyPendingSettingsAtLapStart();
     beginTurn();
   }
 
@@ -755,6 +792,7 @@
     renderPlayDiceChoice();
     renderPlayBoostOffer();
     renderPlayButtons();
+    applyTheme();
   }
 
   playRollBtn.addEventListener('click', onRoll);
@@ -779,6 +817,7 @@
   function endGame() {
     renderEnd();
     showScreen('end');
+    applyTheme();
   }
 
   endNewGameBtn.addEventListener('click', function () {
@@ -813,5 +852,6 @@
   });
 
   // ---- Boot ----
+  applyTheme();
   showScreen('launch');
 })();
