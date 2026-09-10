@@ -227,6 +227,16 @@
     }
     queueSettingChange('motionEnabled', newValue);
     renderSettingsControls();
+    // Motion started OFF (skipped the launch-screen permission request per
+    // §3.8) and is now being turned on for the first time - request
+    // permission now, from this same click/change gesture. A no-op if
+    // already granted; startListening is only ever attached once.
+    if (newValue && !motionPermissionGranted) {
+      MOTION.requestPermission().then(function (granted) {
+        motionPermissionGranted = granted;
+        if (granted) beginMotionListening();
+      });
+    }
   });
 
   tapToggleEl.addEventListener('change', function () {
@@ -653,14 +663,24 @@
 
   // ---- Launch screen (motion permission gate) ----
 
+  function beginMotionListening() {
+    MOTION.startListening(onFlatChange, function () {
+      lastMotionSampleAt = Date.now();
+    });
+  }
+
   screens.launch.addEventListener('click', function () {
+    // §3.8: when the persisted preference is already OFF (e.g. from a prior
+    // session), no permission is requested at all - not just ignored once
+    // granted.
+    if (!settings.motionEnabled) {
+      renderSetup();
+      showScreen('setup');
+      return;
+    }
     MOTION.requestPermission().then(function (granted) {
       motionPermissionGranted = granted;
-      if (granted) {
-        MOTION.startListening(onFlatChange, function () {
-          lastMotionSampleAt = Date.now();
-        });
-      }
+      if (granted) beginMotionListening();
       renderSetup();
       showScreen('setup');
     });
