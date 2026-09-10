@@ -508,6 +508,20 @@
     return total;
   }
 
+  // Whether the current selection is the specific case isValidSelection
+  // blocks under overpay: every open tile selected (shutting the whole
+  // rack) with an inexact sum. With only one tile open there's nothing to
+  // exclude - that case is just a plain mismatch, same as strict play, so
+  // it's not called out here.
+  function wholeRackOverpayBlocked() {
+    if (!game.currentRoll || game.currentRoll.stalled || game.currentRoll.boostOfferPending) return false;
+    var effectiveMode = game.currentRoll.boostSpent ? 'D' : game.overpayMode;
+    if (effectiveMode !== 'D') return false;
+    var openVals = RULES.openValues(currentPlayer().rack);
+    if (openVals.length <= 1 || game.selected.size !== openVals.length) return false;
+    return selectedSum() !== game.currentRoll.total;
+  }
+
   function onTileClick(tile) {
     if (!game.currentRoll || game.currentRoll.stalled) return;
     if (!tile.open) return;
@@ -776,6 +790,9 @@
     if (game.currentRoll && game.currentRoll.stalled && !game.currentRoll.boostOfferPending) {
       playMessageEl.textContent = 'Stalled — no legal move for this roll.';
       playMessageEl.className = 'stalled';
+    } else if (wholeRackOverpayBlocked()) {
+      playMessageEl.textContent = 'Closing the whole rack needs an exact match — exclude a tile to overpay instead.';
+      playMessageEl.className = 'notice';
     } else {
       playMessageEl.textContent = '';
     }

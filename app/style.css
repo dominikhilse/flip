@@ -336,6 +336,7 @@ legend {
   margin-bottom: 1rem;
 }
 #play-message.stalled { color: var(--accent-danger); }
+#play-message.notice { color: var(--text-muted); }
 
 #play-selection-sum {
   text-align: center;

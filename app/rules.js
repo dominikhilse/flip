@@ -53,16 +53,19 @@
 
   // Whether a selection of open-tile values is a legal move under the given
   // overpay mode (§3.5). openValues are the player's open tiles BEFORE this
-  // move, used only to detect the "last remaining open tile" case.
+  // move, used only to detect a selection that would shut the whole rack.
   function isValidSelection(openValues, selectedValues, total, overpayMode) {
     if (selectedValues.length === 0) return false;
     var selectedSum = sum(selectedValues);
     if (overpayMode !== 'D') return selectedSum === total;
-    // D: any subset summing to <= total is legal, except the last
-    // remaining open tile, which must still be paid exactly (mandatory
-    // exception established in testing - overpay may not close the last
-    // tile, or the endgame loses all tension).
-    if (openValues.length === 1) return selectedSum === total;
+    // D: any subset summing to <= total is legal, except a selection that
+    // shuts the whole rack (selects every currently open tile), which must
+    // still be paid exactly (mandatory exception established in testing -
+    // overpay may not finish the game, or the endgame loses all tension).
+    // This is a property of the MOVE, not of the rack size: closing the
+    // last two tiles at once via a big overpaid roll is exactly as
+    // tension-free as closing a literal last single tile would be.
+    if (selectedValues.length === openValues.length) return selectedSum === total;
     return selectedSum <= total;
   }
 
