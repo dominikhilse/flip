@@ -51,6 +51,33 @@
     return rack.every(function (t) { return !t.open; });
   }
 
+  // Whether a selection of open-tile values is a legal move under the given
+  // overpay mode (§3.5). openValues are the player's open tiles BEFORE this
+  // move, used only to detect the "last remaining open tile" case.
+  function isValidSelection(openValues, selectedValues, total, overpayMode) {
+    if (selectedValues.length === 0) return false;
+    var selectedSum = sum(selectedValues);
+    if (overpayMode !== 'D') return selectedSum === total;
+    // D: any subset summing to <= total is legal, except the last
+    // remaining open tile, which must still be paid exactly (mandatory
+    // exception established in testing - overpay may not close the last
+    // tile, or the endgame loses all tension).
+    if (openValues.length === 1) return selectedSum === total;
+    return selectedSum <= total;
+  }
+
+  // Whether any legal move exists for this roll, under the given overpay
+  // mode - drives stall detection.
+  function anyLegalMoveExists(openValues, total, overpayMode) {
+    if (overpayMode !== 'D') return subsetSumExists(openValues, total);
+    if (openValues.length === 0) return true;
+    if (openValues.length === 1) return openValues[0] === total;
+    // With more than one tile open, a single open tile is the smallest
+    // possible non-empty selection; if even that clears <= total, a legal
+    // (non-rack-closing) move exists.
+    return openValues.some(function (v) { return v <= total; });
+  }
+
   window.RULES = {
     rollDice: rollDice,
     sum: sum,
@@ -58,6 +85,8 @@
     createRack: createRack,
     openValues: openValues,
     singleDieUnlocked: singleDieUnlocked,
-    isRackShut: isRackShut
+    isRackShut: isRackShut,
+    isValidSelection: isValidSelection,
+    anyLegalMoveExists: anyLegalMoveExists
   };
 })();

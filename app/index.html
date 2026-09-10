@@ -24,9 +24,11 @@
       <div id="color-swatches"></div>
       <button type="submit" class="secondary">Add player</button>
     </form>
+    <div class="setting-note blocked-note" id="roster-note" hidden>Applies next game - end this game to add or remove players</div>
 
     <fieldset>
       <legend>Settings</legend>
+
       <div class="setting-row">
         <span>Rack size</span>
         <div class="toggle-group" id="rack-size-toggle">
@@ -34,6 +36,8 @@
           <button type="button" class="toggle-btn" data-rack-size="12">12</button>
         </div>
       </div>
+      <div class="setting-note blocked-note" id="rack-size-note" hidden>Applies next game</div>
+
       <div class="setting-row">
         <span>Placement</span>
         <select id="placement-mode">
@@ -42,9 +46,35 @@
           <option value="all-places">All places</option>
         </select>
       </div>
+      <div class="setting-note live-note" id="placement-mode-note" hidden>Applies next lap</div>
+
+      <div class="setting-row">
+        <span>Overpay</span>
+        <div class="toggle-group" id="overpay-toggle">
+          <button type="button" class="toggle-btn" data-overpay="A">A</button>
+          <button type="button" class="toggle-btn" data-overpay="D">D</button>
+        </div>
+      </div>
+      <div class="setting-note live-note" id="overpay-note" hidden>Applies next lap</div>
+
+      <div class="setting-row">
+        <label class="checkbox-row"><input type="checkbox" id="boost-checkbox"> Boost mode (A only; no effect yet)</label>
+      </div>
+      <div class="setting-note live-note" id="boost-note" hidden>Applies next lap</div>
+
+      <div class="setting-row">
+        <label class="checkbox-row"><input type="checkbox" id="motion-toggle"> Motion</label>
+      </div>
+      <div class="setting-note live-note" id="motion-note" hidden>Applies next lap</div>
+
+      <div class="setting-row">
+        <label class="checkbox-row"><input type="checkbox" id="tap-toggle"> Tap to proceed</label>
+      </div>
+      <div class="setting-note live-note" id="tap-note" hidden>Applies next lap</div>
     </fieldset>
 
     <button id="start-game" class="primary" disabled>Start game</button>
+    <button id="back-to-game" class="primary" hidden>Back to game</button>
   </section>
 
   <section id="screen-turncard" class="screen full-bleed" hidden>

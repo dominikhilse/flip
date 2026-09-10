@@ -23,9 +23,21 @@
   var addPlayerForm = document.getElementById('add-player-form');
   var playerNameInput = document.getElementById('player-name-input');
   var colorSwatchesEl = document.getElementById('color-swatches');
+  var rosterNoteEl = document.getElementById('roster-note');
   var rackSizeToggleEl = document.getElementById('rack-size-toggle');
+  var rackSizeNoteEl = document.getElementById('rack-size-note');
   var placementModeEl = document.getElementById('placement-mode');
+  var placementModeNoteEl = document.getElementById('placement-mode-note');
+  var overpayToggleEl = document.getElementById('overpay-toggle');
+  var overpayNoteEl = document.getElementById('overpay-note');
+  var boostCheckboxEl = document.getElementById('boost-checkbox');
+  var boostNoteEl = document.getElementById('boost-note');
+  var motionToggleEl = document.getElementById('motion-toggle');
+  var motionNoteEl = document.getElementById('motion-note');
+  var tapToggleEl = document.getElementById('tap-toggle');
+  var tapNoteEl = document.getElementById('tap-note');
   var startGameBtn = document.getElementById('start-game');
+  var backToGameBtn = document.getElementById('back-to-game');
 
   var turncardNameEl = document.getElementById('turncard-name');
   var turncardScreenEl = screens.turncard;
@@ -58,6 +70,7 @@
   }
 
   function renderRosterList() {
+    var blocked = game !== null;
     rosterListEl.innerHTML = '';
     roster.forEach(function (p) {
       var li = document.createElement('li');
@@ -74,6 +87,7 @@
       removeBtn.type = 'button';
       removeBtn.className = 'remove-player';
       removeBtn.textContent = 'Remove';
+      removeBtn.disabled = blocked;
       removeBtn.addEventListener('click', function () {
         roster = roster.filter(function (rp) { return rp.id !== p.id; });
         STORAGE.saveRoster(roster);
@@ -105,28 +119,69 @@
     });
   }
 
+  // Settings reachable mid-game (§3.10): rack size and the roster are
+  // blocked-until-next-game (visibly disabled, not hidden, with a note);
+  // placement, overpay, the boost checkbox, and the two handoff toggles are
+  // live-at-end-of-lap (editable mid-game, but deferred - see
+  // queueSettingChange/notePlayerCompletedTurn). The blocked/live notes only
+  // need to be shown while a game is actually in progress.
   function renderSettingsControls() {
-    var toggleBtns = rackSizeToggleEl.querySelectorAll('.toggle-btn');
-    toggleBtns.forEach(function (btn) {
+    var midGame = game !== null;
+
+    var rackSizeBtns = rackSizeToggleEl.querySelectorAll('.toggle-btn');
+    rackSizeBtns.forEach(function (btn) {
       var size = parseInt(btn.getAttribute('data-rack-size'), 10);
       btn.classList.toggle('active', settings.rackSize === size);
+      btn.disabled = midGame;
     });
+    rackSizeNoteEl.hidden = !midGame;
+
     placementModeEl.value = settings.placementMode;
+    placementModeNoteEl.hidden = !midGame;
+
+    var overpayBtns = overpayToggleEl.querySelectorAll('.toggle-btn');
+    overpayBtns.forEach(function (btn) {
+      btn.classList.toggle('active', settings.overpayMode === btn.getAttribute('data-overpay'));
+    });
+    overpayNoteEl.hidden = !midGame;
+
+    boostCheckboxEl.checked = settings.boostEnabled;
+    boostCheckboxEl.disabled = settings.overpayMode !== 'A';
+    boostCheckboxEl.closest('.setting-row').classList.toggle('disabled', boostCheckboxEl.disabled);
+    boostNoteEl.hidden = !midGame;
+
+    motionToggleEl.checked = settings.motionEnabled;
+    motionNoteEl.hidden = !midGame;
+
+    tapToggleEl.checked = settings.tapToProceed;
+    tapNoteEl.hidden = !midGame;
   }
 
-  function renderStartButton() {
+  function renderPrimaryAction() {
+    var midGame = game !== null;
+    startGameBtn.hidden = midGame;
+    backToGameBtn.hidden = !midGame;
     startGameBtn.disabled = roster.length < 2;
+  }
+
+  function renderRosterEditability() {
+    var blocked = game !== null;
+    playerNameInput.disabled = blocked;
+    addPlayerForm.querySelector('button[type="submit"]').disabled = blocked;
+    rosterNoteEl.hidden = !blocked;
   }
 
   function renderSetup() {
     renderRosterList();
     renderColorSwatches();
+    renderRosterEditability();
     renderSettingsControls();
-    renderStartButton();
+    renderPrimaryAction();
   }
 
   addPlayerForm.addEventListener('submit', function (e) {
     e.preventDefault();
+    if (game !== null) return; // blocked-until-next-game
     var name = playerNameInput.value.trim();
     if (!name) return;
     roster.push({ id: makePlayerId(), name: name, color: selectedColor });
@@ -137,6 +192,7 @@
   });
 
   rackSizeToggleEl.addEventListener('click', function (e) {
+    if (game !== null) return; // blocked-until-next-game
     var btn = e.target.closest('.toggle-btn');
     if (!btn) return;
     settings.rackSize = parseInt(btn.getAttribute('data-rack-size'), 10);
@@ -145,8 +201,42 @@
   });
 
   placementModeEl.addEventListener('change', function () {
-    settings.placementMode = placementModeEl.value;
-    STORAGE.saveSettings(settings);
+    queueSettingChange('placementMode', placementModeEl.value);
+    renderSettingsControls();
+  });
+
+  overpayToggleEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    queueSettingChange('overpayMode', btn.getAttribute('data-overpay'));
+    renderSettingsControls();
+  });
+
+  boostCheckboxEl.addEventListener('change', function () {
+    queueSettingChange('boostEnabled', boostCheckboxEl.checked);
+  });
+
+  // Motion and tap-to-proceed can never both be off at once (§3.9) - forcing
+  // the other back on goes through the same queueSettingChange path so the
+  // forced flip is deferred exactly like a direct one would be.
+  motionToggleEl.addEventListener('change', function () {
+    var newValue = motionToggleEl.checked;
+    if (!newValue && !tapToggleEl.checked) {
+      tapToggleEl.checked = true;
+      queueSettingChange('tapToProceed', true);
+    }
+    queueSettingChange('motionEnabled', newValue);
+    renderSettingsControls();
+  });
+
+  tapToggleEl.addEventListener('change', function () {
+    var newValue = tapToggleEl.checked;
+    if (!newValue && !motionToggleEl.checked) {
+      motionToggleEl.checked = true;
+      queueSettingChange('motionEnabled', true);
+    }
+    queueSettingChange('tapToProceed', newValue);
+    renderSettingsControls();
   });
 
   startGameBtn.addEventListener('click', function () {
@@ -154,7 +244,49 @@
     startNewGame();
   });
 
+  backToGameBtn.addEventListener('click', function () {
+    if (!game) return;
+    showTurnCardFor(currentPlayer());
+  });
+
   // ---- Game orchestration ----
+
+  // Live-at-end-of-lap settings (§3.10) that may be changed mid-game. Rack
+  // size and the roster are blocked-until-next-game and never go through
+  // this path - they're only editable while game === null.
+  var LIVE_SETTING_KEYS = ['placementMode', 'overpayMode', 'boostEnabled', 'motionEnabled', 'tapToProceed'];
+
+  function activePlayerIds() {
+    return game.players.filter(function (p) { return !p.finished; }).map(function (p) { return p.id; });
+  }
+
+  // Persists the new preference immediately (it always governs future games
+  // and future laps). If a game is in progress, the *live* effect on that
+  // game is deferred to the next lap boundary instead of applied instantly -
+  // the fairness rule in §3.10: everyone plays one more turn under the old
+  // ruleset before the new one takes hold.
+  function queueSettingChange(key, value) {
+    settings[key] = value;
+    STORAGE.saveSettings(settings);
+    if (!game || LIVE_SETTING_KEYS.indexOf(key) === -1) return;
+    if (!game.pendingSettings) {
+      game.pendingSettings = { changes: {}, waitingOn: new Set(activePlayerIds()) };
+    }
+    game.pendingSettings.changes[key] = value;
+  }
+
+  // Called once a player's current turn has resolved (a confirmed move or a
+  // stall/pass both count as "completing the turn they were currently on").
+  // A pending lap-boundary change applies the moment every player who was
+  // still active when it was requested has completed one more turn.
+  function notePlayerCompletedTurn(playerId) {
+    if (!game.pendingSettings) return;
+    game.pendingSettings.waitingOn.delete(playerId);
+    if (game.pendingSettings.waitingOn.size === 0) {
+      Object.assign(game, game.pendingSettings.changes);
+      game.pendingSettings = null;
+    }
+  }
 
   function startNewGame() {
     var players = roster.map(function (p) {
@@ -173,6 +305,11 @@
       players: players,
       turnIndex: 0,
       placementMode: settings.placementMode,
+      overpayMode: settings.overpayMode,
+      boostEnabled: settings.boostEnabled,
+      motionEnabled: settings.motionEnabled,
+      tapToProceed: settings.tapToProceed,
+      pendingSettings: null,
       finishedOrder: [],
       currentRoll: null,
       selected: new Set()
@@ -210,8 +347,37 @@
     renderPlay();
   }
 
+  // ---- Motion / tap-to-proceed invariant (§3.9) ----
+  // motionPermissionGranted and lastMotionSampleAt are set from the launch
+  // handler's MOTION.startListening(onFlatChange, onMotionSample) call
+  // further down. A game must always have at least one live way to advance
+  // a turn, so tap becomes effective whenever motion is not actually
+  // delivering - toggled off, denied, or gone silent mid-game - even if the
+  // user's tap-to-proceed preference is OFF.
+  var motionPermissionGranted = false;
+  var lastMotionSampleAt = null;
+  var MOTION_WATCHDOG_MS = 2000;
+
+  function isMotionEffectivelyEnabled() {
+    return game ? game.motionEnabled : settings.motionEnabled;
+  }
+
+  function isTapPreferenceOn() {
+    return game ? game.tapToProceed : settings.tapToProceed;
+  }
+
+  function motionCurrentlyWorking() {
+    return isMotionEffectivelyEnabled() && motionPermissionGranted &&
+      lastMotionSampleAt !== null && (Date.now() - lastMotionSampleAt) < MOTION_WATCHDOG_MS;
+  }
+
+  function effectiveTap() {
+    return isTapPreferenceOn() || !motionCurrentlyWorking();
+  }
+
   turncardScreenEl.addEventListener('click', function (e) {
     if (e.target === settingsFromTurncardBtn) return;
+    if (!effectiveTap()) return;
     goToRack();
   });
 
@@ -220,8 +386,12 @@
   // back down flat returns to the same rack via the same goToRack() path
   // used for a genuine handoff. Motion only ever acts while a game screen
   // (turn card or rack) is showing - on setup/launch/end screens it is a
-  // no-op, so it never interferes outside of active play.
+  // no-op, so it never interferes outside of active play. Gated on the
+  // *effective* motion setting (game.motionEnabled when a lap-boundary
+  // change is pending, else the persisted preference) so a mid-game toggle
+  // takes hold exactly when §3.10 says it should.
   function onFlatChange(isFlat) {
+    if (!isMotionEffectivelyEnabled()) return;
     if (isFlat) {
       if (activeScreen === 'turncard') goToRack();
     } else {
@@ -229,11 +399,10 @@
     }
   }
 
+  // Settings are reachable mid-game without ending the match (§3.10) - this
+  // just navigates to the settings screen; nothing here mutates game state.
   settingsFromTurncardBtn.addEventListener('click', function (e) {
     e.stopPropagation();
-    var proceed = window.confirm('Leave the current game and edit settings? This ends the game in progress.');
-    if (!proceed) return;
-    game = null;
     renderSetup();
     showScreen('setup');
   });
@@ -263,7 +432,7 @@
     var countToUse = unlocked ? p.diceCount : 2;
     var dice = RULES.rollDice(countToUse);
     var total = RULES.sum(dice);
-    var stalled = !RULES.subsetSumExists(RULES.openValues(p.rack), total);
+    var stalled = !RULES.anyLegalMoveExists(RULES.openValues(p.rack), total, game.overpayMode);
     game.currentRoll = { dice: dice, total: total, stalled: stalled };
     game.selected = new Set();
     renderPlay();
@@ -279,7 +448,9 @@
   function onConfirm() {
     var p = currentPlayer();
     if (!game.currentRoll || game.currentRoll.stalled) return;
-    if (selectedSum() !== game.currentRoll.total || game.selected.size === 0) return;
+    var openVals = RULES.openValues(p.rack);
+    var selectedVals = Array.from(game.selected);
+    if (!RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, game.overpayMode)) return;
 
     game.selected.forEach(function (v) {
       var tile = p.rack.find(function (t) { return t.value === v; });
@@ -346,6 +517,7 @@
   }
 
   function proceedAfterTurn() {
+    notePlayerCompletedTurn(currentPlayer().id);
     if (checkGameEnd()) {
       endGame();
       return;
@@ -428,8 +600,15 @@
     playConfirmBtn.hidden = stalled;
 
     playRollBtn.disabled = game.currentRoll !== null;
-    playConfirmBtn.disabled = !game.currentRoll || game.currentRoll.stalled ||
-      selectedSum() !== game.currentRoll.total || game.selected.size === 0;
+
+    if (!game.currentRoll || game.currentRoll.stalled) {
+      playConfirmBtn.disabled = true;
+    } else {
+      var p = currentPlayer();
+      var openVals = RULES.openValues(p.rack);
+      var selectedVals = Array.from(game.selected);
+      playConfirmBtn.disabled = !RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, game.overpayMode);
+    }
   }
 
   function renderPlay() {
@@ -476,8 +655,11 @@
 
   screens.launch.addEventListener('click', function () {
     MOTION.requestPermission().then(function (granted) {
+      motionPermissionGranted = granted;
       if (granted) {
-        MOTION.startListening(onFlatChange);
+        MOTION.startListening(onFlatChange, function () {
+          lastMotionSampleAt = Date.now();
+        });
       }
       renderSetup();
       showScreen('setup');
