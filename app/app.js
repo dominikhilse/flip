@@ -711,7 +711,14 @@
       return;
     }
     playBoostCountEl.hidden = false;
-    playBoostCountEl.textContent = 'Overpay boosts: ' + p.boosts.overpay;
+    // The last remaining tile is always exact-only (never boostable, even
+    // holding a boost) - say so plainly instead of showing a count that
+    // implies a boost could help here.
+    if (RULES.openValues(p.rack).length === 1) {
+      playBoostCountEl.textContent = 'No boosts for the last number';
+    } else {
+      playBoostCountEl.textContent = 'Overpay boosts: ' + p.boosts.overpay;
+    }
   }
 
   function renderPlayBoostAnnouncement() {
