@@ -106,6 +106,12 @@
     color: #cccccc;
     margin-bottom: 1rem;
   }
+  #rest-to-flip-note {
+    font-size: 0.8rem;
+    color: #999999;
+    margin: -0.5rem 0 1rem;
+    line-height: 1.4;
+  }
   h2 {
     font-size: 0.85rem;
     font-weight: 600;
@@ -161,10 +167,19 @@
       <input type="range" id="still-threshold" min="0.1" max="5" step="0.1" value="1.5">
     </div>
     <div class="slider-row">
-      <label><span>Debounce duration</span><span id="debounce-val">300 ms</span></label>
+      <label><span>Rest-to-flip delay</span><span id="debounce-val">300 ms</span></label>
       <input type="range" id="debounce-duration" min="0" max="2000" step="50" value="300">
     </div>
   </fieldset>
+
+  <div id="rest-to-flip-note">
+    D-31: find the shortest value that still stays bump-safe. Set it low, tap
+    the screen the instant the phone settles FLAT - if the tap lands before
+    the indicator flips, go higher. Then bump the table / rest a hand nearby
+    - if that falsely flips it, go higher still. If no single value clears
+    both checks, that is a stop condition (see the plan's M0 §8) - the fix is
+    a better settle trigger, not a longer guess.
+  </div>
 
   <div id="orientation">screen.orientation: — · deviceorientation α/β/γ: —</div>
 

@@ -479,10 +479,6 @@
       if (granted) {
         MOTION.startListening(onFlatChange);
       }
-      // Attempted regardless of motion permission - orientation lock is a
-      // separate API. Expected to silently no-op on iOS Safari outside an
-      // installed PWA; see motion.js.
-      MOTION.lockLandscape();
       renderSetup();
       showScreen('setup');
     });

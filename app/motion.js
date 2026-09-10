@@ -2,6 +2,11 @@
 // permission outcome and debounced flat/not-flat transitions to a callback.
 // Same flat-detection algorithm as the M0 harness (app/harness.html), now
 // driven by the measured constants in config.js instead of live sliders.
+//
+// No orientation lock (D-08 superseded by D-26): M4 hand-testing found
+// portrait plays fine and the shove/lift handoff never depended on reading
+// orientation while flat, so the earlier defensive screen.orientation.lock()
+// call was removed rather than kept as unreachable code.
 (function () {
   'use strict';
 
@@ -31,7 +36,11 @@
   }
 
   // Calls onFlatChange(true|false) on debounced flat/not-flat transitions.
-  function startListening(onFlatChange) {
+  // onSample, if given, fires on every raw devicemotion event regardless of
+  // debounce state - a liveness heartbeat so callers can tell "motion is
+  // enabled but genuinely not delivering events" from "nothing has changed
+  // in a while" (see the tap-to-proceed invariant, §3.9).
+  function startListening(onFlatChange, onSample) {
     var lastGravity = null;
     var candidateFlat = null;
     var stableSince = null;
@@ -40,6 +49,7 @@
     function onMotion(event) {
       var g = event.accelerationIncludingGravity;
       if (!g || g.x === null) return;
+      if (onSample) onSample();
 
       var magnitude = Math.sqrt(g.x * g.x + g.y * g.y + g.z * g.z);
       var angleFromFlat = magnitude > 0
@@ -70,7 +80,7 @@
         stableSince = now;
       }
 
-      if (candidateFlat !== null && (now - stableSince) >= window.CONFIG.debounceMs) {
+      if (candidateFlat !== null && (now - stableSince) >= window.CONFIG.restToFlipDelayMs) {
         if (currentFlat !== candidateFlat) {
           currentFlat = candidateFlat;
           onFlatChange(currentFlat);
@@ -81,23 +91,8 @@
     window.addEventListener('devicemotion', onMotion);
   }
 
-  // Best-effort only: iOS Safari does not support the Screen Orientation
-  // Lock API outside an installed, fullscreen PWA. Failure here is silent
-  // and expected on the target devices - the game is still fully playable,
-  // just without an OS-enforced lock.
-  function lockLandscape() {
-    try {
-      if (screen.orientation && typeof screen.orientation.lock === 'function') {
-        screen.orientation.lock('landscape').catch(function () {});
-      }
-    } catch (e) {
-      // Ignore - see comment above.
-    }
-  }
-
   window.MOTION = {
     requestPermission: requestPermission,
-    startListening: startListening,
-    lockLandscape: lockLandscape
+    startListening: startListening
   };
 })();
