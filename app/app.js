@@ -68,21 +68,22 @@
     });
   }
 
-  // Whether the CURRENT roll is being resolved under overpay-relaxed rules
-  // right now - either overpayMode is 'D', or this roll's boost was spent.
-  // Deliberately excludes the stalled/offer-pending states: the flip is
-  // meant to mark "you can make a loose move right now", not "you might".
+  // Whether overpay-relaxed rules are in effect right now - a persistent
+  // mode-state signal, not a per-roll flash. D mode is a standing
+  // ruleset: the flip stays on for the whole time the game is in D, through
+  // stalls and everything else, and off again the instant it reverts to A.
+  // A spent boost is the one genuinely per-roll case - it relaxes only the
+  // roll it was spent on, so the flip tracks it for exactly that long.
   function overpayFlipActive() {
-    if (!game || !game.currentRoll) return false;
-    var r = game.currentRoll;
-    if (r.stalled || r.boostOfferPending) return false;
-    return r.boostSpent || game.overpayMode === 'D';
+    if (!game) return false;
+    if (game.overpayMode === 'D') return true;
+    return !!(game.currentRoll && game.currentRoll.boostSpent);
   }
 
   // Theme is purely cosmetic (never stored on `game`) but doubles as the
   // overpay "visual highlight" the design track hasn't nailed down yet: the
   // effective theme is the user's preference XORed with overpayFlipActive,
-  // so the whole page inverts for the moment an overpay move is available.
+  // so the whole page inverts for as long as overpay-relaxed rules are live.
   function applyTheme() {
     var wantsLight = settings.theme === 'light';
     var showLight = wantsLight !== overpayFlipActive();
