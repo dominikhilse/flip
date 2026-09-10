@@ -44,11 +44,17 @@
   var settingsFromTurncardBtn = document.getElementById('settings-from-turncard');
 
   var playPlayerNameEl = document.getElementById('play-player-name');
+  var playBoostCountEl = document.getElementById('play-boost-count');
+  var playBoostAnnouncementEl = document.getElementById('play-boost-announcement');
   var playMessageEl = document.getElementById('play-message');
   var playSelectionSumEl = document.getElementById('play-selection-sum');
   var playRackEl = document.getElementById('play-rack');
   var playDiceChoiceEl = document.getElementById('play-dice-choice');
   var playDiceAreaEl = document.getElementById('play-dice-area');
+  var playBoostOfferEl = document.getElementById('play-boost-offer');
+  var playBoostOfferTextEl = document.getElementById('play-boost-offer-text');
+  var playBoostSpendBtn = document.getElementById('play-boost-spend');
+  var playBoostDeclineBtn = document.getElementById('play-boost-decline');
   var playRollBtn = document.getElementById('play-roll');
   var playConfirmBtn = document.getElementById('play-confirm');
   var playPassBtn = document.getElementById('play-pass');
@@ -308,7 +314,12 @@
         finished: false,
         place: null,
         diceCount: 2,
-        diceCountChosenByPlayer: false
+        diceCountChosenByPlayer: false,
+        // Boost mode (§3.6, M6) - typed holding, never a bare integer, so a
+        // future boost type is additive rather than a schema change.
+        boosts: { overpay: 0 },
+        rollHistory: [], // last N clean/not-clean rolls while boost mode is active
+        pendingBoostAnnouncement: false
       };
     });
     game = {
@@ -436,14 +447,65 @@
     renderPlay();
   }
 
+  // ---- Boost mode (§3.6, M6) ----
+  // Reached via overpayMode 'A' + boostEnabled (§3.5) - never touches D's
+  // rules. Base play stays strict (mode 'A'); a spent boost relaxes only
+  // the current roll to D-style validity (RULES already encodes the
+  // last-tile-exact exception, so it's reused rather than duplicated).
+
+  function boostModeActive() {
+    return game.overpayMode === 'A' && game.boostEnabled;
+  }
+
+  function awardBoost(p) {
+    if (p.boosts.overpay >= CONFIG.boostMaxHeld) return; // discarded past the cap (D-20)
+    p.boosts.overpay++;
+    p.pendingBoostAnnouncement = true;
+  }
+
+  // Dry streak (§3.6): fewer than boostDryStreakThreshold clean (exact-move-
+  // possible) rolls in the player's last boostDryStreakWindow rolls. Skipped
+  // on a turn where this same player just spent a boost (no re-earn).
+  function maybeAwardDryStreakBoost(p) {
+    var recent = p.rollHistory.slice(-CONFIG.boostDryStreakWindow);
+    var cleanCount = recent.filter(Boolean).length;
+    if (cleanCount < CONFIG.boostDryStreakThreshold) awardBoost(p);
+  }
+
+  // Trailing-at-finish (§3.6): the moment any player shuts, whichever
+  // remaining (not-yet-finished) player(s) have the most open tiles are
+  // awarded a boost each - ties all awarded.
+  function awardTrailingBoosts() {
+    var remaining = game.players.filter(function (pl) { return !pl.finished; });
+    if (remaining.length === 0) return;
+    var maxOpen = Math.max.apply(null, remaining.map(function (pl) { return RULES.openValues(pl.rack).length; }));
+    remaining.forEach(function (pl) {
+      if (RULES.openValues(pl.rack).length === maxOpen) awardBoost(pl);
+    });
+  }
+
   function onRoll() {
     var p = currentPlayer();
     var unlocked = RULES.singleDieUnlocked(p.rack);
     var countToUse = unlocked ? p.diceCount : 2;
     var dice = RULES.rollDice(countToUse);
     var total = RULES.sum(dice);
-    var stalled = !RULES.anyLegalMoveExists(RULES.openValues(p.rack), total, game.overpayMode);
-    game.currentRoll = { dice: dice, total: total, stalled: stalled };
+    var openVals = RULES.openValues(p.rack);
+    var stalled = !RULES.anyLegalMoveExists(openVals, total, game.overpayMode);
+
+    if (boostModeActive()) {
+      var strictlyLegal = RULES.anyLegalMoveExists(openVals, total, 'A');
+      p.rollHistory.push(strictlyLegal);
+      if (p.rollHistory.length > CONFIG.boostDryStreakWindow) p.rollHistory.shift();
+    }
+
+    // Only offer a boost if spending it would actually produce a legal
+    // move - never offer one that the last-tile-exact rule would make
+    // pointless to spend.
+    var boostOfferPending = stalled && boostModeActive() && p.boosts.overpay >= 1 &&
+      RULES.anyLegalMoveExists(openVals, total, 'D');
+
+    game.currentRoll = { dice: dice, total: total, stalled: stalled, boostOfferPending: boostOfferPending, boostSpent: false };
     game.selected = new Set();
     renderPlay();
   }
@@ -455,12 +517,33 @@
     renderPlay();
   }
 
+  function onBoostSpend() {
+    if (!game.currentRoll || !game.currentRoll.boostOfferPending) return;
+    var p = currentPlayer();
+    if (p.boosts.overpay < 1) return;
+    p.boosts.overpay--;
+    game.currentRoll.boostSpent = true;
+    game.currentRoll.boostOfferPending = false;
+    game.currentRoll.stalled = false;
+    renderPlay();
+  }
+
+  function onBoostDecline() {
+    if (!game.currentRoll || !game.currentRoll.boostOfferPending) return;
+    game.currentRoll.boostOfferPending = false;
+    // Falls back to a normal stall - rack unchanged, boost retained.
+    renderPlay();
+  }
+
   function onConfirm() {
     var p = currentPlayer();
-    if (!game.currentRoll || game.currentRoll.stalled) return;
+    if (!game.currentRoll || game.currentRoll.stalled || game.currentRoll.boostOfferPending) return;
     var openVals = RULES.openValues(p.rack);
     var selectedVals = Array.from(game.selected);
-    if (!RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, game.overpayMode)) return;
+    var effectiveMode = game.currentRoll.boostSpent ? 'D' : game.overpayMode;
+    if (!RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, effectiveMode)) return;
+
+    var boostSpentThisTurn = game.currentRoll.boostSpent;
 
     game.selected.forEach(function (v) {
       var tile = p.rack.find(function (t) { return t.value === v; });
@@ -473,16 +556,21 @@
       p.finished = true;
       p.place = game.finishedOrder.length + 1;
       game.finishedOrder.push(p.id);
+      if (boostModeActive()) awardTrailingBoosts();
     } else if (RULES.singleDieUnlocked(p.rack) && !p.diceCountChosenByPlayer) {
       p.diceCount = 1;
     }
+
+    if (boostModeActive() && !boostSpentThisTurn) maybeAwardDryStreakBoost(p);
 
     proceedAfterTurn();
   }
 
   function onPass() {
+    var p = currentPlayer();
     game.currentRoll = null;
     game.selected = new Set();
+    if (boostModeActive()) maybeAwardDryStreakBoost(p);
     proceedAfterTurn();
   }
 
@@ -570,11 +658,41 @@
 
   function renderPlayMessage() {
     playMessageEl.className = '';
-    if (game.currentRoll && game.currentRoll.stalled) {
+    if (game.currentRoll && game.currentRoll.stalled && !game.currentRoll.boostOfferPending) {
       playMessageEl.textContent = 'Stalled — no legal move for this roll.';
       playMessageEl.className = 'stalled';
     } else {
       playMessageEl.textContent = '';
+    }
+  }
+
+  function renderPlayBoostCount() {
+    var p = currentPlayer();
+    if (!boostModeActive()) {
+      playBoostCountEl.hidden = true;
+      return;
+    }
+    playBoostCountEl.hidden = false;
+    playBoostCountEl.textContent = 'Overpay boosts: ' + p.boosts.overpay;
+  }
+
+  function renderPlayBoostAnnouncement() {
+    var p = currentPlayer();
+    if (!p.pendingBoostAnnouncement) {
+      playBoostAnnouncementEl.hidden = true;
+      return;
+    }
+    playBoostAnnouncementEl.hidden = false;
+    playBoostAnnouncementEl.textContent = 'Boost earned! Overpay boosts: ' + p.boosts.overpay;
+    p.pendingBoostAnnouncement = false;
+  }
+
+  function renderPlayBoostOffer() {
+    var show = !!(game.currentRoll && game.currentRoll.boostOfferPending);
+    playBoostOfferEl.hidden = !show;
+    if (show) {
+      playBoostOfferTextEl.textContent = 'Stalled — spend an overpay boost to flip tiles summing to at most ' +
+        game.currentRoll.total + '?';
     }
   }
 
@@ -604,20 +722,23 @@
   }
 
   function renderPlayButtons() {
-    var stalled = !!(game.currentRoll && game.currentRoll.stalled);
-    playRollBtn.hidden = stalled;
+    var boostOfferPending = !!(game.currentRoll && game.currentRoll.boostOfferPending);
+    var stalled = !!(game.currentRoll && game.currentRoll.stalled) && !boostOfferPending;
+
+    playRollBtn.hidden = stalled || boostOfferPending;
     playPassBtn.hidden = !stalled;
-    playConfirmBtn.hidden = stalled;
+    playConfirmBtn.hidden = stalled || boostOfferPending;
 
     playRollBtn.disabled = game.currentRoll !== null;
 
-    if (!game.currentRoll || game.currentRoll.stalled) {
+    if (!game.currentRoll || game.currentRoll.stalled || boostOfferPending) {
       playConfirmBtn.disabled = true;
     } else {
       var p = currentPlayer();
       var openVals = RULES.openValues(p.rack);
       var selectedVals = Array.from(game.selected);
-      playConfirmBtn.disabled = !RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, game.overpayMode);
+      var effectiveMode = game.currentRoll.boostSpent ? 'D' : game.overpayMode;
+      playConfirmBtn.disabled = !RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, effectiveMode);
     }
   }
 
@@ -625,17 +746,22 @@
     var p = currentPlayer();
     playPlayerNameEl.textContent = p.name;
     playPlayerNameEl.style.color = p.color;
+    renderPlayBoostCount();
+    renderPlayBoostAnnouncement();
     renderPlayRack();
     renderPlayDice();
     renderPlayMessage();
     renderPlaySelectionSum();
     renderPlayDiceChoice();
+    renderPlayBoostOffer();
     renderPlayButtons();
   }
 
   playRollBtn.addEventListener('click', onRoll);
   playConfirmBtn.addEventListener('click', onConfirm);
   playPassBtn.addEventListener('click', onPass);
+  playBoostSpendBtn.addEventListener('click', onBoostSpend);
+  playBoostDeclineBtn.addEventListener('click', onBoostDecline);
 
   // ---- End screen ----
 

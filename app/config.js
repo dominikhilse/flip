@@ -15,5 +15,13 @@
 window.CONFIG = {
   flatAngleThresholdDegrees: 7,
   stillMagnitudeThreshold: 0.3, // m/s^2
-  restToFlipDelayMs: 300 // PENDING RETUNE - see comment above
+  restToFlipDelayMs: 300, // PENDING RETUNE - see comment above
+
+  // Boost mode (§3.6, M6). boostDryStreakWindow/Threshold are the starting
+  // values from the spec, explicitly flagged there as tunable after real
+  // play - change in place if the feel is off, no need to re-derive them.
+  // boostMaxHeld is a locked decision (D-20), not a tuning knob.
+  boostDryStreakWindow: 5,
+  boostDryStreakThreshold: 3, // fewer than this many clean rolls in the window awards a boost
+  boostMaxHeld: 3
 };

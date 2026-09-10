@@ -324,6 +324,34 @@ legend {
 }
 .action-row button.primary { flex: 1; }
 
+#play-boost-count {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #cccccc;
+  margin-bottom: 0.5rem;
+}
+
+#play-boost-announcement {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111111;
+  background: #f9c74f;
+  border-radius: 8px;
+  padding: 0.6em;
+  margin-bottom: 1rem;
+}
+
+#play-boost-offer {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+#play-boost-offer-text {
+  font-size: 0.95rem;
+  color: #e08a8a;
+  margin-bottom: 0.75rem;
+}
+
 /* End screen */
 
 #finish-list {
