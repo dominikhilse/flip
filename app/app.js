@@ -15,7 +15,8 @@
     setup: document.getElementById('screen-setup'),
     turncard: document.getElementById('screen-turncard'),
     play: document.getElementById('screen-play'),
-    end: document.getElementById('screen-end')
+    end: document.getElementById('screen-end'),
+    timeout: document.getElementById('screen-timeout')
   };
   var activeScreen = 'launch';
 
@@ -33,6 +34,9 @@
   var boostCheckboxEl = document.getElementById('boost-checkbox');
   var boostNoteEl = document.getElementById('boost-note');
   var devTwoDiceForceEl = document.getElementById('dev-two-dice-force');
+  var devTimeChallengeInputEl = document.getElementById('dev-time-challenge-input');
+  var devTimeChallengeSetBtn = document.getElementById('dev-time-challenge-set');
+  var devTimeChallengeStatusEl = document.getElementById('dev-time-challenge-status');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleEl = document.getElementById('theme-toggle');
@@ -43,8 +47,10 @@
   var turncardNameEl = document.getElementById('turncard-name');
   var turncardScreenEl = screens.turncard;
   var settingsFromTurncardBtn = document.getElementById('settings-from-turncard');
+  var turncardTimerEl = document.getElementById('turncard-timer');
 
   var playPlayerNameEl = document.getElementById('play-player-name');
+  var playTimerEl = document.getElementById('play-timer');
   var playBoostCountEl = document.getElementById('play-boost-count');
   var playBoostAnnouncementEl = document.getElementById('play-boost-announcement');
   var playMessageEl = document.getElementById('play-message');
@@ -62,12 +68,17 @@
 
   var finishListEl = document.getElementById('finish-list');
   var endNewGameBtn = document.getElementById('end-new-game');
+  var timeoutNewGameBtn = document.getElementById('timeout-new-game');
 
   function showScreen(name) {
     activeScreen = name;
     Object.keys(screens).forEach(function (key) {
       screens[key].hidden = key !== name;
     });
+    // Time challenge (M9): pauses on the turn card, runs on the rack - the
+    // HUD reflects that the instant the screen changes, not just on the
+    // next tick (see tickChallenge, further down).
+    renderChallengeTimer();
   }
 
   // Whether overpay-relaxed rules are in effect right now - a persistent
@@ -197,6 +208,16 @@
     // Dev mode (M8) - a testing instrument, applies immediately like the
     // preferences above, carries no "applies next lap" note.
     devTwoDiceForceEl.checked = settings.devTwoDiceForce;
+
+    // Time challenge (M9) - blocked-until-next-game, same class as rack
+    // size: retrofitting a countdown onto a game already in progress isn't
+    // worth the edge cases for a dev instrument.
+    devTimeChallengeInputEl.value = settings.timeChallengeSeconds;
+    devTimeChallengeInputEl.disabled = midGame;
+    devTimeChallengeSetBtn.disabled = midGame;
+    devTimeChallengeStatusEl.textContent =
+      (settings.timeChallengeSeconds > 0 ? 'Currently ' + formatSecondsLabel(settings.timeChallengeSeconds) : 'Currently off') +
+      (midGame ? ' - applies next game' : '');
   }
 
   function renderPrimaryAction() {
@@ -262,6 +283,18 @@
 
   devTwoDiceForceEl.addEventListener('change', function () {
     queueSettingChange('devTwoDiceForce', devTwoDiceForceEl.checked);
+    renderSettingsControls();
+  });
+
+  // Time challenge (M9): blocked-until-next-game, so this writes straight
+  // to settings like rackSize does - never through queueSettingChange/game.
+  devTimeChallengeSetBtn.addEventListener('click', function () {
+    if (game !== null) return; // blocked-until-next-game
+    var raw = parseInt(devTimeChallengeInputEl.value, 10);
+    if (!Number.isFinite(raw) || raw < 0) raw = 0;
+    var rounded = raw === 0 ? 0 : Math.max(15, Math.round(raw / 15) * 15);
+    settings.timeChallengeSeconds = rounded;
+    STORAGE.saveSettings(settings);
     renderSettingsControls();
   });
 
@@ -394,6 +427,12 @@
       overpayMode: settings.overpayMode,
       boostEnabled: settings.boostEnabled,
       devTwoDiceForce: settings.devTwoDiceForce, // M8 - dev instrument, not a rule
+      // Time challenge (M9) - null when off. Only the configured duration
+      // (settings.timeChallengeSeconds) is a setting; remainingMs is
+      // game-in-progress state, never persisted, like the rest of `game`.
+      timeChallenge: settings.timeChallengeSeconds > 0
+        ? { remainingMs: settings.timeChallengeSeconds * 1000 }
+        : null,
       motionEnabled: settings.motionEnabled,
       tapToProceed: settings.tapToProceed,
       pendingSettings: null,
@@ -993,6 +1032,74 @@
   }
 
   endNewGameBtn.addEventListener('click', function () {
+    game = null;
+    renderSetup();
+    showScreen('setup');
+  });
+
+  // ---- Time challenge (M9, dev mode) ----
+  // An anti-drag circuit-breaker, not a rule: ends a game that won't end,
+  // without declaring a false winner. Pure overlay on top of the existing
+  // turn loop - ticks independently on a fixed interval and only ever reads
+  // `activeScreen`/`game.timeChallenge`, never touches turn/rack state. Per
+  // §5/M9: pauses while a turn/player screen shows, runs on the active rack.
+
+  function formatSecondsLabel(totalSeconds) {
+    var m = Math.floor(totalSeconds / 60);
+    var s = totalSeconds % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function formatChallengeTime(ms) {
+    return formatSecondsLabel(Math.ceil(ms / 1000));
+  }
+
+  // Called on every screen transition (see showScreen) and every tick while
+  // running (see tickChallenge) - the single place that keeps both HUD
+  // elements in sync with game.timeChallenge. Hidden entirely when no
+  // challenge is active for this game.
+  function renderChallengeTimer() {
+    var active = !!(game && game.timeChallenge);
+    turncardTimerEl.hidden = !active;
+    playTimerEl.hidden = !active;
+    if (!active) return;
+    var label = formatChallengeTime(game.timeChallenge.remainingMs);
+    turncardTimerEl.textContent = 'Time challenge (paused): ' + label;
+    playTimerEl.textContent = 'Time challenge: ' + label;
+  }
+
+  // Deliberately no ranking (§5/M9) - nobody shut their box, so there is no
+  // winner, and a placeholder table would undercut the very tension being
+  // tested. Do not add one here.
+  function timeoutGame() {
+    showScreen('timeout');
+    applyTheme();
+  }
+
+  var CHALLENGE_TICK_MS = 250;
+  var lastChallengeTickAt = null;
+
+  // Delta-time based, not a fixed decrement per tick, so a long pause (the
+  // turn card showing for a while) never produces a jump once it resumes -
+  // the elapsed gap is only ever measured across two ticks that were both
+  // actually running.
+  function tickChallenge() {
+    var now = Date.now();
+    if (!game || !game.timeChallenge || activeScreen !== 'play') {
+      lastChallengeTickAt = now;
+      return;
+    }
+    if (lastChallengeTickAt === null) lastChallengeTickAt = now;
+    var delta = now - lastChallengeTickAt;
+    lastChallengeTickAt = now;
+    game.timeChallenge.remainingMs = Math.max(0, game.timeChallenge.remainingMs - delta);
+    renderChallengeTimer();
+    if (game.timeChallenge.remainingMs <= 0) timeoutGame();
+  }
+
+  setInterval(tickChallenge, CHALLENGE_TICK_MS);
+
+  timeoutNewGameBtn.addEventListener('click', function () {
     game = null;
     renderSetup();
     showScreen('setup');

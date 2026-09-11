@@ -224,6 +224,23 @@ legend {
 #dev-mode-section .setting-row {
   margin-top: 0.6rem;
 }
+.dev-time-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.dev-time-row input[type="number"] {
+  width: 4.5rem;
+  padding: 0.4em 0.5em;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+.dev-time-row button {
+  width: auto;
+  padding: 0.4em 0.8em;
+}
 .checkbox-row {
   display: flex;
   align-items: center;
@@ -284,6 +301,22 @@ legend {
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 6px;
+}
+
+/* Time challenge HUD (M9). Fixed dark/light styling like the rest of the
+   turn card - not theme-tokened. Visibly "paused" (struck, dimmer) here,
+   since the turn card is exactly when the challenge is paused. */
+.corner-timer {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.5em 0.9em;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  text-decoration: line-through;
 }
 
 /* Fixed regardless of theme - see the comment on the :root token block. */
@@ -389,6 +422,17 @@ legend {
   gap: 0.5rem;
 }
 .action-row button.primary { flex: 1; }
+
+/* Time challenge HUD (M9). Always "running" here - the timer only shows on
+   this screen while it's actively counting down (paused state lives on the
+   turn card instead, .corner-timer). */
+#play-timer {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-danger);
+  margin-bottom: 0.5rem;
+}
 
 #play-boost-count {
   text-align: center;

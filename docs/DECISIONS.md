@@ -238,3 +238,42 @@ duplicated here.
   full automated games (normal, dev-force-on, native D) completed cleanly with zero console
   errors. Screenshots confirmed the dev-mode section renders collapsed and visually distinct
   from production settings, and expands to show its explanatory text correctly.
+
+### 2026-09-11 — M9 built: time challenge (anti-drag circuit-breaker)
+- **Status: BUILT, matches §5/M9's spec.** A dev-mode time picker + Set button, a persistent
+  countdown HUD (one element on the turn card, one on the rack), pause-on-turn-card/resume-on-
+  rack, and a deliberate no-ranking timeout screen.
+- **Design calls not spelled out in the spec, made explicitly:**
+  - **Blocked-until-next-game, not live mid-game.** "A time picker plus a Set button to
+    activate the challenge for the group" doesn't say whether Set retrofits a game already in
+    progress. Went with the same `blocked-until-next-game` class as `rackSize` (input/button
+    disabled while a game is running, with an "applies next game" note) - reason: there's no
+    sane answer to "how much of this game's time already elapsed" for a game that started
+    before a duration existed, and the whole feature is explicitly a cheap-to-try dev
+    instrument, not worth the edge cases of mid-game injection.
+  - **Persistence split:** only the configured duration (`settings.timeChallengeSeconds`)
+    persists to `localStorage`, matching every other setting; the live countdown
+    (`game.timeChallenge.remainingMs`) is in-memory-only game state, per the project's own
+    "never persist game-in-progress state" rule (§2) - a reload starts fresh with no timer
+    resuming from a stale value.
+  - **Pure overlay, not a core-loop change** (the stop condition's own bar): a single
+    `setInterval(tickChallenge, 250)` started once at boot, delta-time based so a long pause
+    never produces a jump on resume, gated only on reading `activeScreen`/`game.timeChallenge`
+    and calling `timeoutGame()` - no turn/rack function was touched to make this work.
+    `showScreen()` additionally calls `renderChallengeTimer()` on every transition so the
+    paused/running HUD switches instantly rather than waiting up to 250ms for the next tick.
+  - **New `screen-timeout`**, not a conditional branch of the existing end screen - keeps
+    `endGame()`/`renderEnd()` untouched and makes "no ranking table, ever, on this screen"
+    structurally true rather than something a future edit could accidentally reintroduce.
+- **Verified** via a temporary debug hook (removed before commit) against all 4 acceptance
+  criteria: Set rounds an arbitrary input to the nearest 15s and persists it; the HUD
+  genuinely counts down in real time on the rack (confirmed across real multi-second waits,
+  not simulated); moving to the turn card freezes `remainingMs` exactly (held flat across a
+  further real wait) and moving back resumes from precisely where it left off, with no jump;
+  forcing `remainingMs` near zero triggers the timeout screen within one tick, showing the
+  exact "Time's up! Better luck finishing next time!" text with no ranking table and leaving
+  `screen-end` untouched; a normal game-ending win was confirmed to end via `screen-end`, not
+  `screen-timeout`, even with a challenge configured. Screenshots confirmed the paused HUD
+  renders visibly struck-through and dimmed on the turn card, and the running HUD renders
+  normally on the rack. Full automated games with a challenge configured (both short-circuited
+  by real time and left to run long) completed with zero console errors.

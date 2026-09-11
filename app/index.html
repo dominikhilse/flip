@@ -85,6 +85,15 @@
         <label class="checkbox-row"><input type="checkbox" id="dev-two-dice-force"> Force two dice at the single-die endgame</label>
       </div>
       <div class="setting-note">Testing instrument only - overrides the per-turn 1/2 choice so the two-dice path can be exercised on demand. The single-die endgame rule (§3.3) is otherwise untouched: default play is still one die, and the last-tile-is-1 safety rule always wins regardless of this toggle.</div>
+
+      <div class="setting-row">
+        <span>Time challenge</span>
+        <div class="dev-time-row">
+          <input type="number" id="dev-time-challenge-input" min="0" step="15" value="0">
+          <button type="button" id="dev-time-challenge-set" class="secondary">Set</button>
+        </div>
+      </div>
+      <div class="setting-note" id="dev-time-challenge-status">Currently off</div>
     </details>
 
     <button id="start-game" class="primary" disabled>Start game</button>
@@ -94,6 +103,7 @@
 
   <section id="screen-turncard" class="screen full-bleed" hidden>
     <button id="settings-from-turncard" class="corner-btn">Settings</button>
+    <div id="turncard-timer" class="corner-timer" hidden></div>
     <div class="turncard-center">
       <div id="turncard-name"></div>
       <div id="turncard-instruction">Place the phone flat on the table</div>
@@ -103,6 +113,7 @@
 
   <section id="screen-play" class="screen" hidden>
     <h1 id="play-player-name"></h1>
+    <div id="play-timer" hidden></div>
 
     <div id="play-boost-count" hidden></div>
     <div id="play-boost-announcement" hidden></div>
@@ -134,6 +145,14 @@
     <h1>Game over</h1>
     <ol id="finish-list"></ol>
     <button id="end-new-game" class="primary">New game</button>
+  </section>
+
+  <!-- Time challenge timeout (M9): deliberately no ranking table - nobody
+       shut their box, so there is no winner. Do not add one here. -->
+  <section id="screen-timeout" class="screen" hidden>
+    <h1>Time's up!</h1>
+    <p id="timeout-message">Better luck finishing next time!</p>
+    <button id="timeout-new-game" class="primary">New game</button>
   </section>
 
   <script src="theme.js"></script>

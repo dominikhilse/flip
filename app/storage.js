@@ -15,6 +15,11 @@
     // Dev mode (M8, D-42): a testing instrument, not a production rule -
     // §3.3's per-turn 1/2 choice (default one die) is otherwise untouched.
     devTwoDiceForce: false,
+    // Time challenge (M9, dev mode). 0 = off. Whole seconds, always a
+    // multiple of 15 (enforced where it's set, not here) - blocked-until-
+    // next-game like rackSize: retrofitting a countdown onto a game already
+    // in progress is a can of worms not worth opening for a dev instrument.
+    timeChallengeSeconds: 0,
     motionEnabled: true, // D-21
     // D-29: default ON in development (this prototype), OFF in the final
     // build - there is no build step to branch on, so this is the
@@ -51,6 +56,8 @@
         overpayMode: parsed.overpayMode === 'D' ? 'D' : DEFAULT_SETTINGS.overpayMode,
         boostEnabled: parsed.boostEnabled === true,
         devTwoDiceForce: parsed.devTwoDiceForce === true,
+        timeChallengeSeconds: (Number.isInteger(parsed.timeChallengeSeconds) && parsed.timeChallengeSeconds >= 0)
+          ? parsed.timeChallengeSeconds : DEFAULT_SETTINGS.timeChallengeSeconds,
         motionEnabled: parsed.motionEnabled !== false,
         tapToProceed: parsed.tapToProceed !== false,
         theme: parsed.theme === 'light' ? 'light' : DEFAULT_SETTINGS.theme
