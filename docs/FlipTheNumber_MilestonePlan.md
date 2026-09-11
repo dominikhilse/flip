@@ -11,7 +11,10 @@ added; the two-dice-force relocated to dev mode with §3.3 left unchanged; boost
 timing folded in (D-44); the overpay "final tile" rule generalised to **whole-rack** exact-match
 (D-45, §3.5/§3.6); the theme-flip predicate given its **last-tile carve-out** / invert-iff-overpay-
 legal framing (D-34 revised); §3.6 restructured into the LIVE single-type spec plus §3.6b (M7,
-not built); and a reconciliation-stamp process rule added (D-46).
+not built); a reconciliation-stamp process rule added (D-46); and **M10 dice roll animation**
+(face-cycle + optional shake, CSS-3D out of scope) added (D-47). Brand-track direction (Flip cut,
+Spudlings carry the game) is being brainstormed into a separate brand brief and is **deliberately
+NOT yet folded into this plan** — it awaits the design session's outcome before reconciliation.
 
 **Earlier pass:** orientation lock removed; rest-to-flip debounce as an M0-tuned constant; overpay
 restructured into an A/D toggle + boost checkbox; boost system typed; mid-game settings with
@@ -75,7 +78,7 @@ acceptable because the project contains no secrets and no personal data.
 
 **Consequence of a public repo — treat as a hard rule.** Do not commit real family or
 child names anywhere: not as default players, not in test fixtures, not in comments, not in
-`docs/FINDINGS.md`. The player roster lives in `localStorage` and is never committed. Use
+`FINDINGS.md`. The player roster lives in `localStorage` and is never committed. Use
 placeholder names (`Player 1`, `Player 2`) in all code and documents.
 
 ---
@@ -517,7 +520,7 @@ beyond the single button. This is instrumentation only.
    shortest bump-safe delay is still slow enough to out-tap — that is a stop condition**
    (see below): the flip needs a different trigger, not just a shorter delay.
 
-**Deliverable beyond the harness:** a short `docs/FINDINGS.md` recording the measured
+**Deliverable beyond the harness:** a short `FINDINGS.md` recording the measured
 thresholds, the phone model and iOS version, the date, and the answers to criteria 5 and 6.
 
 **Risks.**
@@ -913,6 +916,50 @@ it.
 
 ---
 
+### M10 — Dice roll animation — SPECIFIED
+
+**Goal.** The dice visibly *roll* before settling, so a roll reads as a roll rather than a value
+appearing. Cheap, cosmetic, replaceable.
+
+**The load-bearing rule (do not violate).** The roll **result is decided by `Math.random()` before
+the animation starts.** The animation only *displays* that predetermined result — it never derives,
+influences, or is read for the outcome. Coupling the result to where an animation "lands" is the one
+way this goes subtly wrong; keep them fully separate.
+
+**Scope.**
+- **Face-cycle animation:** on roll, flash each die rapidly through several random faces (~a few
+  hundred ms), then settle on the predetermined result. This is the whole feature.
+- **Optional CSS shake/wobble** on the die element during the cycle (a few degrees of transform,
+  a small bounce) — pure CSS `@keyframes`, no library. Include if it makes the roll feel juicier;
+  cut freely if it fights the layout.
+- **Covers the single-die endgame animation** (§3.3): when only one die is rolled, the same
+  face-cycle plays on the single die. Do not build a two-dice-only animation that breaks or looks
+  wrong in single-die mode.
+- Must **not fight the theme-inversion signal** (§3.11): the die animation is cosmetic and runs
+  independently of the overpay theme flip; neither should interrupt, delay, or visually collide
+  with the other. If the theme is mid-inversion when a roll happens, both proceed without
+  stepping on each other.
+
+**Out of scope.** **CSS-3D dice** (a real rotating cube built from six faces) — explicitly parked as
+later polish. Its landing-orientation math is a time sink disproportionate to a prototype; the
+face-cycle delivers the "it rolled" read for a fraction of the cost. Physics simulation of any kind.
+Sound (M-later / out of scope generally).
+
+**Acceptance criteria — checkable by playing:**
+1. Rolling visibly cycles the dice through changing faces, then settles — it reads as a roll, not a
+   value popping in.
+2. The settled faces always match the actual roll result used by the rules (the animation never
+   changes the outcome). Rolling many times, the displayed faces and the resolved total always agree.
+3. In the single-die endgame, the single die animates the same way — no broken or missing animation.
+4. A roll during an active overpay theme-inversion animates normally; neither effect glitches the
+   other.
+
+**Stop conditions.** If making the animation display the predetermined result cleanly would require
+deriving the result *from* the animation, **stop** — that inverts the load-bearing rule. Keep result
+and animation decoupled or report why it can't be done.
+
+---
+
 ## 6. Explicitly out of scope for this prototype
 
 - **Single-player mode.** Playable in principle but the design has not been worked out.
@@ -1047,3 +1094,4 @@ though it were known:
 | D-44 | Boost timing distinguishes **earned** (award criterion fires) from **granted** (credit delivered + announced at the start of the earning player's next turn); §3.6 "announced when granted" refers to the granted moment (per DECISIONS.md 2026-09-11) | Locked |
 | D-45 | Overpay/boost may not close a selection that would **shut the whole rack** (any selection covering every open tile needs exact match), generalising the earlier singular "final tile" wording; shipped commit `f262a7d` | Locked |
 | D-46 | Reconciliation rule: DECISIONS.md entries are folded into this §8 at the start of each orchestrator session before new work; once folded, the entry is stamped "Reconciled into §8" so pending vs absorbed is visible | Locked (process) |
+| D-47 | M10 dice animation is the face-cycle (+ optional CSS shake), result decided by `Math.random()` before the animation which only displays it; covers the single-die endgame; must not fight the theme-inversion signal; CSS-3D dice explicitly out of scope | Locked |
