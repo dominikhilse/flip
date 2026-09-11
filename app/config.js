@@ -1,6 +1,6 @@
 // Motion thresholds measured in the M0 sensor spike. Do not hand-tune these
 // by feel in game code - if they turn out insufficient, re-measure using the
-// harness (app/harness.html) and update this file. See ../FINDINGS.md for
+// harness (app/harness.html) and update this file. See ../docs/FINDINGS.md for
 // the full measurement record and acceptance-criteria results.
 //
 // Device: iPhone 15, iOS 26.5. Measured: 2026-09-09, on the real GitHub

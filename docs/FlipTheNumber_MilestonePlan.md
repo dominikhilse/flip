@@ -75,7 +75,7 @@ acceptable because the project contains no secrets and no personal data.
 
 **Consequence of a public repo — treat as a hard rule.** Do not commit real family or
 child names anywhere: not as default players, not in test fixtures, not in comments, not in
-`FINDINGS.md`. The player roster lives in `localStorage` and is never committed. Use
+`docs/FINDINGS.md`. The player roster lives in `localStorage` and is never committed. Use
 placeholder names (`Player 1`, `Player 2`) in all code and documents.
 
 ---
@@ -517,7 +517,7 @@ beyond the single button. This is instrumentation only.
    shortest bump-safe delay is still slow enough to out-tap — that is a stop condition**
    (see below): the flip needs a different trigger, not just a shorter delay.
 
-**Deliverable beyond the harness:** a short `FINDINGS.md` recording the measured
+**Deliverable beyond the harness:** a short `docs/FINDINGS.md` recording the measured
 thresholds, the phone model and iOS version, the date, and the answers to criteria 5 and 6.
 
 **Risks.**

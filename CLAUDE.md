@@ -64,7 +64,7 @@ There is no test framework and no build step, so verification is live-browser-dr
   `.claude/launch.json` (gitignored) to a fresh, never-used-this-session value rather than
   trusting a reload — then revert it to `8123` before finishing.
 - Never guess at unmeasured constants (motion thresholds, rest-to-flip delay) — see
-  `FINDINGS.md` and plan §7. Re-measure via the M0 harness if a value is ever in doubt.
+  `docs/FINDINGS.md` and plan §7. Re-measure via the M0 harness if a value is ever in doubt.
 
 ## Commit protocol
 

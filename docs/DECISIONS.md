@@ -48,6 +48,14 @@ duplicated here.
   either. This entry exists so the orchestrator has the full context before ruling on: revise
   §3.3 to describe the once-per-game model, revert to the original per-turn/default-1 design,
   or land it in the future dev-mode tab.
+- **Reconciled into §8 as D-42 (2026-09-11 orchestrator pass) — resolved differently than
+  shipped, follow-up needed.** The ruling landed on a third option: §3.3 stays unchanged
+  (default one die, no production toggle at all — the once-per-game decide model is explicitly
+  **not adopted**), and a much simpler dev-mode-only "force two dice" override is specified
+  instead (M8). The currently-shipped hidden toggle + once-per-game-decide mechanism
+  (`app/index.html`'s hidden `dice-count-toggle`, `diceChoicePending`/`onChooseDice` in
+  `app/app.js`) does not match this and needs replacing when M8 is built — noted, not yet
+  actioned, since M8 hasn't been started.
 
 ### 2026-09-11 — §3.6 "announced at the moment it is granted" still holds under a redefined timeline
 - **Finding:** playtesting surfaced a real confusion — a dry-streak boost awarded at the
@@ -64,6 +72,8 @@ duplicated here.
   `boostMaxHeld`, silently dropped if the game has left boost mode before delivery) needs no
   change. Recorded here so the plan's §3.6 wording can absorb the earned/granted distinction
   on its next revision pass.
+- **Reconciled into §8 as D-44 (2026-09-11 orchestrator pass).** No follow-up needed — shipped
+  behavior matches.
 
 ### 2026-09-11 — D-34's theme-flip predicate needs a last-tile carve-out
 - **Finding:** D-34 / §3.11 state the sustained-inversion predicate as "D active" full stop.
@@ -77,6 +87,9 @@ duplicated here.
   hence the drift. D-34's predicate should be revised to state this carve-out explicitly:
   "D active AND the current player has more than one tile open" OR a boost overpay move in
   progress.
+- **Reconciled into §8 as revised D-34 (2026-09-11 orchestrator pass).** No follow-up needed —
+  shipped behavior matches; the predicate is now framed cleanly as "inverted exactly when an
+  overpay move is currently legal," which makes the carve-out fall out automatically.
 
 ### 2026-09-11 — "Final remaining tile" (§3.5/§3.6) generalized to "closing the whole rack"
 - **Finding:** §3.5 and §3.6 both say overpay/boost may not close "the final remaining tile,"
@@ -92,11 +105,13 @@ duplicated here.
   rack needs an exact match — exclude a tile to overpay instead.") when a player's current
   selection hits this case. §3.5/§3.6's wording should be updated from "the final remaining
   tile" to "a selection that would shut the whole rack" to match.
+- **Reconciled into §8 as D-45 (and D-18 updated to match) (2026-09-11 orchestrator pass).** No
+  follow-up needed — shipped behavior matches.
 
 ### 2026-09-11 — M4 (continuous-rotation handoff) cut for real
 - **Finding, from the status check earlier this session:** M4 was a cuttable spike per its
   own plan text, and M0's orientation-during-lift finding (readable during a lift —
-  `FINDINGS.md` criterion 6) kept it technically viable, but the actual feature (skip the
+  `docs/FINDINGS.md` criterion 6) kept it technically viable, but the actual feature (skip the
   turn card on a detected 180° rotate-and-set-down) was never attempted, and its three
   acceptance criteria were never run on-device. It sat in an undecided middle state: not
   built, not explicitly cut either.
@@ -106,6 +121,7 @@ duplicated here.
   reads **CUT**, with the original goal/scope/acceptance criteria kept in a collapsed
   `<details>` block for the historical record only. Do not revisit without a new decision to
   do so.
+- **Reconciled into §8 as D-40 (2026-09-11 orchestrator pass).** No follow-up needed — matches.
 
 ### 2026-09-11 — M6 closed at single-type scope; two-type boost split into new milestone M7
 - **Supersedes the framing of the entry below, not its content.** Dominik confirmed the
@@ -123,6 +139,8 @@ duplicated here.
 - **Still true, restated under the new milestone number:** M7 is not to be started without the
   orchestrator's design pass finishing first — see the entry immediately below, which now
   describes M7 rather than an unscoped "the two-type system."
+- **Reconciled into §8 as D-41 (2026-09-11 orchestrator pass).** No follow-up needed — matches,
+  and M7 now carries a full spec (scope + acceptance criteria) rather than just a placeholder.
 
 ### 2026-09-11 — The two-type boost system (D-35–D-38) is not being built yet
 - **Status, per the orchestrator:** confirmed explicitly — do **not** start building the
@@ -134,3 +152,18 @@ duplicated here.
   revision — functioning correctly against its own (superseded) spec, but behind the
   currently-written one. Recorded here so no future Code session mistakes the gap for an
   oversight and starts building it unprompted.
+- **Reconciled into §8 as D-35–D-38 (2026-09-11 orchestrator pass), and the "don't build yet"
+  hold is now lifted.** The plan revision gave M7 a full spec (scope + 9 acceptance criteria,
+  §3.6b) rather than the placeholder it had before, and Dominik confirmed moving on to M7.
+  Superseded by the entry below.
+
+### 2026-09-11 — M7 go-ahead; M8 (dev-mode tab) and M9 (time challenge) added to the plan
+- **Status:** the orchestrator's revision pass landed with M7 fully specified (§3.6b, scope,
+  9 acceptance criteria, stop conditions — D-35–D-38), plus two new milestones not previously
+  in the plan: **M8** (a dev-mode settings tab separating exploratory/debug controls from the
+  production surface — D-42) and **M9** (a time-challenge anti-drag circuit-breaker, living in
+  M8's dev-mode surface — D-43). Dominik confirmed starting M7.
+- **Note for the next Code session working M8:** D-42 settles the dice-count question
+  differently than the interim fix in the entry above — see that entry's reconciliation stamp.
+  The M6-era hidden toggle code should be replaced with M8's plain dev-mode force-toggle when
+  M8 is actually built, not before.
