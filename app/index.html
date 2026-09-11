@@ -62,15 +62,25 @@
       </div>
       <div class="setting-note live-note" id="boost-note" hidden>Applies next lap</div>
 
-      <div class="setting-row">
-        <span>Dice once unlocked</span>
-        <div class="toggle-group" id="dice-count-toggle">
-          <button type="button" class="toggle-btn" data-dice-count="1">1</button>
-          <button type="button" class="toggle-btn" data-dice-count="2">2</button>
-          <button type="button" class="toggle-btn" data-dice-count="0">?</button>
+      <!-- Dice-count toggle: hidden pending an orchestrator ruling (see docs/DECISIONS.md,
+           2026-09-11 entry) - §3.3 of the milestone plan locks this as "must not be made a
+           settings toggle," which this literally is. The underlying flow it drives (asked
+           once per game, by whoever first reaches the unlocked state, not re-asked every
+           turn - see diceChoicePending/onChooseDice in app.js) stays fully live; only this
+           settings-screen control is taken out of the visible product. Do not delete the
+           markup - restore it (or move it into a future dev-mode tab) once the orchestrator
+           decides where this setting belongs. -->
+      <div hidden>
+        <div class="setting-row">
+          <span>Dice once unlocked</span>
+          <div class="toggle-group" id="dice-count-toggle">
+            <button type="button" class="toggle-btn" data-dice-count="1">1</button>
+            <button type="button" class="toggle-btn" data-dice-count="2">2</button>
+            <button type="button" class="toggle-btn" data-dice-count="0">?</button>
+          </div>
         </div>
+        <div class="setting-note live-note" id="dice-count-note" hidden>Applies next lap - "?" leaves it undecided, so whoever unlocks it first this game is asked and decides</div>
       </div>
-      <div class="setting-note live-note" id="dice-count-note" hidden>Applies next lap - "?" leaves it undecided, so whoever unlocks it first this game is asked and decides</div>
 
       <div class="setting-row">
         <label class="checkbox-row"><input type="checkbox" id="motion-toggle"> Motion</label>
