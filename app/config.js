@@ -23,5 +23,12 @@ window.CONFIG = {
   // boostMaxHeld is a locked decision (D-20), not a tuning knob.
   boostDryStreakWindow: 5,
   boostDryStreakThreshold: 3, // fewer than this many clean rolls in the window awards a boost
-  boostMaxHeld: 3
+  boostMaxHeld: 3, // total across BOTH types (M7, §3.6b) - not 3 of each
+
+  // Two-type reward model (§3.6b, M7). Both types currently share the same
+  // award criteria (dry streak + trailing-at-finish), so every award rolls
+  // a type: Math.random() < this value grants overpay, otherwise 1-for-2.
+  // Starting value per spec (50/50); tune after playtest, e.g. weight
+  // toward 1-for-2 to keep overpay scarce.
+  boostTypeDistribution: 0.5
 };

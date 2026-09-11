@@ -85,7 +85,10 @@
     if (game.overpayMode === 'D') {
       return RULES.openValues(currentPlayer().rack).length !== 1;
     }
-    return !!(game.currentRoll && game.currentRoll.boostSpent);
+    // 1-for-2 is never "overpay" in the rules sense - always an exact
+    // match, never a relaxed/wasteful one - so it doesn't trigger the
+    // signal, only a spent overpay boost does.
+    return !!(game.currentRoll && game.currentRoll.boostSpentType === 'overpay');
   }
 
   // Theme is purely cosmetic (never stored on `game`) but doubles as the
@@ -385,10 +388,9 @@
         rack: RULES.createRack(settings.rackSize),
         finished: false,
         place: null,
-        // Boost mode (§3.6, M6) - typed holding, never a bare integer, so a
-        // future boost type is additive rather than a schema change.
-        boosts: { overpay: 0 },
-        pendingBoostCredits: 0, // earned, not yet delivered - see deliverPendingBoost
+        // Boost mode (§3.6/§3.6b, M6+M7) - typed holding, both types live.
+        boosts: { overpay: 0, oneForTwo: 0 },
+        pendingBoostCredits: { overpay: 0, oneForTwo: 0 }, // earned, not yet delivered - see deliverPendingBoost
         rollHistory: [], // last N clean/not-clean rolls while boost mode is active
         pendingBoostAnnouncement: false
       };
@@ -509,14 +511,33 @@
     return total;
   }
 
+  // The single validity check for the current selection, covering all
+  // three move shapes: a spent 1-for-2 (exact match to one die face,
+  // RULES.isValidOneForTwoSelection), a spent overpay or native D mode
+  // (RULES.isValidSelection under 'D'), or plain strict play (same
+  // function under the game's own overpayMode). Centralised here so
+  // onConfirm and the Confirm-button enablement can never disagree.
+  function currentSelectionValid(p) {
+    if (!game.currentRoll) return false;
+    var selectedVals = Array.from(game.selected);
+    if (game.currentRoll.boostSpentType === 'oneForTwo') {
+      return RULES.isValidOneForTwoSelection(selectedVals, game.currentRoll.dice);
+    }
+    var openVals = RULES.openValues(p.rack);
+    var effectiveMode = game.currentRoll.boostSpentType === 'overpay' ? 'D' : game.overpayMode;
+    return RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, effectiveMode);
+  }
+
   // Whether the current selection is the specific case isValidSelection
   // blocks under overpay: every open tile selected (shutting the whole
   // rack) with an inexact sum. With only one tile open there's nothing to
   // exclude - that case is just a plain mismatch, same as strict play, so
-  // it's not called out here.
+  // it's not called out here. A spent 1-for-2 is never this case - it's
+  // always an exact match to a die face, so it can never "overpay".
   function wholeRackOverpayBlocked() {
     if (!game.currentRoll || game.currentRoll.stalled || game.currentRoll.boostOfferPending) return false;
-    var effectiveMode = game.currentRoll.boostSpent ? 'D' : game.overpayMode;
+    if (game.currentRoll.boostSpentType === 'oneForTwo') return false;
+    var effectiveMode = game.currentRoll.boostSpentType === 'overpay' ? 'D' : game.overpayMode;
     if (effectiveMode !== 'D') return false;
     var openVals = RULES.openValues(currentPlayer().rack);
     if (openVals.length <= 1 || game.selected.size !== openVals.length) return false;
@@ -534,40 +555,63 @@
     renderPlay();
   }
 
-  // ---- Boost mode (§3.6, M6) ----
+  // ---- Boost mode (§3.6/§3.6b, M6+M7) ----
   // Reached via overpayMode 'A' + boostEnabled (§3.5) - never touches D's
   // rules. Base play stays strict (mode 'A'); a spent boost relaxes only
-  // the current roll to D-style validity (RULES already encodes the
-  // last-tile-exact exception, so it's reused rather than duplicated).
+  // the current roll - overpay to D-style validity (RULES already encodes
+  // the whole-rack-exact-match exception, reused rather than duplicated),
+  // 1-for-2 to a single-die-equivalent exact match (RULES.isValidOneForTwoSelection).
+
+  var BOOST_TYPES = ['overpay', 'oneForTwo'];
+  var BOOST_TYPE_LABELS = { overpay: 'Overpay', oneForTwo: '1-for-2' };
 
   function boostModeActive() {
     return game.overpayMode === 'A' && game.boostEnabled;
   }
 
-  // Awards land as a credit, not immediately in boosts.overpay - crediting a
+  // Awards land as a credit, not immediately in boosts[type] - crediting a
   // boost the instant a player's own turn ends left them told "you earned
   // one" with no way to actually spend it until their next turn anyway, so
   // the credit is banked here and only delivered (see deliverPendingBoost)
   // at the start of the turn where it can first be used. Multiple credits
   // can stack before delivery (e.g. a dry streak plus a trailing award) -
   // that's fine, better than a boost nobody could act on.
+  //
+  // The reward model (§3.6b): both criteria currently share the same
+  // criteria pool, so the TYPE is decided right here by a single
+  // configurable roll (CONFIG.boostTypeDistribution, default 50/50) - once
+  // the pools diverge later, this is where that would branch per criterion.
   function awardBoost(p) {
-    p.pendingBoostCredits++;
+    var type = Math.random() < CONFIG.boostTypeDistribution ? 'overpay' : 'oneForTwo';
+    p.pendingBoostCredits[type]++;
   }
 
   // Called at the top of every turn (see beginTurn). Turns banked credits
-  // into spendable boosts, capped at boostMaxHeld (D-20) - excess credits
-  // are simply discarded, same as the old at-award cap. If the game has
-  // moved on to a mode where boosts aren't offered (overpayMode flipped to
-  // 'D' since the credit was earned), the credit is moot - drop it quietly
-  // rather than resurrecting it if the mode ever flips back.
+  // into spendable boosts, capped at boostMaxHeld (D-20) **combined across
+  // both types** (not 3 of each) - excess is simply discarded, same as the
+  // old at-award cap. Room is computed fresh per type in BOOST_TYPES order,
+  // so if a rare simultaneous double-award would overflow the cap, overpay
+  // credits are applied first and 1-for-2 gets whatever room is left - an
+  // implementation choice for an edge case the spec doesn't otherwise
+  // resolve. If the game has moved on to a mode where boosts aren't offered
+  // (overpayMode flipped to 'D' since the credit was earned), the credit is
+  // moot - drop it quietly rather than resurrecting it if the mode flips
+  // back.
   function deliverPendingBoost(p) {
-    if (!p.pendingBoostCredits) return;
     var credits = p.pendingBoostCredits;
-    p.pendingBoostCredits = 0;
-    if (!boostModeActive()) return;
-    p.boosts.overpay = Math.min(CONFIG.boostMaxHeld, p.boosts.overpay + credits);
-    p.pendingBoostAnnouncement = true;
+    p.pendingBoostCredits = { overpay: 0, oneForTwo: 0 };
+    if (!(credits.overpay || credits.oneForTwo) || !boostModeActive()) return;
+    var delivered = [];
+    BOOST_TYPES.forEach(function (type) {
+      var held = p.boosts.overpay + p.boosts.oneForTwo;
+      var room = Math.max(0, CONFIG.boostMaxHeld - held);
+      var toAdd = Math.min(room, credits[type]);
+      if (toAdd > 0) {
+        p.boosts[type] += toAdd;
+        delivered.push(type);
+      }
+    });
+    if (delivered.length) p.pendingBoostAnnouncement = delivered;
   }
 
   // Dry streak (§3.6): fewer than boostDryStreakThreshold clean (exact-move-
@@ -589,6 +633,19 @@
     remaining.forEach(function (pl) {
       if (RULES.openValues(pl.rack).length === maxOpen) awardBoost(pl);
     });
+  }
+
+  // Auto-select spend (§3.6b/D-36-D-37): never a which-boost picker. Compute
+  // which held types would actually resolve THIS stall; 1-for-2 is checked
+  // first and preferred when both would, conserving the strictly-more-
+  // versatile overpay for a stall only it can rescue (overpay's reachable
+  // set is a proven superset of 1-for-2's, so this ordering alone is
+  // enough - no need to separately confirm overpay also resolves before
+  // falling back to it). Returns the type to offer, or null for no offer.
+  function selectBoostTypeToOffer(p, openVals, dice, total) {
+    if (p.boosts.oneForTwo >= 1 && RULES.oneForTwoResolvable(openVals, dice)) return 'oneForTwo';
+    if (p.boosts.overpay >= 1 && RULES.anyLegalMoveExists(openVals, total, 'D')) return 'overpay';
+    return null;
   }
 
   // ---- Dice count (once unlocked) ----
@@ -626,13 +683,18 @@
       if (p.rollHistory.length > CONFIG.boostDryStreakWindow) p.rollHistory.shift();
     }
 
-    // Only offer a boost if spending it would actually produce a legal
-    // move - never offer one that the last-tile-exact rule would make
-    // pointless to spend.
-    var boostOfferPending = stalled && boostModeActive() && p.boosts.overpay >= 1 &&
-      RULES.anyLegalMoveExists(openVals, total, 'D');
+    // Auto-select which type (if any) to offer - never offer one that
+    // wouldn't actually resolve this stall (§3.6b/D-36).
+    var offeredBoostType = (stalled && boostModeActive()) ? selectBoostTypeToOffer(p, openVals, dice, total) : null;
 
-    game.currentRoll = { dice: dice, total: total, stalled: stalled, boostOfferPending: boostOfferPending, boostSpent: false };
+    game.currentRoll = {
+      dice: dice,
+      total: total,
+      stalled: stalled,
+      boostOfferPending: !!offeredBoostType,
+      offeredBoostType: offeredBoostType,
+      boostSpentType: null // set on spend - null | 'overpay' | 'oneForTwo'
+    };
     game.selected = new Set();
     renderPlay();
   }
@@ -652,9 +714,10 @@
   function onBoostSpend() {
     if (!game.currentRoll || !game.currentRoll.boostOfferPending) return;
     var p = currentPlayer();
-    if (p.boosts.overpay < 1) return;
-    p.boosts.overpay--;
-    game.currentRoll.boostSpent = true;
+    var type = game.currentRoll.offeredBoostType;
+    if (!type || p.boosts[type] < 1) return;
+    p.boosts[type]--;
+    game.currentRoll.boostSpentType = type;
     game.currentRoll.boostOfferPending = false;
     game.currentRoll.stalled = false;
     renderPlay();
@@ -670,12 +733,9 @@
   function onConfirm() {
     var p = currentPlayer();
     if (!game.currentRoll || game.currentRoll.stalled || game.currentRoll.boostOfferPending) return;
-    var openVals = RULES.openValues(p.rack);
-    var selectedVals = Array.from(game.selected);
-    var effectiveMode = game.currentRoll.boostSpent ? 'D' : game.overpayMode;
-    if (!RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, effectiveMode)) return;
+    if (!currentSelectionValid(p)) return;
 
-    var boostSpentThisTurn = game.currentRoll.boostSpent;
+    var boostSpentThisTurn = !!game.currentRoll.boostSpentType;
 
     game.selected.forEach(function (v) {
       var tile = p.rack.find(function (t) { return t.value === v; });
@@ -799,6 +859,12 @@
     }
   }
 
+  // "3" if both dice show the same face, "3 or 5" otherwise - the single
+  // value (or either-of-two) a 1-for-2 boost lets the player play against.
+  function oneForTwoTargetLabel(dice) {
+    return dice[0] === dice[1] ? '' + dice[0] : dice[0] + ' or ' + dice[1];
+  }
+
   function renderPlayBoostCount() {
     var p = currentPlayer();
     if (!boostModeActive()) {
@@ -812,25 +878,30 @@
     if (RULES.openValues(p.rack).length === 1) {
       playBoostCountEl.textContent = 'No boosts for the last number';
     } else {
-      playBoostCountEl.textContent = 'Overpay boosts: ' + p.boosts.overpay;
+      playBoostCountEl.textContent = 'Overpay: ' + p.boosts.overpay + ' · 1-for-2: ' + p.boosts.oneForTwo;
     }
   }
 
   function renderPlayBoostAnnouncement() {
     var p = currentPlayer();
-    if (!p.pendingBoostAnnouncement) {
+    if (!p.pendingBoostAnnouncement || !p.pendingBoostAnnouncement.length) {
       playBoostAnnouncementEl.hidden = true;
       return;
     }
     playBoostAnnouncementEl.hidden = false;
-    playBoostAnnouncementEl.textContent = 'Boost earned! Overpay boosts: ' + p.boosts.overpay;
+    var labels = p.pendingBoostAnnouncement.map(function (type) { return BOOST_TYPE_LABELS[type]; });
+    playBoostAnnouncementEl.textContent = 'Boost earned: ' + labels.join(' + ') + '!';
     p.pendingBoostAnnouncement = false;
   }
 
   function renderPlayBoostOffer() {
     var show = !!(game.currentRoll && game.currentRoll.boostOfferPending);
     playBoostOfferEl.hidden = !show;
-    if (show) {
+    if (!show) return;
+    if (game.currentRoll.offeredBoostType === 'oneForTwo') {
+      playBoostOfferTextEl.textContent = 'Stalled — spend a 1-for-2 boost to play a single ' +
+        oneForTwoTargetLabel(game.currentRoll.dice) + '?';
+    } else {
       playBoostOfferTextEl.textContent = 'Stalled — spend an overpay boost to flip tiles summing to at most ' +
         game.currentRoll.total + '?';
     }
@@ -839,6 +910,11 @@
   function renderPlaySelectionSum() {
     if (!game.currentRoll || game.currentRoll.stalled) {
       playSelectionSumEl.textContent = '';
+      return;
+    }
+    if (game.currentRoll.boostSpentType === 'oneForTwo') {
+      playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' (needs ' +
+        oneForTwoTargetLabel(game.currentRoll.dice) + ')';
       return;
     }
     playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' / ' + game.currentRoll.total;
@@ -876,11 +952,7 @@
     if (!game.currentRoll || game.currentRoll.stalled || boostOfferPending) {
       playConfirmBtn.disabled = true;
     } else {
-      var p = currentPlayer();
-      var openVals = RULES.openValues(p.rack);
-      var selectedVals = Array.from(game.selected);
-      var effectiveMode = game.currentRoll.boostSpent ? 'D' : game.overpayMode;
-      playConfirmBtn.disabled = !RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, effectiveMode);
+      playConfirmBtn.disabled = !currentSelectionValid(currentPlayer());
     }
   }
 

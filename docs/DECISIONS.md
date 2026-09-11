@@ -167,3 +167,39 @@ duplicated here.
   differently than the interim fix in the entry above — see that entry's reconciliation stamp.
   The M6-era hidden toggle code should be replaced with M8's plain dev-mode force-toggle when
   M8 is actually built, not before.
+
+### 2026-09-11 — M7 (two-type boost system) built and verified
+- **Status: BUILT, matches §3.6b's spec as written.** Implements the second boost type
+  (1-for-2), typed inventory/credits (`{ overpay, oneForTwo }`), a cross-type 3-boost cap, the
+  auto-select spend (1-for-2 preferred when both resolve, conserving overpay), the shared-pool
+  50/50 reward-type roll (`CONFIG.boostTypeDistribution`), and type-aware inventory/
+  announcement/offer text.
+- **Files touched:** `app/rules.js` (new `isValidOneForTwoSelection` — exact match to either
+  rolled die face, needs no whole-rack carve-out of its own since it can never overpay; and
+  `oneForTwoResolvable`, gated on two dice actually being rolled), `app/config.js`
+  (`boostTypeDistribution`, default 0.5), `app/app.js` (typed `boosts`/`pendingBoostCredits`,
+  `awardBoost` now rolls a type at earn time, `deliverPendingBoost` reworked for the combined
+  cap — processes `overpay` before `oneForTwo` when a rare simultaneous over-cap delivery would
+  otherwise be ambiguous, an implementation choice the spec doesn't otherwise resolve;
+  `selectBoostTypeToOffer` for auto-select; `game.currentRoll.boostSpent` (boolean) replaced
+  throughout with `boostSpentType` (null/'overpay'/'oneForTwo'), including in the D-34 theme
+  predicate — a 1-for-2 spend is never "overpay" in the rules sense (always exact, never
+  relaxed) so it correctly does not trigger the theme flip).
+- **One interpretation not spelled out in §3.6b, flagged for the orchestrator:** "ignore one
+  whole die, play the other as a single value" doesn't say which die when the two faces differ
+  and either could resolve the stall. Implemented as *exact match to either individual die
+  face* (`sum === dice[0] || sum === dice[1]`) rather than forcing a specific die choice —
+  matches the {3,7,8,9}/roll-3+3 example, stays player-driven like every other move, and is a
+  safe superset reading. Not contradicted by any acceptance criterion, but worth the
+  orchestrator confirming on the next pass.
+- **Verified** via a temporary debug hook (removed before commit) against all 9 acceptance
+  criteria individually — the spec's own {3,7,8,9}/roll-3+3 example resolving correctly (#4);
+  auto-select offering 1-for-2 and leaving overpay untouched when both resolve (#5); the
+  only-overpay and no-op cases (#6, #7); the cross-type cap holding at 3 with credits
+  overflowing correctly discarded (#3); per-type inventory and announcement text, including
+  the multi-type-delivered-at-once announcement (#2); the reward roll landing close to 50/50
+  over 5000 trials (#1); single spend-or-stay with no picker, unchanged from M6 (#8) — plus
+  full automated multi-type games (both A+boost, where a real random playthrough naturally
+  spent both types in the same game, and native D) completing cleanly with zero console
+  errors, and a manual click-through screenshot pass confirming the on-screen text reads
+  correctly.

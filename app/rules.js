@@ -69,6 +69,26 @@
     return selectedSum <= total;
   }
 
+  // Whether a selection is legal as a spent 1-for-2 boost (§3.6b, M7): one
+  // whole die is ignored, the other is played as a single value, so the
+  // selection must sum EXACTLY to one of the two rolled dice faces - never
+  // the combined total, never <= either face. Needs no whole-rack carve-out
+  // of its own: an exact match can never "overpay", so it's always fine to
+  // legitimately finish the rack this way, same as any other exact move.
+  function isValidOneForTwoSelection(selectedValues, dice) {
+    if (selectedValues.length === 0 || dice.length < 2) return false;
+    var selectedSum = sum(selectedValues);
+    return selectedSum === dice[0] || selectedSum === dice[1];
+  }
+
+  // Whether spending a 1-for-2 boost would resolve the current stall - feeds
+  // the auto-select offer logic (§3.6b/D-36). Only meaningful with two dice
+  // rolled; there is nothing to "ignore" with one.
+  function oneForTwoResolvable(openValues, dice) {
+    if (dice.length < 2) return false;
+    return subsetSumExists(openValues, dice[0]) || subsetSumExists(openValues, dice[1]);
+  }
+
   // Whether any legal move exists for this roll, under the given overpay
   // mode - drives stall detection.
   function anyLegalMoveExists(openValues, total, overpayMode) {
@@ -90,6 +110,8 @@
     singleDieUnlocked: singleDieUnlocked,
     isRackShut: isRackShut,
     isValidSelection: isValidSelection,
+    isValidOneForTwoSelection: isValidOneForTwoSelection,
+    oneForTwoResolvable: oneForTwoResolvable,
     anyLegalMoveExists: anyLegalMoveExists
   };
 })();
