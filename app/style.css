@@ -330,23 +330,63 @@ legend {
 
 /* Play screen */
 
+/* A fixed-height flex column, not a normally-flowing block, so the rack
+   (the one element with genuinely compressible cells) can claim exactly
+   whatever room is left after everything else - rather than forcing
+   aspect-ratio:1 tiles that overflow a real phone's viewport and force a
+   scroll. `.screen`'s own padding still applies on top/left/right; this
+   only overrides the bottom to add 48px of clear space below the lowest
+   button (thumb reach / home-indicator area), on top of the base 1rem.
+   overflow-y is `auto`, not `hidden`, as a safety net - normal play should
+   never need it, but nothing becomes invisibly unreachable if an unusually
+   long message ever does overflow this budget. */
+#screen-play {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding-bottom: calc(1rem + 48px);
+  overflow-y: auto;
+}
+
+.play-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+.play-header h1 {
+  margin: 0;
+}
+
 #play-rack {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  grid-auto-rows: 1fr;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+  flex: 1 1 0;
+  min-height: 0;
+  /* Lets .tile's font-size scale off the rack's own rendered height (cqh)
+     rather than the viewport - so a 12-tile rack (4 short rows) gets a
+     smaller number than a 9-tile rack (3 taller rows) automatically,
+     without hand-computing row counts in CSS. */
+  container-type: size;
+  container-name: rack;
 }
 
 .tile {
-  aspect-ratio: 1;
   border: none;
   border-radius: 8px;
-  font-size: 1.6rem;
+  font-size: clamp(0.75rem, calc(70cqh / var(--rack-rows, 3)), 1.6rem);
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 .tile.selected {
   outline: 4px solid var(--fg);
@@ -358,8 +398,9 @@ legend {
 
 #play-dice-area {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   min-height: 3.5rem;
+  flex: 0 0 auto;
 }
 .die {
   display: inline-flex;
@@ -371,8 +412,7 @@ legend {
   background: var(--btn-primary-bg);
   color: var(--btn-primary-fg);
   border-radius: 6px;
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.9rem;
 }
 /* Dice roll animation (M10): a cheap wobble while the face is flashing
    through random values - see animateDiceRoll(). Purely decorative, does
@@ -395,7 +435,8 @@ legend {
   text-align: center;
   font-size: 1rem;
   min-height: 1.4em;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  flex: 0 0 auto;
 }
 #play-message.stalled { color: var(--accent-danger); }
 #play-message.notice { color: var(--text-muted); }
@@ -404,15 +445,17 @@ legend {
   text-align: center;
   font-size: 0.9rem;
   color: var(--text-soft);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
   min-height: 1.2em;
+  flex: 0 0 auto;
 }
 
 #play-dice-choice {
   display: none;
   justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  flex: 0 0 auto;
 }
 #play-dice-choice.visible { display: flex; }
 #play-dice-choice button {
@@ -431,8 +474,12 @@ legend {
 .action-row {
   display: flex;
   gap: 0.5rem;
+  flex: 0 0 auto;
 }
 .action-row button.primary { flex: 1; }
+#play-pass {
+  flex: 0 0 auto;
+}
 
 /* Time challenge HUD (M9). Always "running" here - the timer only shows on
    this screen while it's actively counting down (paused state lives on the
@@ -443,6 +490,7 @@ legend {
   font-weight: 600;
   color: var(--accent-danger);
   margin-bottom: 0.5rem;
+  flex: 0 0 auto;
 }
 
 #play-boost-count {
@@ -450,24 +498,29 @@ legend {
   font-size: 0.85rem;
   color: var(--text-soft);
   margin-bottom: 0.5rem;
+  flex: 0 0 auto;
 }
 
 /* Fixed gold-on-dark regardless of theme - reads fine either way, and a
-   highlight banner shouldn't quietly blend into the current theme. */
+   highlight banner shouldn't quietly blend into the current theme.
+   Lives in the header row now (see .play-header), right-aligned against
+   the player name on the left - a compact toast, not a full-width banner. */
 #play-boost-announcement {
-  text-align: center;
-  font-size: 0.95rem;
+  text-align: right;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #111111;
   background: #f9c74f;
   border-radius: 8px;
-  padding: 0.6em;
-  margin-bottom: 1rem;
+  padding: 0.35em 0.6em;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 #play-boost-offer {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  flex: 0 0 auto;
 }
 #play-boost-offer-text {
   font-size: 0.95rem;

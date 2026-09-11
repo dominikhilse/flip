@@ -849,6 +849,12 @@
 
   function renderPlayRack() {
     var p = currentPlayer();
+    // Exposed as a CSS custom property so .tile's font-size (style.css) can
+    // scale against the actual row height, not just the rack container's
+    // total height - cqh alone can't tell 3 short rows from 4 shorter ones,
+    // since the container's own height doesn't change, only how many rows
+    // divide it.
+    playRackEl.style.setProperty('--rack-rows', Math.ceil(p.rack.length / 3));
     playRackEl.innerHTML = '';
     p.rack.forEach(function (tile) {
       var btn = document.createElement('button');
@@ -867,13 +873,23 @@
     });
   }
 
+  // Standard die pips (Unicode U+2680-2685), not digits - the tiles keep
+  // plain numerals (D-13), this is the dice only. A system glyph, not an
+  // image asset, so it needs no build step and inherits .die's color/size
+  // like any other text.
+  var DIE_FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+  function dieFace(value) {
+    return DIE_FACES[value] || value;
+  }
+
   function renderPlayDice() {
     if (!game.currentRoll) {
       playDiceAreaEl.innerHTML = '';
       return;
     }
     var html = game.currentRoll.dice.map(function (d) {
-      return '<span class="die">' + d + '</span>';
+      return '<span class="die">' + dieFace(d) + '</span>';
     }).join('');
     html += '<div id="total">Total: ' + game.currentRoll.total + '</div>';
     playDiceAreaEl.innerHTML = html;
@@ -902,14 +918,14 @@
     diceAnimationIntervalId = setInterval(function () {
       elapsed += CONFIG.diceAnimationFrameMs;
       dieEls.forEach(function (el) {
-        el.textContent = 1 + Math.floor(Math.random() * 6); // cosmetic flash only
+        el.textContent = dieFace(1 + Math.floor(Math.random() * 6)); // cosmetic flash only
       });
       if (elapsed >= CONFIG.diceAnimationDurationMs) {
         clearInterval(diceAnimationIntervalId);
         diceAnimationIntervalId = null;
         dieEls.forEach(function (el, i) {
           el.classList.remove('rolling');
-          el.textContent = finalDice[i]; // settle on the predetermined result
+          el.textContent = dieFace(finalDice[i]); // settle on the predetermined result
         });
         if (totalEl) totalEl.hidden = false;
       }
