@@ -185,9 +185,10 @@
     boostCheckboxEl.closest('.setting-row').classList.toggle('disabled', boostCheckboxEl.disabled);
     boostNoteEl.hidden = !midGame;
 
-    // Neither button is "active" while settings.diceCount is 0 - genuinely
-    // undecided until someone chooses, either here or by being the first
-    // player to reach the live in-game question (see onChooseDice).
+    // "?" (value 0) is a real, selectable state - genuinely undecided until
+    // someone chooses 1 or 2, either here or by being the first player to
+    // reach the live in-game question (see onChooseDice). Picking "?" here
+    // is how a game that already decided gets reset back to asking again.
     var diceCountBtns = diceCountToggleEl.querySelectorAll('.toggle-btn');
     diceCountBtns.forEach(function (btn) {
       var count = parseInt(btn.getAttribute('data-dice-count'), 10);
