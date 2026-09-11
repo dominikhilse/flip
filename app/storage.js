@@ -12,9 +12,14 @@
     rackSize: 9,
     overpayMode: 'A', // 'A' strict (D-18) | 'D' overpay
     boostEnabled: false, // A-only; inert until M6 (D-27, D-28)
-    // Dev mode (M8, D-42): a testing instrument, not a production rule -
-    // §3.3's per-turn 1/2 choice (default one die) is otherwise untouched.
-    devTwoDiceForce: false,
+    // Dev mode (M8, D-42) dice-choice test instrument. Production default
+    // (devDiceTestEnabled false) is a silent, hardcoded one die - no
+    // per-turn prompt at all. Enabling it exposes devDiceChoice: 'ask'
+    // (the live per-turn 1/2 choice, for exercising both paths by hand),
+    // '1', or '2' (hard-forced, no prompt). Resets to 'ask' every time the
+    // checkbox is (re-)enabled - see queueSettingChange's caller.
+    devDiceTestEnabled: false,
+    devDiceChoice: 'ask', // 'ask' | '1' | '2'
     // Time challenge (M9, dev mode). 0 = off. Whole seconds, always a
     // multiple of 15 (enforced where it's set, not here) - blocked-until-
     // next-game like rackSize: retrofitting a countdown onto a game already
@@ -55,7 +60,9 @@
         rackSize: parsed.rackSize === 12 ? 12 : DEFAULT_SETTINGS.rackSize,
         overpayMode: parsed.overpayMode === 'D' ? 'D' : DEFAULT_SETTINGS.overpayMode,
         boostEnabled: parsed.boostEnabled === true,
-        devTwoDiceForce: parsed.devTwoDiceForce === true,
+        devDiceTestEnabled: parsed.devDiceTestEnabled === true,
+        devDiceChoice: (parsed.devDiceChoice === '1' || parsed.devDiceChoice === '2')
+          ? parsed.devDiceChoice : DEFAULT_SETTINGS.devDiceChoice,
         timeChallengeSeconds: (Number.isInteger(parsed.timeChallengeSeconds) && parsed.timeChallengeSeconds >= 0)
           ? parsed.timeChallengeSeconds : DEFAULT_SETTINGS.timeChallengeSeconds,
         motionEnabled: parsed.motionEnabled !== false,

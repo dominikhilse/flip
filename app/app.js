@@ -33,7 +33,9 @@
   var overpayNoteEl = document.getElementById('overpay-note');
   var boostCheckboxEl = document.getElementById('boost-checkbox');
   var boostNoteEl = document.getElementById('boost-note');
-  var devTwoDiceForceEl = document.getElementById('dev-two-dice-force');
+  var devDiceTestEnabledEl = document.getElementById('dev-dice-test-enabled');
+  var devDiceChoiceRowEl = document.getElementById('dev-dice-choice-row');
+  var devDiceChoiceToggleEl = document.getElementById('dev-dice-choice-toggle');
   var devTimeChallengeInputEl = document.getElementById('dev-time-challenge-input');
   var devTimeChallengeSetBtn = document.getElementById('dev-time-challenge-set');
   var devTimeChallengeStatusEl = document.getElementById('dev-time-challenge-status');
@@ -205,9 +207,15 @@
     tapToggleEl.checked = settings.tapToProceed;
     themeToggleEl.checked = settings.theme === 'light';
 
-    // Dev mode (M8) - a testing instrument, applies immediately like the
-    // preferences above, carries no "applies next lap" note.
-    devTwoDiceForceEl.checked = settings.devTwoDiceForce;
+    // Dev mode (M8) dice-choice test instrument - applies immediately like
+    // the preferences above, carries no "applies next lap" note. The
+    // nested 1/2/? toggle only shows once the checkbox is ticked.
+    devDiceTestEnabledEl.checked = settings.devDiceTestEnabled;
+    devDiceChoiceRowEl.hidden = !settings.devDiceTestEnabled;
+    var diceChoiceBtns = devDiceChoiceToggleEl.querySelectorAll('.toggle-btn');
+    diceChoiceBtns.forEach(function (btn) {
+      btn.classList.toggle('active', settings.devDiceChoice === btn.getAttribute('data-dice-choice'));
+    });
 
     // Time challenge (M9) - blocked-until-next-game, same class as rack
     // size: retrofitting a countdown onto a game already in progress isn't
@@ -281,8 +289,20 @@
     queueSettingChange('boostEnabled', boostCheckboxEl.checked);
   });
 
-  devTwoDiceForceEl.addEventListener('change', function () {
-    queueSettingChange('devTwoDiceForce', devTwoDiceForceEl.checked);
+  // Resets to 'ask' every time the checkbox is (re-)ticked, per the
+  // request this was built for: a known, predictable starting point
+  // rather than resuming whatever was last force-set.
+  devDiceTestEnabledEl.addEventListener('change', function () {
+    var enabled = devDiceTestEnabledEl.checked;
+    queueSettingChange('devDiceTestEnabled', enabled);
+    if (enabled) queueSettingChange('devDiceChoice', 'ask');
+    renderSettingsControls();
+  });
+
+  devDiceChoiceToggleEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    queueSettingChange('devDiceChoice', btn.getAttribute('data-dice-choice'));
     renderSettingsControls();
   });
 
@@ -363,10 +383,11 @@
   var LAP_ANCHORED_SETTING_KEYS = ['placementMode', 'overpayMode', 'boostEnabled'];
 
   // Pure input-path preferences that affect live game behaviour (read via
-  // game.motionEnabled/game.tapToProceed/game.devTwoDiceForce) - no fairness
-  // reason to defer these, so they take effect immediately, live, even
-  // mid-turn. devTwoDiceForce is a testing instrument, not a rule (M8).
-  var IMMEDIATE_SETTING_KEYS = ['motionEnabled', 'tapToProceed', 'devTwoDiceForce'];
+  // game.motionEnabled/game.tapToProceed/game.devDiceTestEnabled/
+  // game.devDiceChoice) - no fairness reason to defer these, so they take
+  // effect immediately, live, even mid-turn. The dev dice-test pair is a
+  // testing instrument, not a rule (M8).
+  var IMMEDIATE_SETTING_KEYS = ['motionEnabled', 'tapToProceed', 'devDiceTestEnabled', 'devDiceChoice'];
 
   function firstActiveSeatIndex() {
     return game.players.findIndex(function (p) { return !p.finished; });
@@ -426,7 +447,9 @@
       placementMode: settings.placementMode,
       overpayMode: settings.overpayMode,
       boostEnabled: settings.boostEnabled,
-      devTwoDiceForce: settings.devTwoDiceForce, // M8 - dev instrument, not a rule
+      // M8 dice-choice test instrument, not a rule - see effectiveDiceCount.
+      devDiceTestEnabled: settings.devDiceTestEnabled,
+      devDiceChoice: settings.devDiceChoice,
       // Time challenge (M9) - null when off. Only the configured duration
       // (settings.timeChallengeSeconds) is a setting; remainingMs is
       // game-in-progress state, never persisted, like the rest of `game`.
@@ -694,15 +717,18 @@
     return openVals.length === 1 && openVals[0] === 1;
   }
 
-  // Dev mode only (M8, D-42): a testing instrument that forces two dice at
-  // the single-die endgame, to exercise that path on demand. Not a rule,
-  // not shown on the production settings surface, and never overrides the
-  // last-tile-is-1 safety rule above.
+  // Production default (dev dice-test off): a silent, hardcoded one die -
+  // no prompt, no player-facing choice at all. §3.3's "changeable with a
+  // tap" only exists at all when a tester has deliberately opted in below;
+  // it is never shown on the production settings surface. The last-tile-
+  // is-1 safety rule always wins regardless, including over a dev force.
   function effectiveDiceCount(p) {
     if (!RULES.singleDieUnlocked(p.rack)) return 2;
     if (lastTileIsOne(p)) return 1;
-    if (game.devTwoDiceForce) return 2;
-    return p.diceCount;
+    if (!game.devDiceTestEnabled) return 1;
+    if (game.devDiceChoice === '2') return 2;
+    if (game.devDiceChoice === '1') return 1;
+    return p.diceCount; // devDiceChoice === 'ask' - the live per-turn choice
   }
 
   function onRoll() {
@@ -1006,16 +1032,19 @@
     playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' / ' + game.currentRoll.total;
   }
 
-  // §3.3: shown every turn once unlocked, defaulting to whichever the
-  // player last chose (or one die, per p.diceCount's default) - a live
-  // toggle, not a one-time question, so the current choice is pre-marked
-  // "active" and remains changeable with a single tap right up to Roll.
-  // Hidden at the last-tile-is-1 safety case (nothing to choose - see
-  // effectiveDiceCount) and while the M8 dev force is on (it would only
-  // contradict a choice that no longer has any effect).
+  // §3.3's per-turn choice, but only ever surfaced at all when dev dice-
+  // testing is on and set to "?" (devDiceChoice === 'ask') - the production
+  // default (test mode off) is silently one die, no prompt whatsoever, per
+  // explicit request. When shown: defaults to whichever the player last
+  // chose (or one die, per p.diceCount's default), pre-marked "active",
+  // changeable with a single tap right up to Roll. Hidden at the last-
+  // tile-is-1 safety case (nothing to choose - see effectiveDiceCount) and
+  // whenever devDiceChoice is hard-forced to '1' or '2' (nothing to choose
+  // there either).
   function renderPlayDiceChoice() {
     var p = currentPlayer();
-    var show = RULES.singleDieUnlocked(p.rack) && !lastTileIsOne(p) && !game.devTwoDiceForce && !game.currentRoll;
+    var show = RULES.singleDieUnlocked(p.rack) && !lastTileIsOne(p) &&
+      game.devDiceTestEnabled && game.devDiceChoice === 'ask' && !game.currentRoll;
     if (!show) {
       playDiceChoiceEl.classList.remove('visible');
       playDiceChoiceEl.innerHTML = '';

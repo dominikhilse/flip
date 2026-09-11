@@ -82,9 +82,17 @@
     <details id="dev-mode-section">
       <summary>Dev mode</summary>
       <div class="setting-row">
-        <label class="checkbox-row"><input type="checkbox" id="dev-two-dice-force"> Force two dice at the single-die endgame</label>
+        <label class="checkbox-row"><input type="checkbox" id="dev-dice-test-enabled"> Test dice #</label>
       </div>
-      <div class="setting-note">Testing instrument only - overrides the per-turn 1/2 choice so the two-dice path can be exercised on demand. The single-die endgame rule (§3.3) is otherwise untouched: default play is still one die, and the last-tile-is-1 safety rule always wins regardless of this toggle.</div>
+      <div class="setting-row" id="dev-dice-choice-row" hidden>
+        <span>Dice choice</span>
+        <div class="toggle-group" id="dev-dice-choice-toggle">
+          <button type="button" class="toggle-btn" data-dice-choice="1">1</button>
+          <button type="button" class="toggle-btn" data-dice-choice="2">2</button>
+          <button type="button" class="toggle-btn" data-dice-choice="ask">?</button>
+        </div>
+      </div>
+      <div class="setting-note">Off = always one die, no prompt (production default). On: "?" shows the normal per-turn 1/2 choice (§3.3) for exercising both paths by hand; 1 or 2 hard-forces that count, no prompt. Switch back to 1 (or untick) at any time - the last-tile-is-1 safety rule always wins regardless.</div>
 
       <div class="setting-row">
         <span>Time challenge</span>

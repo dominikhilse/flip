@@ -277,3 +277,39 @@ duplicated here.
   renders visibly struck-through and dimmed on the turn card, and the running HUD renders
   normally on the rack. Full automated games with a challenge configured (both short-circuited
   by real time and left to run long) completed with zero console errors.
+
+### 2026-09-12 — Production dice choice goes silent; the old 1/2/? toggle returns, dev-gated
+- **Finding, from real-device playtesting:** the M8/§3.3 per-turn prompt (defaulting to one
+  die, re-asked every turn once unlocked) still reads as "the prompt won't go away" in real
+  play, even though it was verified working exactly as D-42 specified. The dev-only
+  `devTwoDiceForce` checkbox from M8 was a one-way force (2 dice only) with no way to ask
+  interactively or reset - not enough to actually test the per-turn path by hand.
+- **Decision (Dominik, this session):** go further than D-42 - **production drops the
+  player-facing choice entirely.** `devDiceTestEnabled` off (the default) means one die,
+  silently, no prompt, no tap-to-change, full stop. This is no longer literally §3.3 ("chooses
+  one die or two... changeable with a single tap") - it's "always one, no choice surfaced" -
+  but is exactly what was asked for and is a natural extension of D-42's own reasoning, not a
+  reversal of it: D-42 already established that dev-testable dice behavior belongs in dev
+  mode, not on the production surface; this just moves the *entire* choice there instead of
+  only the force.
+- **`devDiceTestEnabled` (checkbox) + `devDiceChoice` (nested `1`/`2`/`ask` toggle,
+  dev-mode-only, resets to `ask` every time the checkbox is re-ticked):** `ask` reactivates the
+  exact §3.3 per-turn prompt for hand-testing both paths; `1`/`2` hard-force silently, folding
+  in what `devTwoDiceForce` used to do as one case of this toggle rather than a separate
+  control. This is functionally the M6-era "1/2/?" toggle again, but it is **not** a
+  reinstatement of the production toggle D-42 rejected - it now lives strictly behind an
+  off-by-default dev checkbox, matching M8's own charter ("exploratory, debug, and testable
+  controls... reachable during development without polluting the settings a real user sees").
+  The last-tile-is-1 safety rule is unconditional throughout, same as before.
+- **Flagging for the orchestrator's next pass:** §3.3's text should be revised to state the
+  *production* behaviour is now a silent single die with no player-facing choice at all, and
+  that the per-turn "changeable with a tap" model is a dev-mode testing affordance
+  (`devDiceChoice: 'ask'`), not a shipped mechanic. D-03/D-42 should be updated to match.
+- **Verified** via a temporary debug hook (removed before this commit): production default
+  (test mode off) rolls one die with zero prompt shown, confirmed on a fresh unlock; ticking
+  "Test dice #" resets the nested toggle to `ask` and immediately shows the live per-turn
+  prompt; forcing `2` then `1` via the real Settings UI applies immediately with the prompt
+  correctly hidden in both forced states; unticking the checkbox reverts everything to the
+  silent one-die default with no residual state; three full automated games (production
+  default, dev test on `ask`, dev test forced to `2`) completed cleanly with zero console
+  errors.
