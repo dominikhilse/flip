@@ -203,3 +203,38 @@ duplicated here.
   spent both types in the same game, and native D) completing cleanly with zero console
   errors, and a manual click-through screenshot pass confirming the on-screen text reads
   correctly.
+
+### 2026-09-11 — M8 built: dev-mode tab, and the dice-count reversion this session flagged
+- **Status: BUILT, matches §5/M8's spec.** This is the concrete follow-up the "Reconciled as
+  D-42" stamp above flagged as owed - it's now done.
+- **Dice-count fully reverted to §3.3 as originally written**, not just hidden. The M6-era
+  once-per-game mechanism (game-wide `diceCount`, the settings-screen `1/2/?` toggle, the
+  first-player-decides live prompt) is gone entirely - `app/app.js`'s `renderPlayDiceChoice`
+  is back to showing the 1-or-2 choice **every turn**, per player, defaulting to one die,
+  changeable with a single tap, exactly as §3.3 describes. `p.diceCount` is per-player
+  again (simplified from the original M1/M2 version - defaults to `1` at player creation, so
+  the old `diceCountChosenByPlayer` auto-correct-on-first-unlock flag is no longer needed at
+  all and was dropped). The one thing kept from the M6-era work, because it's an independent
+  correctness fix, not part of the rejected toggle: the last-tile-is-1 safety net
+  (`lastTileIsOne`) still forces 1 die unconditionally, overriding even the new dev-mode force
+  below - verified live.
+- **Dev-mode tab, since this project has no build step to gate on:** M8's own text leaves "how
+  it is gated" as a build decision. With no environment flag to hide behind, implemented as a
+  collapsed `<details id="dev-mode-section"><summary>Dev mode</summary>...</details>` on the
+  settings screen, styled with a dashed warning-toned border distinct from the production
+  `<fieldset>` above it - closed by default so the production surface stays visually clean
+  (M8 criterion 1), but not hard-gated, since nothing in this static-file project can hard-gate
+  a build variant. Holds a single checkbox for now (`devTwoDiceForce`); §5 says M8 should also
+  host the M9 time-challenge as its first exploratory feature, deliberately not built yet -
+  that's M9's own session.
+- **`devTwoDiceForce` (M8 criteria 2-3):** an `IMMEDIATE`-class setting (same class as
+  motion/tap - a testing instrument, not a rule, no fairness reason to defer), forces two dice
+  whenever the single-die-unlocked state is reached, and is correctly subordinate to the
+  last-tile-is-1 safety rule. Default off; production dice choice unaffected when off.
+- **Verified** via a temporary debug hook (removed before commit): the per-turn choice reappears
+  for both players every unlock, defaulting to 1 and persisting whatever was last tapped; the
+  dev force set mid-game via Settings applies immediately (both `game.devTwoDiceForce` and the
+  persisted setting); the last-tile-is-1 override wins even with the dev force on; and three
+  full automated games (normal, dev-force-on, native D) completed cleanly with zero console
+  errors. Screenshots confirmed the dev-mode section renders collapsed and visually distinct
+  from production settings, and expands to show its explanatory text correctly.

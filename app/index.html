@@ -62,26 +62,6 @@
       </div>
       <div class="setting-note live-note" id="boost-note" hidden>Applies next lap</div>
 
-      <!-- Dice-count toggle: hidden pending an orchestrator ruling (see docs/DECISIONS.md,
-           2026-09-11 entry) - §3.3 of the milestone plan locks this as "must not be made a
-           settings toggle," which this literally is. The underlying flow it drives (asked
-           once per game, by whoever first reaches the unlocked state, not re-asked every
-           turn - see diceChoicePending/onChooseDice in app.js) stays fully live; only this
-           settings-screen control is taken out of the visible product. Do not delete the
-           markup - restore it (or move it into a future dev-mode tab) once the orchestrator
-           decides where this setting belongs. -->
-      <div hidden>
-        <div class="setting-row">
-          <span>Dice once unlocked</span>
-          <div class="toggle-group" id="dice-count-toggle">
-            <button type="button" class="toggle-btn" data-dice-count="1">1</button>
-            <button type="button" class="toggle-btn" data-dice-count="2">2</button>
-            <button type="button" class="toggle-btn" data-dice-count="0">?</button>
-          </div>
-        </div>
-        <div class="setting-note live-note" id="dice-count-note" hidden>Applies next lap - "?" leaves it undecided, so whoever unlocks it first this game is asked and decides</div>
-      </div>
-
       <div class="setting-row">
         <label class="checkbox-row"><input type="checkbox" id="motion-toggle"> Motion</label>
       </div>
@@ -94,6 +74,18 @@
         <label class="checkbox-row"><input type="checkbox" id="theme-toggle"> Light theme</label>
       </div>
     </fieldset>
+
+    <!-- Dev mode (M8, §5): a container for exploratory/testable controls, kept
+         structurally and visually separate from the production settings above.
+         Collapsed by default via <details> so it stays out of the way of a
+         parent using the real product; nothing here is a game rule. -->
+    <details id="dev-mode-section">
+      <summary>Dev mode</summary>
+      <div class="setting-row">
+        <label class="checkbox-row"><input type="checkbox" id="dev-two-dice-force"> Force two dice at the single-die endgame</label>
+      </div>
+      <div class="setting-note">Testing instrument only - overrides the per-turn 1/2 choice so the two-dice path can be exercised on demand. The single-die endgame rule (§3.3) is otherwise untouched: default play is still one die, and the last-tile-is-1 safety rule always wins regardless of this toggle.</div>
+    </details>
 
     <button id="start-game" class="primary" disabled>Start game</button>
     <button id="back-to-game" class="primary" hidden>Back to game</button>

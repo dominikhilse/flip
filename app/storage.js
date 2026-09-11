@@ -12,10 +12,9 @@
     rackSize: 9,
     overpayMode: 'A', // 'A' strict (D-18) | 'D' overpay
     boostEnabled: false, // A-only; inert until M6 (D-27, D-28)
-    // 0 = undecided - the first player to reach the single-die-unlocked
-    // state this game gets asked live and their answer becomes this
-    // setting (and sticks for future games too); 1 or 2 once decided.
-    diceCount: 0,
+    // Dev mode (M8, D-42): a testing instrument, not a production rule -
+    // §3.3's per-turn 1/2 choice (default one die) is otherwise untouched.
+    devTwoDiceForce: false,
     motionEnabled: true, // D-21
     // D-29: default ON in development (this prototype), OFF in the final
     // build - there is no build step to branch on, so this is the
@@ -51,7 +50,7 @@
         rackSize: parsed.rackSize === 12 ? 12 : DEFAULT_SETTINGS.rackSize,
         overpayMode: parsed.overpayMode === 'D' ? 'D' : DEFAULT_SETTINGS.overpayMode,
         boostEnabled: parsed.boostEnabled === true,
-        diceCount: (parsed.diceCount === 1 || parsed.diceCount === 2) ? parsed.diceCount : DEFAULT_SETTINGS.diceCount,
+        devTwoDiceForce: parsed.devTwoDiceForce === true,
         motionEnabled: parsed.motionEnabled !== false,
         tapToProceed: parsed.tapToProceed !== false,
         theme: parsed.theme === 'light' ? 'light' : DEFAULT_SETTINGS.theme

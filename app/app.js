@@ -32,8 +32,7 @@
   var overpayNoteEl = document.getElementById('overpay-note');
   var boostCheckboxEl = document.getElementById('boost-checkbox');
   var boostNoteEl = document.getElementById('boost-note');
-  var diceCountToggleEl = document.getElementById('dice-count-toggle');
-  var diceCountNoteEl = document.getElementById('dice-count-note');
+  var devTwoDiceForceEl = document.getElementById('dev-two-dice-force');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleEl = document.getElementById('theme-toggle');
@@ -188,23 +187,16 @@
     boostCheckboxEl.closest('.setting-row').classList.toggle('disabled', boostCheckboxEl.disabled);
     boostNoteEl.hidden = !midGame;
 
-    // "?" (value 0) is a real, selectable state - genuinely undecided until
-    // someone chooses 1 or 2, either here or by being the first player to
-    // reach the live in-game question (see onChooseDice). Picking "?" here
-    // is how a game that already decided gets reset back to asking again.
-    var diceCountBtns = diceCountToggleEl.querySelectorAll('.toggle-btn');
-    diceCountBtns.forEach(function (btn) {
-      var count = parseInt(btn.getAttribute('data-dice-count'), 10);
-      btn.classList.toggle('active', settings.diceCount === count);
-    });
-    diceCountNoteEl.hidden = !midGame;
-
     // Motion, tap-to-proceed, and theme are input/cosmetic preferences, not
     // rules - they apply immediately (see queueSettingChange), so unlike
     // the settings above they carry no "applies next lap" note.
     motionToggleEl.checked = settings.motionEnabled;
     tapToggleEl.checked = settings.tapToProceed;
     themeToggleEl.checked = settings.theme === 'light';
+
+    // Dev mode (M8) - a testing instrument, applies immediately like the
+    // preferences above, carries no "applies next lap" note.
+    devTwoDiceForceEl.checked = settings.devTwoDiceForce;
   }
 
   function renderPrimaryAction() {
@@ -268,10 +260,8 @@
     queueSettingChange('boostEnabled', boostCheckboxEl.checked);
   });
 
-  diceCountToggleEl.addEventListener('click', function (e) {
-    var btn = e.target.closest('.toggle-btn');
-    if (!btn) return;
-    queueSettingChange('diceCount', parseInt(btn.getAttribute('data-dice-count'), 10));
+  devTwoDiceForceEl.addEventListener('change', function () {
+    queueSettingChange('devTwoDiceForce', devTwoDiceForceEl.checked);
     renderSettingsControls();
   });
 
@@ -337,12 +327,13 @@
   // and the rest under another. A "lap" is anchored to seat order: it always
   // starts at the earliest not-yet-finished player (normally P1), not at
   // whoever happened to be mid-turn when the change was requested.
-  var LAP_ANCHORED_SETTING_KEYS = ['placementMode', 'overpayMode', 'boostEnabled', 'diceCount'];
+  var LAP_ANCHORED_SETTING_KEYS = ['placementMode', 'overpayMode', 'boostEnabled'];
 
   // Pure input-path preferences that affect live game behaviour (read via
-  // game.motionEnabled/game.tapToProceed) - no fairness reason to defer
-  // these, so they take effect immediately, live, even mid-turn.
-  var IMMEDIATE_SETTING_KEYS = ['motionEnabled', 'tapToProceed'];
+  // game.motionEnabled/game.tapToProceed/game.devTwoDiceForce) - no fairness
+  // reason to defer these, so they take effect immediately, live, even
+  // mid-turn. devTwoDiceForce is a testing instrument, not a rule (M8).
+  var IMMEDIATE_SETTING_KEYS = ['motionEnabled', 'tapToProceed', 'devTwoDiceForce'];
 
   function firstActiveSeatIndex() {
     return game.players.findIndex(function (p) { return !p.finished; });
@@ -388,6 +379,7 @@
         rack: RULES.createRack(settings.rackSize),
         finished: false,
         place: null,
+        diceCount: 1, // §3.3 default - one die, changeable per turn (see onChooseDice)
         // Boost mode (§3.6/§3.6b, M6+M7) - typed holding, both types live.
         boosts: { overpay: 0, oneForTwo: 0 },
         pendingBoostCredits: { overpay: 0, oneForTwo: 0 }, // earned, not yet delivered - see deliverPendingBoost
@@ -401,7 +393,7 @@
       placementMode: settings.placementMode,
       overpayMode: settings.overpayMode,
       boostEnabled: settings.boostEnabled,
-      diceCount: settings.diceCount, // 0 = still undecided this game
+      devTwoDiceForce: settings.devTwoDiceForce, // M8 - dev instrument, not a rule
       motionEnabled: settings.motionEnabled,
       tapToProceed: settings.tapToProceed,
       pendingSettings: null,
@@ -649,25 +641,29 @@
   }
 
   // ---- Dice count (once unlocked) ----
-  // A single-die-unlocked rack (all open tiles <= 6) can be played with 1 or
-  // 2 dice - a whole-game setting, decided once by whichever player first
-  // reaches the unlocked state (see renderPlayDiceChoice/onChooseDice), not
-  // re-asked every turn. Regardless of that setting, a rack down to only the
-  // "1" tile is a guaranteed dead end under 2 dice (minimum roll is 2, and
-  // the last tile is always exact-only) - always force 1 die there.
+  // §3.3: once every open tile is <= 6, the player chooses one die or two
+  // before EACH roll, defaulting to one die, changeable with a single tap -
+  // mandatory, not a settings toggle (D-03/D-42). p.diceCount is per-player,
+  // per-turn preference, not a persisted setting.
+  //
+  // Regardless of that choice, a rack down to only the "1" tile is a
+  // guaranteed dead end under 2 dice (minimum roll is 2, and the last tile
+  // is always exact-only) - always force 1 die there; this safety rule
+  // holds unconditionally, even under the dev-mode force below.
   function lastTileIsOne(p) {
     var openVals = RULES.openValues(p.rack);
     return openVals.length === 1 && openVals[0] === 1;
   }
 
-  function diceChoicePending(p) {
-    return RULES.singleDieUnlocked(p.rack) && !lastTileIsOne(p) && !game.diceCount;
-  }
-
+  // Dev mode only (M8, D-42): a testing instrument that forces two dice at
+  // the single-die endgame, to exercise that path on demand. Not a rule,
+  // not shown on the production settings surface, and never overrides the
+  // last-tile-is-1 safety rule above.
   function effectiveDiceCount(p) {
     if (!RULES.singleDieUnlocked(p.rack)) return 2;
     if (lastTileIsOne(p)) return 1;
-    return game.diceCount; // decided by now - Roll is disabled otherwise
+    if (game.devTwoDiceForce) return 2;
+    return p.diceCount;
   }
 
   function onRoll() {
@@ -699,15 +695,10 @@
     renderPlay();
   }
 
-  // The live in-game question, asked once per game to whichever player
-  // first reaches the unlocked state (see diceChoicePending) - the answer
-  // applies immediately (nothing was decided before this, so there's no
-  // fairness reason to defer it like a settings-screen change) and is
-  // persisted so it's also next game's starting default.
+  // §3.3's "changeable with a single tap" - a per-turn, per-player
+  // preference, not persisted to settings or deferred in any way.
   function onChooseDice(count) {
-    game.diceCount = count;
-    settings.diceCount = count;
-    STORAGE.saveSettings(settings);
+    currentPlayer().diceCount = count;
     renderPlay();
   }
 
@@ -920,12 +911,16 @@
     playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' / ' + game.currentRoll.total;
   }
 
-  // Shown once per game, to whichever player first has a pending choice
-  // (see diceChoicePending) - not a toggle reflecting a current value, just
-  // a one-time question, so neither button is pre-marked "active".
+  // §3.3: shown every turn once unlocked, defaulting to whichever the
+  // player last chose (or one die, per p.diceCount's default) - a live
+  // toggle, not a one-time question, so the current choice is pre-marked
+  // "active" and remains changeable with a single tap right up to Roll.
+  // Hidden at the last-tile-is-1 safety case (nothing to choose - see
+  // effectiveDiceCount) and while the M8 dev force is on (it would only
+  // contradict a choice that no longer has any effect).
   function renderPlayDiceChoice() {
     var p = currentPlayer();
-    var show = diceChoicePending(p) && !game.currentRoll;
+    var show = RULES.singleDieUnlocked(p.rack) && !lastTileIsOne(p) && !game.devTwoDiceForce && !game.currentRoll;
     if (!show) {
       playDiceChoiceEl.classList.remove('visible');
       playDiceChoiceEl.innerHTML = '';
@@ -933,8 +928,8 @@
     }
     playDiceChoiceEl.classList.add('visible');
     playDiceChoiceEl.innerHTML =
-      '<button type="button" id="choice-one">1 die</button>' +
-      '<button type="button" id="choice-two">2 dice</button>';
+      '<button type="button" id="choice-one" class="' + (p.diceCount === 1 ? 'active' : '') + '">1 die</button>' +
+      '<button type="button" id="choice-two" class="' + (p.diceCount === 2 ? 'active' : '') + '">2 dice</button>';
     document.getElementById('choice-one').addEventListener('click', function () { onChooseDice(1); });
     document.getElementById('choice-two').addEventListener('click', function () { onChooseDice(2); });
   }
@@ -947,7 +942,7 @@
     playPassBtn.hidden = !stalled;
     playConfirmBtn.hidden = stalled || boostOfferPending;
 
-    playRollBtn.disabled = game.currentRoll !== null || diceChoicePending(currentPlayer());
+    playRollBtn.disabled = game.currentRoll !== null;
 
     if (!game.currentRoll || game.currentRoll.stalled || boostOfferPending) {
       playConfirmBtn.disabled = true;
