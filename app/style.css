@@ -374,6 +374,17 @@ legend {
   font-size: 1.3rem;
   font-weight: 700;
 }
+/* Dice roll animation (M10): a cheap wobble while the face is flashing
+   through random values - see animateDiceRoll(). Purely decorative, does
+   not touch layout (transform only) so it can't shift anything around it. */
+.die.rolling {
+  animation: die-wobble 0.15s ease-in-out infinite;
+}
+@keyframes die-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
 #total {
   font-size: 0.95rem;
   color: var(--text-muted);

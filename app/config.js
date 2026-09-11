@@ -30,5 +30,13 @@ window.CONFIG = {
   // a type: Math.random() < this value grants overpay, otherwise 1-for-2.
   // Starting value per spec (50/50); tune after playtest, e.g. weight
   // toward 1-for-2 to keep overpay scarce.
-  boostTypeDistribution: 0.5
+  boostTypeDistribution: 0.5,
+
+  // Dice roll animation (M10, D-47). Purely cosmetic - the actual roll
+  // result is decided by RULES.rollDice() before the animation ever runs
+  // (see onRoll/animateDiceRoll); these two values only control how long
+  // and how fast the face-cycle flashes before settling. Starting values,
+  // not measured - tune by feel.
+  diceAnimationDurationMs: 400,
+  diceAnimationFrameMs: 60
 };

@@ -732,6 +732,9 @@
     };
     game.selected = new Set();
     renderPlay();
+    // Cosmetic only (M10) - `dice` above is already the final, decided
+    // result; this just flashes the display before settling on it.
+    animateDiceRoll(dice);
   }
 
   // §3.3's "changeable with a single tap" - a per-turn, per-player
@@ -874,6 +877,43 @@
     }).join('');
     html += '<div id="total">Total: ' + game.currentRoll.total + '</div>';
     playDiceAreaEl.innerHTML = html;
+  }
+
+  // ---- Dice roll animation (M10, D-47) ----
+  // The load-bearing rule: `finalDice` is already the real, fully-decided
+  // roll result by the time this is ever called (onRoll computes it via
+  // RULES.rollDice() first, stores it in game.currentRoll, and renderPlay()
+  // has already drawn it before this runs) - everything below is a purely
+  // cosmetic overlay on top of that. The random faces flashed here are
+  // never read, never stored, never compared against anything; they cannot
+  // influence the outcome even in principle.
+  var diceAnimationIntervalId = null;
+
+  function animateDiceRoll(finalDice) {
+    var dieEls = Array.prototype.slice.call(playDiceAreaEl.querySelectorAll('.die'));
+    var totalEl = document.getElementById('total');
+    if (!dieEls.length) return;
+    if (diceAnimationIntervalId !== null) clearInterval(diceAnimationIntervalId);
+
+    dieEls.forEach(function (el) { el.classList.add('rolling'); });
+    if (totalEl) totalEl.hidden = true;
+
+    var elapsed = 0;
+    diceAnimationIntervalId = setInterval(function () {
+      elapsed += CONFIG.diceAnimationFrameMs;
+      dieEls.forEach(function (el) {
+        el.textContent = 1 + Math.floor(Math.random() * 6); // cosmetic flash only
+      });
+      if (elapsed >= CONFIG.diceAnimationDurationMs) {
+        clearInterval(diceAnimationIntervalId);
+        diceAnimationIntervalId = null;
+        dieEls.forEach(function (el, i) {
+          el.classList.remove('rolling');
+          el.textContent = finalDice[i]; // settle on the predetermined result
+        });
+        if (totalEl) totalEl.hidden = false;
+      }
+    }, CONFIG.diceAnimationFrameMs);
   }
 
   function renderPlayMessage() {
