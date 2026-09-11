@@ -899,14 +899,29 @@
     });
   }
 
-  // Standard die pips (Unicode U+2680-2685), not digits - the tiles keep
-  // plain numerals (D-13), this is the dice only. A system glyph, not an
-  // image asset, so it needs no build step and inherits .die's color/size
-  // like any other text.
-  var DIE_FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  // Standard die pips, drawn as inline SVG rather than a Unicode glyph
+  // (U+2680-2685) - the glyph approach rendered legibly but tiny, because
+  // how much of its own em-box a symbol character actually fills is baked
+  // into the font, not something font-size alone controls. An SVG with a
+  // fixed viewBox scaled to 100% of .die's box sizes exactly to the
+  // container instead. Tiles keep plain numerals (D-13); this is the
+  // rolled dice only. fill="currentColor" so it follows .die's own color
+  // token like text would.
+  var DIE_PIPS = {
+    1: [[50, 50]],
+    2: [[25, 25], [75, 75]],
+    3: [[25, 25], [50, 50], [75, 75]],
+    4: [[25, 25], [75, 25], [25, 75], [75, 75]],
+    5: [[25, 25], [75, 25], [50, 50], [25, 75], [75, 75]],
+    6: [[25, 25], [75, 25], [25, 50], [75, 50], [25, 75], [75, 75]]
+  };
 
-  function dieFace(value) {
-    return DIE_FACES[value] || value;
+  function dieFaceSVG(value) {
+    var pips = DIE_PIPS[value] || [];
+    var circles = pips.map(function (pos) {
+      return '<circle cx="' + pos[0] + '" cy="' + pos[1] + '" r="11"></circle>';
+    }).join('');
+    return '<svg class="die-face" viewBox="0 0 100 100" aria-hidden="true">' + circles + '</svg>';
   }
 
   function renderPlayDice() {
@@ -915,7 +930,7 @@
       return;
     }
     var html = game.currentRoll.dice.map(function (d) {
-      return '<span class="die">' + dieFace(d) + '</span>';
+      return '<span class="die">' + dieFaceSVG(d) + '</span>';
     }).join('');
     html += '<div id="total">Total: ' + game.currentRoll.total + '</div>';
     playDiceAreaEl.innerHTML = html;
@@ -940,18 +955,22 @@
     dieEls.forEach(function (el) { el.classList.add('rolling'); });
     if (totalEl) totalEl.hidden = true;
 
+    // innerHTML, not textContent, since each face is now a small SVG - the
+    // .rolling wobble (a CSS transform on the .die box itself) and this
+    // content swap never touch the same property, so they can't collide:
+    // the box rotates while whatever's inside it gets replaced underneath.
     var elapsed = 0;
     diceAnimationIntervalId = setInterval(function () {
       elapsed += CONFIG.diceAnimationFrameMs;
       dieEls.forEach(function (el) {
-        el.textContent = dieFace(1 + Math.floor(Math.random() * 6)); // cosmetic flash only
+        el.innerHTML = dieFaceSVG(1 + Math.floor(Math.random() * 6)); // cosmetic flash only
       });
       if (elapsed >= CONFIG.diceAnimationDurationMs) {
         clearInterval(diceAnimationIntervalId);
         diceAnimationIntervalId = null;
         dieEls.forEach(function (el, i) {
           el.classList.remove('rolling');
-          el.textContent = dieFace(finalDice[i]); // settle on the predetermined result
+          el.innerHTML = dieFaceSVG(finalDice[i]); // settle on the predetermined result
         });
         if (totalEl) totalEl.hidden = false;
       }
@@ -1011,8 +1030,12 @@
     playBoostOfferEl.hidden = !show;
     if (!show) return;
     if (game.currentRoll.offeredBoostType === 'oneForTwo') {
-      playBoostOfferTextEl.textContent = 'Stalled — spend a 1-for-2 boost to play a single ' +
-        oneForTwoTargetLabel(game.currentRoll.dice) + '?';
+      // "a single N" (not "the tile numbered N") - a real playtest read this
+      // as needing tile N specifically, which is often exactly the closed
+      // tile that made the roll stall in the first place, and concluded
+      // there was no escape. Spell out "any tiles" to head that off.
+      playBoostOfferTextEl.textContent = 'Stalled — spend a 1-for-2 boost to play this roll as a single ' +
+        oneForTwoTargetLabel(game.currentRoll.dice) + ' (any open tiles summing to it)?';
     } else {
       playBoostOfferTextEl.textContent = 'Stalled — spend an overpay boost to flip tiles summing to at most ' +
         game.currentRoll.total + '?';
@@ -1025,8 +1048,11 @@
       return;
     }
     if (game.currentRoll.boostSpentType === 'oneForTwo') {
-      playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' (needs ' +
-        oneForTwoTargetLabel(game.currentRoll.dice) + ')';
+      // "any tiles summing to" - not "needs N", which reads as needing the
+      // single tile numbered N (often exactly the closed tile that caused
+      // the stall). See the boost-offer text above for the same fix.
+      playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' — any tiles summing to ' +
+        oneForTwoTargetLabel(game.currentRoll.dice);
       return;
     }
     playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' / ' + game.currentRoll.total;

@@ -313,3 +313,37 @@ duplicated here.
   silent one-die default with no residual state; three full automated games (production
   default, dev test on `ask`, dev test forced to `2`) completed cleanly with zero console
   errors.
+
+### 2026-09-12 — Real-device report: 1-for-2 boost looked like a dead end - wording, not logic
+- **Report:** on a real iPhone, rack open {2, 3, 9}, rolled 5+5, only held boost was 1-for-2.
+  Spending it showed "Selected: 0 (needs 5)"; the player couldn't find a way forward and
+  concluded the game was stuck with the boost wasted.
+- **Investigated and reproduced the exact scenario** (same rack, same dice, same boost) via a
+  temporary debug hook: selecting tiles 2 and 3 together (2+3=5) correctly validated, enabled
+  Confirm, and completed the move - `RULES.isValidOneForTwoSelection`/`oneForTwoResolvable`
+  and the offer/spend pipeline are all correct. **Not a logic bug** - this was reachable,
+  just not obviously so.
+- **The actual bug: the wording.** "needs 5" and (in the offer) "play a single 5" both read
+  as "you need the tile numbered 5" - which, in the case that triggers this boost at all, is
+  very often exactly the closed tile that caused the stall in the first place, making a
+  legitimately-solvable roll *look* like a trap. Fixed both strings to say explicitly "any
+  tiles/open tiles summing to N" (`app/app.js`, `renderPlayBoostOffer`/
+  `renderPlaySelectionSum`). No rule or validity logic changed.
+- **Verified**: reproduced the exact reported rack/roll/boost via a temporary debug hook
+  (removed before commit) - confirmed the escape move resolves correctly, confirmed the new
+  wording reads unambiguously, and ran a full automated game with boosts enabled end to end
+  with zero console errors.
+
+### 2026-09-12 — URGENT flag for the orchestrator: no recovery/undo path when a player is stuck
+- **Raised by Dominik, off the report above** (this instance turned out not to be a dead end,
+  but the *category* of risk is real and unaddressed): if a player ever does reach a genuine
+  stuck state - a real rules bug, a future regression, or just a player who can't figure out
+  a legal move exists - there is currently **no way to recover except "End game"**, which
+  discards the entire match for every player, not just backs out of one bad spot. There is no
+  undo, no restart-this-turn, no back button anywhere in the turn/rack flow.
+- **Not investigated or scoped further here** - explicitly the orchestrator's to think through
+  (what should be undoable - a tile selection before Confirm? a whole turn? a boost spend? -
+  and what state that requires keeping around, given §2's "never persist/retain more than the
+  live game" posture). Flagged as urgent because it's a real-play gap, not a hypothetical one:
+  this session's own reporter got stuck (before the wording fix above) with no way out but to
+  end the whole game.
