@@ -93,6 +93,20 @@ duplicated here.
   selection hits this case. §3.5/§3.6's wording should be updated from "the final remaining
   tile" to "a selection that would shut the whole rack" to match.
 
+### 2026-09-11 — M4 (continuous-rotation handoff) cut for real
+- **Finding, from the status check earlier this session:** M4 was a cuttable spike per its
+  own plan text, and M0's orientation-during-lift finding (readable during a lift —
+  `FINDINGS.md` criterion 6) kept it technically viable, but the actual feature (skip the
+  turn card on a detected 180° rotate-and-set-down) was never attempted, and its three
+  acceptance criteria were never run on-device. It sat in an undecided middle state: not
+  built, not explicitly cut either.
+- **Decision (Dominik, this session):** cut it for real, not just leave it unresolved. The
+  game feel with M3's tap/motion turn-card handoff, as shipped, is fine in real play — there
+  is no open problem M4 would be solving. Written into the plan as D-40; §5's M4 section now
+  reads **CUT**, with the original goal/scope/acceptance criteria kept in a collapsed
+  `<details>` block for the historical record only. Do not revisit without a new decision to
+  do so.
+
 ### 2026-09-11 — The two-type boost system (D-35–D-38) is not being built yet
 - **Status, per the orchestrator:** confirmed explicitly — do **not** start building the
   1-for-2 boost type, the typed `{overpay, oneForTwo}` inventory, the auto-select spend logic,

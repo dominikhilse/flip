@@ -698,13 +698,21 @@ stops.
 
 ---
 
-### M4 — Continuous-rotation handoff (spike, cuttable)
+### M4 — Continuous-rotation handoff (spike, cuttable) — **CUT (D-40)**
+
+**Status: CUT. Not built, not scheduled, do not revisit without a new decision to do so.**
+M0's orientation-during-lift finding (readable and meaningful — FINDINGS.md criterion 6) kept
+this spike *viable*, but it was never attempted: the M3 tap/motion turn-card handoff was
+tested in real multi-kid play and the feel is good as shipped. There is no open problem this
+milestone would fix, so there is nothing to spend the build-and-verify cost on. See D-40.
+
+The original scope is kept below for the record only — **none of it is built:**
+
+<details>
+<summary>Original goal, scope, and acceptance criteria (historical — cut before attempting)</summary>
 
 **Goal.** Find out whether the phone can be picked up, turned 180°, and set down again with
 the game staying in play — no turn card at all.
-
-**Status: UNVERIFIED. This milestone may be cut in full without affecting anything built in
-M0–M3.** Do not refactor M3's handoff to accommodate it. If it fails, delete it.
 
 **Scope.**
 - During a lift, read device orientation (§4.3) and latch the last valid landscape
@@ -721,6 +729,8 @@ M0–M3.** Do not refactor M3's handoff to accommodate it. If it fails, delete i
 **Stop conditions.** If criterion 3 cannot be met, **cut the milestone and report.** This
 is explicitly an enhancement. A wrong-player-advance is a far worse outcome than a turn
 card.
+
+</details>
 
 ---
 
@@ -937,3 +947,4 @@ though it were known:
 | D-37 | Auto-select prefers 1-for-2 when both resolve (conserve overpay); overpay strictly dominates 1-for-2, so branches are: both→1-for-2, only-overpay→overpay, neither→no offer; the "could-score-higher" case is locked as by-design | Locked |
 | D-38 | Reward model: each type owns a criteria pool (may overlap); shared-criterion awards pick a type by a configurable distribution variable (default 50/50); MVP both types share the D-24 criteria | Locked |
 | D-39 | Block-dice and any targeted / inter-player / duration boost is benched; if revived it is its own milestone with targeting/duration state and the parked open questions answered first | Locked |
+| D-40 | M4 (continuous-rotation handoff) is cut, not merely deferred: M3's tap/motion turn-card handoff feel is confirmed good in real multi-kid play, so there is no open problem left for M4 to solve; not built, not scheduled | Locked |
