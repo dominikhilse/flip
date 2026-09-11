@@ -107,6 +107,23 @@ duplicated here.
   `<details>` block for the historical record only. Do not revisit without a new decision to
   do so.
 
+### 2026-09-11 — M6 closed at single-type scope; two-type boost split into new milestone M7
+- **Supersedes the framing of the entry below, not its content.** Dominik confirmed the
+  two-type boost expansion will come as its own milestone, and asked whether M6 could then be
+  considered closed. Yes: nothing currently shipped needs the second boost type to be correct
+  or complete on its own terms, and the four reconciliation entries above (dice toggle,
+  award-timing redefinition, D-34's carve-out, the whole-rack overpay generalization) are all
+  either resolved or explicitly deferred, not blockers.
+- **Decision:** `FlipTheNumber_MilestonePlan.md` §5's M6 section now reads **CLOSED at
+  single-type scope**, with a new summary of exactly what shipped, and the original
+  two-type-flavoured goal/scope/acceptance-criteria text preserved in a collapsed `<details>`
+  block for the record. A new **M7 — Two-type boost system** section carries the
+  two-type-specific scope and acceptance criteria (D-35–D-38) forward, explicitly marked not
+  started. Logged as D-41.
+- **Still true, restated under the new milestone number:** M7 is not to be started without the
+  orchestrator's design pass finishing first — see the entry immediately below, which now
+  describes M7 rather than an unscoped "the two-type system."
+
 ### 2026-09-11 — The two-type boost system (D-35–D-38) is not being built yet
 - **Status, per the orchestrator:** confirmed explicitly — do **not** start building the
   1-for-2 boost type, the typed `{overpay, oneForTwo}` inventory, the auto-select spend logic,

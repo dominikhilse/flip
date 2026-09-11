@@ -743,7 +743,52 @@ Do not create work here.
 
 ---
 
-### M6 — Boost system (strict + earned boosts)
+### M6 — Boost system (strict + earned overpay boost) — **CLOSED at single-type scope (D-41)**
+
+**Status: CLOSED.** M6 shipped and is complete as the **single-type** boost system (the
+overpay boost only) — the scope it had before the plan revision that added the two-type
+design (D-35–D-38) below. That expansion is real, still wanted, and **not built** — it is
+its own milestone now, **M7**, not started, design still pending from the orchestrator (see
+`docs/DECISIONS.md`). Splitting it out is what lets M6 close: nothing currently shipped
+needs the second boost type to be correct or complete on its own terms.
+
+**Shipped, verified scope (this is what "M6 done" means now):**
+- Boost checkbox (built inert in M2) is functional whenever overpay = `A`; greys out and its
+  value is ignored the moment the toggle reads `D`.
+- Single boost type, `{ overpay: n }` — typed as an object from day one (D-35's typing intent
+  honoured even though only one type exists yet), capped at **3 held**, in-memory only, lost
+  on reload.
+- Award criteria (D-24): dry streak (fewer than 3 clean rolls in the last 5) and
+  trailing-at-finish (most open tiles the moment any other player shuts, ties all awarded).
+  No re-earn on the turn a boost is spent.
+- Spend is **offered, never forced** (spend-or-stay), and only when holding ≥1 boost would
+  *actually resolve* the current stall — never a dead offer. One spend per turn, no chaining,
+  never closes the final remaining tile (and, per the whole-rack generalization below, never
+  closes the whole rack imprecisely even across several tiles).
+- **Award timing (reconciles with §3.6's "announced at the moment granted"):** a boost is
+  *earned* the instant its condition fires, but *granted* — credited to the spendable
+  inventory and announced on screen — at the start of the earning player's next turn, the
+  first moment it's actually usable. Multiple credits can stack before delivery; a credit is
+  silently dropped if the game has left boost mode before its delivery turn arrives. See
+  `docs/DECISIONS.md`, 2026-09-11.
+- **Overpay resolution generalized beyond the original wording:** the exact-match exception
+  applies to any selection that would shut the whole rack, not only a literal single
+  remaining tile — closing several tiles at once via a big overpaid roll is blocked the same
+  way, with an on-screen message telling the player to exclude a tile. See
+  `docs/DECISIONS.md`, 2026-09-11.
+- Boost count visible on the player's own screen; replaced with an explicit "No boosts for
+  the last number" note while down to one tile, rather than showing a count that implies a
+  boost could help there.
+
+**Verified:** via temporary debug hooks and full automated playthroughs across this session
+(zero console errors), plus real playtesting that surfaced and closed the two fixes above.
+
+The original goal/scope/acceptance-criteria text is kept below for the historical record —
+**the two-type-specific items in it (criteria 4, 7, 9, and the typed-inventory/auto-select/
+reward-model scope bullets) now belong to M7, not M6:**
+
+<details>
+<summary>Original M6 text, as written before this split (historical)</summary>
 
 **Goal.** The boost checkbox (available while overpay = `A`) becomes functional: strict base
 rules with a **two-type earned boost inventory** (overpay + 1-for-2), per §3.6. There is no `B`
@@ -817,6 +862,60 @@ be unchanged. The roster gains only the typed in-memory inventory.
 report the observed award rate** rather than silently tightening constants. If the auto-select
 rule ever offers a boost that does **not** resolve the current stall, **stop and report** — the
 usable-here filter is wrong and must be fixed, not worked around.
+
+</details>
+
+---
+
+### M7 — Two-type boost system (overpay + 1-for-2)
+
+**Status: NOT STARTED.** Split out of M6 so M6 could close (D-41). **Design not yet finished
+by the orchestrator** — per `docs/DECISIONS.md` (2026-09-11), do not start building this
+without an explicit go-ahead; the two-type design (D-35–D-38) is written into §3.6 but has
+not been prepped for a build session the way M6's original single-type scope was.
+
+**Goal.** Extend M6's shipped single-type boost mode into the full two-type inventory per
+§3.6/D-35–D-38: a second boost type (1-for-2 — ignores one whole die, plays the other as a
+single value), a typed `{ overpay: n, oneForTwo: m }` inventory, auto-selected spend that
+conserves the stronger overpay type, and a per-type reward-model split (MVP: 50/50, shared
+criteria).
+
+**Do-not-touch on entry.** Everything M6 shipped (the overpay boost's own logic, its award
+timing, the whole-rack-close generalization) stays as-is; this milestone only adds the second
+type and the machinery to arbitrate between two held types. The `A`/`D` rules, placement
+logic, and motion/tap paths are untouched, same as M6's own constraint.
+
+**Scope** (moved from M6's original text above, unchanged in substance):
+- Typed inventory, `{ overpay: n, oneForTwo: m }` or equivalent, cap raised to **3 total
+  across both types** (not 3 of each) — `boostMaxHeld`'s cap check in code is currently
+  single-type and will need reworking to sum across types.
+- The 1-for-2 effect itself: ignore one whole die, play the other as a single value.
+- Auto-select spend: compute which held types would resolve the current stall; both resolve
+  → offer 1-for-2 (conserve overpay); only one resolves → offer that one; none resolve → no
+  offer. Never a which-boost picker. The offer names the type being spent.
+- Reward model: each type owns a criteria pool (may overlap); a criterion shared by both
+  types picks the awarded type via a configurable distribution variable (default 50/50); MVP
+  both types share the existing D-24 criteria.
+- On-screen: per-player inventory shows counts **per type**, not one undifferentiated number;
+  the award announcement **names the type** granted.
+
+**Acceptance criteria** (moved from M6's original numbering — criteria 4, 7, 9, plus the
+type-aware framing of 2, 5, and 17):
+- Over many awards, the mix of both types roughly matches the configured distribution
+  (default ~50/50) — not always the same type.
+- **1-for-2 works:** with a rack like {3,7,8,9} and a roll of 3+3 that stalls under strict
+  rules, spending a 1-for-2 lets the player play a single 3 and close the {3}.
+- **Auto-select conserves overpay:** on a stall where both a held overpay and a held 1-for-2
+  would resolve it, the game offers to spend the 1-for-2, and the overpay count is unchanged
+  after.
+- Award announcements and the spend offer both name which type is involved.
+- Inventory display shows a count per type.
+- Switching the overpay toggle to `D` greys out the boost checkbox and suppresses prompts for
+  both types (both are redundant under `D`, same as M6's single type already is).
+
+**Stop conditions** (carried from M6): if awards flood a game so stalling never meaningfully
+happens, stop and report the observed award rate rather than silently tightening constants.
+If auto-select ever offers a boost that does not resolve the current stall, stop and report.
 
 ---
 
@@ -948,3 +1047,4 @@ though it were known:
 | D-38 | Reward model: each type owns a criteria pool (may overlap); shared-criterion awards pick a type by a configurable distribution variable (default 50/50); MVP both types share the D-24 criteria | Locked |
 | D-39 | Block-dice and any targeted / inter-player / duration boost is benched; if revived it is its own milestone with targeting/duration state and the parked open questions answered first | Locked |
 | D-40 | M4 (continuous-rotation handoff) is cut, not merely deferred: M3's tap/motion turn-card handoff feel is confirmed good in real multi-kid play, so there is no open problem left for M4 to solve; not built, not scheduled | Locked |
+| D-41 | M6 is closed at single-type (overpay-only) scope; the two-type boost expansion (D-35–D-38) is split into a new milestone M7, not started, design still pending from the orchestrator | Locked |
