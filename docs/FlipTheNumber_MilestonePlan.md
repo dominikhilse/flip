@@ -4,15 +4,19 @@
 **Audience:** a Claude Code session with no prior context. Everything needed is in this file.
 **Supersedes:** nothing. This is the first plan for this project.
 
-**Revision note (latest pass):** orientation lock removed (portrait tested fine; final
-orientation deferred to the design session); rest-to-flip debounce added as an M0-tuned
-constant with a debug slider; overpay restructured from a 3-position slider into an **A/D
-toggle + a boost checkbox** (checkbox live only while overpay = A); boost system made
-**typed** to keep future non-overpay boost types open, including under D; mid-game settings
-changes specified with a lap-boundary fairness rule and blocked/live tags; motion and
-tap-to-proceed given a mutual "at least one always live" invariant; tap-to-proceed default is
-ON in development, OFF in the final build; avatars and the Flip/Spudling character question
-recorded as open design-session items with the roster slot held open.
+**Revision note (latest pass — reconciling DECISIONS.md 2026-09-11):** M4 cut (D-40); M6 closed
+at single-type overpay scope and verified, with the two-type expansion split into a new **M7**
+(specified, not started — D-41); new **M8** dev-mode tab (D-42) and **M9** time challenge (D-43)
+added; the two-dice-force relocated to dev mode with §3.3 left unchanged; boost **earned-vs-granted**
+timing folded in (D-44); the overpay "final tile" rule generalised to **whole-rack** exact-match
+(D-45, §3.5/§3.6); the theme-flip predicate given its **last-tile carve-out** / invert-iff-overpay-
+legal framing (D-34 revised); §3.6 restructured into the LIVE single-type spec plus §3.6b (M7,
+not built); and a reconciliation-stamp process rule added (D-46).
+
+**Earlier pass:** orientation lock removed; rest-to-flip debounce as an M0-tuned constant; overpay
+restructured into an A/D toggle + boost checkbox; boost system typed; mid-game settings with
+lap-boundary fairness; motion/tap mutual invariant; avatars and Flip/Spudling recorded as design
+questions.
 
 ---
 
@@ -149,8 +153,11 @@ overpay flows fast but feels loose. The setting lets the human dial between the 
     Stalling is frequent, especially in the endgame. The rigorous feel.
   - **`D` — overpay.** A move is legal if a subset of open tiles sums to **any value ≤ the
     roll total** — the player need not consume the whole roll. Nearly eliminates stalling.
-    **Mandatory exception, established in testing: the final remaining tile must still be paid
-    exactly** — overpay may not close the last tile, or the endgame loses all tension.
+    **Mandatory exception, established in testing: a selection that would shut the whole rack
+    must be paid exactly** — overpay may not close every remaining tile at once, however many are
+    open, or the endgame loses all tension. (This generalises the earlier "final remaining tile"
+    singular wording, which had an exploit at rack sizes >1; shipped commit `f262a7d`. A strict
+    subset leaving ≥1 tile open keeps the normal overpay ≤ total rule.)
 - **Boost checkbox — available only while the toggle reads `A`.**
   - When the toggle is `A`, the boost checkbox is interactable. Checked = the game runs the
     **boost mode** (strict base play plus earned overpay boosts, §3.6).
@@ -164,108 +171,114 @@ overpay flows fast but feels loose. The setting lets the human dial between the 
 MVP boost types are redundant under `D`. Future boost *types* whose effect is not redundant
 under `D` are not precluded (§3.6).
 
-**Note for M6 acceptance wording:** "select mode B" means "set the overpay toggle to `A` and
-check the boost checkbox." There is no `B` button; the boost mode is an emergent state of two
-controls.
+**Naming note:** there is no `B` button. "Boost mode" means "overpay toggle = `A` with the boost
+checkbox on" — an emergent state of two controls. The single-type overpay boost of this mode is
+M6 (live); the two-type expansion is M7.
 
-### 3.6 Boost system (strict base + earned boosts) — SPECIFIED
+### 3.6 Boost system (strict base + earned boosts)
 The boost mode is strict base play (exact-sum, as `A`) plus earned, spendable **boosts** that
-let a struggling player rescue a stall. It is the middle ground between A's friction and D's
-looseness, and the comeback mechanic that keeps trailing kids in the game. Built in M6.
-Reached via the overpay toggle = `A` with the boost checkbox on (§3.5).
+let a struggling player rescue a stall. It is the comeback mechanic that keeps trailing kids in
+the game. Reached via the overpay toggle = `A` with the boost checkbox on (§3.5).
 
-**The system is a typed inventory with a pluggable reward model — this is the architecture.**
-- A boost has a **type.** The MVP ships **two types** (both stall-rescues, both holder-spent,
-  both self-affecting — no targeting, no durations, no inter-player effects):
-  - **Overpay boost** — grants one move whose selected open tiles sum to **any value ≤ the roll
-    total** (voids *some pips* of one die).
-  - **1-for-2 boost** — grants one move that **ignores one whole die** and plays the other die
-    as a single value (voids a *whole die*). E.g. rack {3,7,8,9}, roll 3+3 (total 6) stalls
-    under strict rules; 1-for-2 lets the player play a single 3 and close the {3}.
-- A player holds a **mixed, typed inventory** — model it as typed from day one (e.g.
-  `{ overpay: n, oneForTwo: m }` or a list of typed boosts), **never a single bare integer.**
-  Adding further types later must be additive.
-- **Inventory cap: 3 boosts total across all types** (not 3 of each). A player may hold any mix
-  summing to 3 — e.g. 2 overpay + 1 one-for-two. Awards beyond 3 total are discarded (no
-  overflow store). The types compete for the same 3 slots.
-- **Both current boost types are only meaningful under strict base play (`A`)**, because `D`
-  already grants free overpay and 1-for-2 is strictly weaker than that. This is why the boost
-  checkbox is A-only (§3.5). It is a property of *these two types' effects being redundant under
-  `D`* — **not** a rule that `D` forbids boosts. A future type whose effect is not redundant
-  under `D` may be offered under `D`. **Never write "D has no boosts."**
+This section describes the **single-type overpay boost that is LIVE and VERIFIED (milestone
+M6).** The **two-type expansion** (adding the 1-for-2 boost, a typed inventory, auto-select, and
+per-type reward pools) is specified separately in **§3.6b and built in M7 — it is NOT yet built.**
+What ships today is the single overpay type only.
 
-**Spending — offered, auto-selected type, one per turn:**
-- **One boost per turn. No chaining.**
-- **Never closes the final remaining tile.** The last-tile-exact rule holds absolutely for any
-  boost.
-- **Offered, never force-spent.** When a player would otherwise stall and holds ≥1 boost that
-  would *actually resolve this stall*, the game shows a single **spend-or-stay** choice (as in
-  the current build: "Spend … / Stay stalled"). Declining leaves them stalled, inventory
-  retained.
-- **The type is auto-selected, not chosen by the player.** There is never a which-boost picker;
-  there is only ever one usable option plus "stay stalled." Selection rule:
-  - Compute which of the player's held boost types would resolve the current stall.
-  - **If both an overpay and a 1-for-2 would resolve it, auto-select the 1-for-2** — the weaker,
-    less versatile boost — to **conserve the more powerful overpay** for a stall only it can
-    rescue.
-  - If only one type would resolve it, select that one.
-  - If none would resolve it (or the player holds none), **no boost is offered** and the player
-    stalls normally.
-  - **This is provably total:** overpay's reachable set (any subset ≤ roll total) is a superset
-    of 1-for-2's (a single die's value is always ≤ the two-die total), so **whenever 1-for-2
-    resolves a stall, overpay resolves it too.** The three live branches are therefore: both
-    resolve → 1-for-2; only overpay resolves → overpay; overpay doesn't resolve → no offer.
-- **The offer names the boost being spent** ("Spend a 1-for-2 boost?" / "Spend an overpay
-  boost?") so the player sees which of their inventory is going — the visibility rule below.
-- **Accepted by-design edge case:** a player who could reach a marginally better rack state by
-  spending overpay instead of the auto-selected 1-for-2 does not get to choose. Conservation of
-  the stronger boost wins; locked.
+**The overpay boost (LIVE — M6):**
+- One overpay boost grants **one overpay move** — flip a subset of open tiles summing to **any
+  value ≤ the roll total** (voids some pips), spent to resolve a turn that would otherwise stall.
+- The holding is modelled **typed even now** — `boosts: { overpay: n }` — so the M7 expansion is
+  additive, not a schema change. **Cap: 3 total.**
+- The overpay boost is only meaningful under strict base play (`A`), because `D` already grants
+  free overpay. This is why the boost checkbox is A-only (§3.5). It is a property of *this type's
+  effect being redundant under `D`* — **not** a rule that `D` forbids boosts. **Never write "D has
+  no boosts."**
 
-**Boost lifetime:**
-- Held **in the in-memory roster**, stacking across replays **within one app session only.** A
-  fresh app launch starts everyone at zero. No cross-session persistence, no stored identity.
+**Spending (LIVE — M6):**
+- **One boost per turn, no chaining.**
+- **Offered, never force-spent.** When a player would otherwise stall and holds ≥1 overpay boost
+  that would actually resolve this stall, the game shows a single **spend-or-stay** choice ("Spend
+  a boost / Stay stalled"). Declining leaves them stalled, boost retained.
+- **May not close the whole rack** (see the whole-rack rule below).
 
-**Reward model — per-boost criteria pools, random tie-break:**
-- **Each boost type owns its own pool of award criteria.** Pools may overlap fully, partly, or
-  not at all.
-- **When a criterion fires that is shared by more than one boost type, one of those types is
-  awarded at random.** The distribution is a **single configurable variable in code** (default
-  **50/50**; any split is allowed and valid — e.g. weighting toward the weaker 1-for-2 to keep
-  overpay scarce is a legitimate later tune).
-- **MVP configuration:** both types (overpay and 1-for-2) share the **same** criteria set — the
-  existing overpay criteria below. So in the MVP **every boost award is a 50/50 roll between the
-  two types.** The per-type-pool machinery is built but not yet exercised with divergent
-  criteria; that divergence is a later tune, not MVP work.
+**Whole-rack exact-match rule (LIVE — M6, shipped commit `f262a7d`).** Overpay may **not close a
+selection that would shut the entire rack.** The exact-match requirement applies to *any* selection
+covering every currently-open tile, however many that is — not only when a single tile remains. A
+strict subset (leaving ≥1 tile open) keeps the normal overpay ≤ total rule; an exact whole-rack sum
+still legitimately finishes the game. This supersedes the earlier "final remaining tile" (singular)
+wording, which had an exploit: with 2+ tiles open, one big overpaid roll could close them all at
+once, losing the endgame tension the rule exists to protect. The UI shows "Closing the whole rack
+needs an exact match — exclude a tile to overpay instead." when a selection hits this case.
 
-**Award criteria (shared by both types in the MVP) — a boost is awarded when either fires:**
+**Boost lifetime (LIVE — M6):** held in the in-memory roster, stacking across replays **within one
+app session only.** Fresh app launch → everyone at zero. No cross-session persistence, no stored
+identity.
+
+**Award criteria (LIVE — M6) — a boost is awarded when either fires:**
 1. **Dry streak.** The player has **not had three clean (legally resolvable) rolls within their
-   last 5 rolls.** Evaluated per player on each of their rolls, over their own rolling window of
-   5. (A "clean roll" is one where a legal exact move existed, boost or not.)
+   last 5 rolls.** Evaluated per player on each of their rolls, over their own rolling window of 5.
+   (A "clean roll" is one where a legal exact move existed, boost or not.)
 2. **Trailing at a finish.** The moment any player shuts their rack, the player with the **most
    tiles still open** is awarded a boost. Ties: all tied players get one. Reads remaining-tile
    counts internally, permitted by §3.4.
 
-When a criterion fires, apply the reward model above to decide *which type* is granted (MVP:
-50/50), then apply the cap (3 total; discard if full).
+**Earned vs granted timing (LIVE — M6).** These two moments are deliberately distinct:
+- **Earned** = the instant an award criterion fires (which for a dry streak is the end of the
+  earning player's own turn).
+- **Granted** = the moment the credit is delivered into the player's spendable inventory and
+  **announced** — deliberately the **start of that player's next turn**, the first moment it can
+  actually be used. Announcing at the earned moment was confusing: the player was told "boost
+  earned" with no way to spend it until their next turn anyway.
+- §3.6's visibility rule ("announced when granted") refers to the **granted** moment. The live
+  behaviour — bank a credit when earned, deliver + announce at the start of that player's next turn,
+  capped at the max held, silently dropped if the game has left boost mode before delivery — is
+  correct and needs no change.
 
-**No eligibility floor.** The leader is **not** excluded from earning boosts. If the
-front-runner becomes eligible it means even they are stalling, so the game is dragging — a boost
-there speeds it toward an end. Do not add a "leader cannot earn boosts" rule.
+**No eligibility floor (LIVE — M6).** The leader is **not** excluded from earning boosts. If the
+front-runner is stalling, the game is dragging — a boost there speeds it toward an end.
 
-**No re-earn on spend.** A player is **not** awarded a boost on the same turn they spend one.
+**No re-earn on spend (LIVE — M6).** A player is not awarded a boost on the same turn they spend one.
 
-**Visibility (mandatory):**
-- Each player's **typed inventory** is visible on their own screen — how many of each type, not
-  a single undifferentiated count. (The current "Overpay boosts: N" counter must become
-  type-aware; the exact visual is a design-session item.)
-- **Every boost award is announced on screen** at the moment it is granted, **naming the type
-  awarded** (the 50/50 outcome is a rule-affecting event the player must see).
-- The spend offer names the type being spent (above).
+**Visibility (LIVE — M6):** each player's boost count is visible on their own screen; every award is
+announced on screen at the **granted** moment.
 
-**Still tunable after playtest (not blocking M6):** the dry-streak ratio; whether condition 2
-fires mid-game rather than only at a finish; the award-type distribution variable; and,
-eventually, giving the two types divergent criteria pools. All are labelled starting points in
-`config.js`.
+**Tunable after playtest (LIVE — M6):** dry-streak ratio; whether criterion 2 fires mid-game rather
+than only at a finish. Labelled starting points in `config.js`.
+
+### 3.6b Two-type boost expansion — SPECIFIED, NOT YET BUILT (M7)
+This expansion is **fully specified but deliberately not built** — see the M7 milestone and the
+DECISIONS.md note. Do **not** start it unprompted; the orchestrator finishes the design pass first.
+Everything in §3.6 (LIVE) remains as the base; M7 layers the following on top.
+
+**Second boost type — 1-for-2.** Grants one move that **ignores one whole die** and plays the other
+die as a single value (voids a *whole die*, vs overpay's *some pips*). E.g. rack {3,7,8,9}, roll 3+3
+(total 6) stalls under strict rules; 1-for-2 lets the player play a single 3 and close the {3}. Also
+a stall-rescue, holder-spent, self-affecting — no targeting, no durations, no inter-player effects.
+
+**Typed inventory.** `{ overpay: n, oneForTwo: m }` (the LIVE build already models it typed). **Cap
+3 total across both types** (not 3 each); the types compete for the same 3 slots. Both MVP types are
+A-only (redundant under `D`); a future type not redundant under `D` may be offered under `D`.
+
+**Auto-select spend (no picker).** At a stall, compute which held types would resolve *this* stall.
+If both an overpay and a 1-for-2 would, auto-select the **1-for-2** (the weaker, less versatile
+boost) to **conserve overpay**. If only one would, select it. If none would, no offer. This is
+provably total: overpay's reachable set (subset ≤ total) is a superset of 1-for-2's (a single die's
+value is always ≤ the two-die total), so whenever 1-for-2 resolves a stall, overpay does too — the
+branches are: both → 1-for-2; only-overpay → overpay; neither → no offer. Still a single
+spend-or-stay choice; the offer **names** the auto-selected type. Accepted by-design edge case: a
+player who could reach a marginally better rack state by spending overpay instead does not get to
+choose — conservation of the stronger boost wins.
+
+**Reward model — per-type criteria pools.** Each type owns its own criteria pool; pools may overlap.
+When a fired criterion is shared by more than one type, the awarded type is chosen by a
+**configurable distribution variable** (default 50/50; any split allowed). MVP config: both types
+share the §3.6 criteria, so every award is a 50/50 roll. The per-type-pool machinery exists but is
+not exercised with divergent criteria until later.
+
+**Visibility (M7).** The inventory display becomes **type-aware** (how many of each type, not one
+count — the current "Overpay boosts: N" counter must change), and each award announcement **names the
+type** awarded (the 50/50 outcome is a rule-affecting event the player must see).
 
 ### 3.7 Dice
 - Standard uniform random 1–6 per die. Use `Math.random()`. No seeding, no determinism
@@ -344,20 +357,23 @@ that killed the cut mode C). When overpay is active the selected theme flips to 
 (light→dark or dark→light); when overpay is not active it shows the user's selected theme.
 
 **The signal has two triggers with two different lifetimes — build both:**
-- **Mode `D` → sustained inversion.** While overpay-`D` is the active ruleset, the theme stays
-  inverted for the **whole duration `D` is on** (respecting the lap-boundary timing of the
-  overpay setting, §3.10). This is an ambient "you are playing in overpay mode" cue that persists
-  between rolls — it is a **mode-state** signal, not a per-move flash. Turning `D` off (at the
-  lap boundary) reverts the theme.
+- **Mode `D` → sustained inversion, but only while overpay is actually available to the current
+  player.** While overpay-`D` is the active ruleset, the theme stays inverted (respecting the
+  lap-boundary timing, §3.10) — **except** it momentarily drops for the turns where the current
+  player is down to **one open tile**, because there overpay cannot apply (the whole-rack
+  exact-match rule, §3.5/§3.6), and a sustained inversion would falsely signal "you can overpay
+  now." It returns once they have more than one tile open again. Shipped commit `077dc7d`. This is
+  an ambient "you are playing in overpay mode" cue, not a per-move flash.
 - **Boost spend → momentary inversion.** A boost is a per-move event, not a mode, so its signal
   is momentary: the theme inverts **for the duration of the overpay move a boost pays for**, then
   reverts. It does not persist, because nothing is "in overpay" between boost-spends.
 
 **Do not** invert the theme merely because a given roll *happens* to be overpay-resolvable, or
-during the stall/boost-offer decision before a boost is actually spent — the signal tracks
-"overpay rules are in force" (mode `D` on, or a boost being spent now), not per-roll
-resolvability. The single predicate is: overpay-`D` active **OR** a boost overpay move in
-progress.
+during the stall/boost-offer decision before a boost is actually spent. The clean framing: **the
+theme is inverted exactly when an overpay move is currently legal for the current player.** That
+makes the last-tile carve-out fall out automatically (overpay is illegal at one tile open), rather
+than being a special case. The predicate is: **(mode `D` active AND the current player has more
+than one tile open) OR a boost overpay move in progress.**
 
 **Deliberately theme-independent surfaces** (keep their own fixed high-contrast look, do not
 flip): the turn card (carries the player's colour), the launch/title screen (fixed dark), and
@@ -588,8 +604,9 @@ rules.
 - Placement modes per §3.4, defaulting to `winner-only`.
 - Rack size setting, 9 or 12, defaulting to 9.
 - **Overpay control per §3.5: an A/D toggle plus a boost checkbox.** Default toggle `A`. When
-  `D`, a move is legal if selected tiles sum to ≤ the roll total, except the final tile which
-  must be exact. The **boost checkbox** is present and interactable only while the toggle is
+  `D`, a move is legal if selected tiles sum to ≤ the roll total, except a selection that would
+  shut the whole rack, which must be exact (§3.5/D-45). The **boost checkbox** is present and
+  interactable only while the toggle is
   `A`; when the toggle is `D` the checkbox greys out and its value is ignored. In M2 the boost
   checkbox is **built and persisted but its checked behaviour is inert** — the boost mode
   itself lands in M6. (Do not build a 3-position slider; there is no `B` button — see §3.5.)
@@ -624,8 +641,8 @@ milestone.
 8. Switching the rack size to 12 (before a game starts) gives every player twelve tiles and
    the single-die option still unlocks correctly.
 9. With overpay set to `D`, I can end a turn using fewer points than I rolled (e.g. roll 11,
-   flip tiles summing to 9) — **except** I cannot close my final remaining tile unless the
-   roll can pay it exactly.
+   flip tiles summing to 9) — **except** I cannot close a selection that would shut my whole rack
+   unless the roll pays it exactly.
 10. With overpay set to `A`, the above is rejected exactly as in M1 — a move must sum to the
     roll total.
 11. The boost checkbox is interactable when the toggle is `A` and greys out when I switch the
@@ -698,38 +715,30 @@ stops.
 
 ---
 
-### M4 — Continuous-rotation handoff (spike, cuttable) — **CUT (D-40)**
+### M4 — Continuous-rotation handoff (spike) — CUT
 
-**Status: CUT. Not built, not scheduled, do not revisit without a new decision to do so.**
-M0's orientation-during-lift finding (readable and meaningful — FINDINGS.md criterion 6) kept
-this spike *viable*, but it was never attempted: the M3 tap/motion turn-card handoff was
-tested in real multi-kid play and the feel is good as shipped. There is no open problem this
-milestone would fix, so there is nothing to spend the build-and-verify cost on. See D-40.
-
-The original scope is kept below for the record only — **none of it is built:**
+**Status: CUT (D-40).** This was a cuttable spike per its own text. M0's orientation-during-lift
+finding kept it technically viable, but the feature (skip the turn card on a detected 180°
+rotate-and-set-down) was never attempted and its acceptance criteria were never run on-device.
+The M3 tap/motion turn-card handoff, as shipped, feels fine in real play — there is no open
+problem M4 would solve. **Do not revisit without a new decision to do so.** Original spec kept
+below for the record only.
 
 <details>
-<summary>Original goal, scope, and acceptance criteria (historical — cut before attempting)</summary>
+<summary>Original M4 spec (cut — historical record)</summary>
 
-**Goal.** Find out whether the phone can be picked up, turned 180°, and set down again with
-the game staying in play — no turn card at all.
+**Goal.** Find out whether the phone can be picked up, turned 180°, and set down again with the
+game staying in play — no turn card at all.
 
-**Scope.**
-- During a lift, read device orientation (§4.3) and latch the last valid landscape
-  orientation at the moment the phone returns to flat.
-- If the latched orientation differs from the previous one, treat the set-down as a
-  completed handoff and advance the turn without showing a turn card.
+**Scope.** During a lift, read device orientation (§4.3) and latch the last valid landscape
+orientation at the moment the phone returns to flat. If the latched orientation differs from the
+previous one, treat the set-down as a completed handoff and advance the turn without a turn card.
 
-**Acceptance criteria:**
-1. Picking the phone up, rotating it 180°, and setting it down advances to the next
-   player's rack, correctly oriented, without a turn card.
-2. Picking the phone up and setting it down **without** rotating does not advance the turn.
-3. Ten consecutive handoffs performed at natural speed give ten correct results.
+**Acceptance criteria.** (1) Picking the phone up, rotating 180°, and setting it down advances to
+the next player's rack without a turn card. (2) Picking up and setting down without rotating does
+not advance. (3) Ten consecutive handoffs at natural speed give ten correct results.
 
-**Stop conditions.** If criterion 3 cannot be met, **cut the milestone and report.** This
-is explicitly an enhancement. A wrong-player-advance is a far worse outcome than a turn
-card.
-
+**Stop conditions.** If criterion 3 cannot be met, cut and report.
 </details>
 
 ---
@@ -743,201 +752,186 @@ Do not create work here.
 
 ---
 
-### M6 — Boost system (strict + earned overpay boost) — **CLOSED at single-type scope (D-41)**
+### M6 — Boost system, single-type overpay — CLOSED (verified)
 
-**Status: CLOSED.** M6 shipped and is complete as the **single-type** boost system (the
-overpay boost only) — the scope it had before the plan revision that added the two-type
-design (D-35–D-38) below. That expansion is real, still wanted, and **not built** — it is
-its own milestone now, **M7**, not started, design still pending from the orchestrator (see
-`docs/DECISIONS.md`). Splitting it out is what lets M6 close: nothing currently shipped
-needs the second boost type to be correct or complete on its own terms.
+**Status: CLOSED at single-type scope, VERIFIED in play (D-41).** What shipped: the strict-base
+boost mode reached via overpay toggle = `A` + boost checkbox on, with the **single overpay boost
+type** (`boosts: { overpay: n }`), the two award criteria, earned/granted timing, the whole-rack
+exact-match rule, and the offered spend-or-stay. This matches §3.6 (LIVE). The **two-type
+expansion is M7, not part of M6.** Nothing shipped needs the second type to be correct on its own
+terms, so M6 is complete.
 
-**Shipped, verified scope (this is what "M6 done" means now):**
-- Boost checkbox (built inert in M2) is functional whenever overpay = `A`; greys out and its
-  value is ignored the moment the toggle reads `D`.
-- Single boost type, `{ overpay: n }` — typed as an object from day one (D-35's typing intent
-  honoured even though only one type exists yet), capped at **3 held**, in-memory only, lost
-  on reload.
-- Award criteria (D-24): dry streak (fewer than 3 clean rolls in the last 5) and
-  trailing-at-finish (most open tiles the moment any other player shuts, ties all awarded).
-  No re-earn on the turn a boost is spent.
-- Spend is **offered, never forced** (spend-or-stay), and only when holding ≥1 boost would
-  *actually resolve* the current stall — never a dead offer. One spend per turn, no chaining,
-  never closes the final remaining tile (and, per the whole-rack generalization below, never
-  closes the whole rack imprecisely even across several tiles).
-- **Award timing (reconciles with §3.6's "announced at the moment granted"):** a boost is
-  *earned* the instant its condition fires, but *granted* — credited to the spendable
-  inventory and announced on screen — at the start of the earning player's next turn, the
-  first moment it's actually usable. Multiple credits can stack before delivery; a credit is
-  silently dropped if the game has left boost mode before its delivery turn arrives. See
-  `docs/DECISIONS.md`, 2026-09-11.
-- **Overpay resolution generalized beyond the original wording:** the exact-match exception
-  applies to any selection that would shut the whole rack, not only a literal single
-  remaining tile — closing several tiles at once via a big overpaid roll is blocked the same
-  way, with an on-screen message telling the player to exclude a tile. See
-  `docs/DECISIONS.md`, 2026-09-11.
-- Boost count visible on the player's own screen; replaced with an explicit "No boosts for
-  the last number" note while down to one tile, rather than showing a count that implies a
-  boost could help there.
-
-**Verified:** via temporary debug hooks and full automated playthroughs across this session
-(zero console errors), plus real playtesting that surfaced and closed the two fixes above.
-
-The original goal/scope/acceptance-criteria text is kept below for the historical record —
-**the two-type-specific items in it (criteria 4, 7, 9, and the typed-inventory/auto-select/
-reward-model scope bullets) now belong to M7, not M6:**
+**What shipped (all live and verified):**
+- Boost checkbox functional while overpay = `A`; greys out under `D`.
+- Single overpay boost: subset ≤ roll total, spent to rescue a stall; cap 3; in-memory,
+  session-only.
+- Whole-rack exact-match rule (commit `f262a7d`) — overpay cannot close every open tile at once.
+- Award criteria: dry streak + trailing-at-finish. Earned-vs-granted timing (bank on earn,
+  deliver + announce at the start of the earning player's next turn).
+- No eligibility floor; no re-earn on spend; per-player boost count shown; award announced when
+  granted.
 
 <details>
-<summary>Original M6 text, as written before this split (historical)</summary>
+<summary>Original M6 spec, written for the two-type system before the split (now M7 — historical)</summary>
 
-**Goal.** The boost checkbox (available while overpay = `A`) becomes functional: strict base
-rules with a **two-type earned boost inventory** (overpay + 1-for-2), per §3.6. There is no `B`
-button — reached by toggle `A` + boost checkbox on (§3.5).
-
-**Sequencing note.** M6 comes *after* real multi-kid sessions on `A` and `D`, so the criteria
-and award distribution can be tuned against observed stall frequency. Build the §3.6 values as
-labelled starting points; expect to adjust. Sequencing preference, not a hard block.
-
-**Scope.**
-- Make the boost checkbox (built inert in M2) functional while overpay = `A`.
-- **Typed inventory** per player (§3.6) — e.g. `{ overpay: n, oneForTwo: m }` or a typed list,
-  **never a bare integer.** Capped at **3 total across both types** (mixed holdings allowed).
-  In-memory, lost on reload; no persistence, no identity, no store.
-- **Two boost effects:** overpay (subset ≤ roll total, voids some pips) and 1-for-2 (ignore one
-  whole die, play the other as a single value). Both: one per turn, no chaining, never close the
-  final tile.
-- **Auto-select spend (§3.6), no which-boost picker.** At a stall, compute which held types would
-  resolve *this* stall; if both overpay and 1-for-2 would, offer the **1-for-2** (conserve
-  overpay); if only one would, offer that; if none, no offer. Single spend-or-stay choice; the
-  offer **names** the type being spent.
-- **Reward model (§3.6):** each type owns a criteria pool; when a fired criterion is shared,
-  pick the awarded type by a **configurable distribution variable (default 50/50)**. MVP: both
-  types share the existing criteria (dry streak + trailing-at-finish), so every award is a 50/50
-  roll. Apply the 3-total cap after selection.
-- The "no re-earn on the turn a boost is spent" suppression.
-- On-screen: per-player **typed inventory** visible (counts per type, not one number); a distinct
-  announcement at each award **naming the type**; the spend offer names the type.
-- All tunable constants (window size, streak count, award distribution) named in `config.js` with
-  a "starting value, tune after playtest" comment.
-
-**Out of scope.** Any purchase, currency, or store. Cross-session persistence. The **block-dice**
-boost and any targeted / inter-player / duration-based boost (benched — §6, its own future
-milestone with its own targeting/duration system). Changes to `A`/`D` rules, placement, or
-motion. Reason: M6 adds the self-affecting boost inventory; targeted effects are a separate build.
-
-**Do-not-touch on entry.** The `A` and `D` rules, placement logic, and the motion/tap paths must
-be unchanged. The roster gains only the typed in-memory inventory.
-
-**Acceptance criteria — checkable by playing with overpay `A` and the boost checkbox on:**
-1. With overpay `A` and boost checkbox on, the game starts strict; a player with zero boosts who
-   cannot make an exact move stalls exactly as in plain `A`.
-2. When I stall three-plus times across my last five rolls, I am awarded a boost; the award is
-   announced on screen and **names which type** (overpay or 1-for-2) I received.
-3. When another player shuts, the remaining player with the most open tiles is awarded a boost
-   right then (ties: all get one), announced with its type.
-4. Over many awards, I receive a mix of both types roughly in line with the configured
-   distribution (default ~50/50) — not always the same type.
-5. My inventory shows **how many of each type** I hold, not a single undifferentiated count.
-6. I never hold more than **3 boosts total** across both types, however many I earn.
-7. **1-for-2 works:** with a rack like {3,7,8,9} and a roll of 3+3 that stalls under strict
-   rules, spending a 1-for-2 lets me play a single 3 and close the {3}.
-8. **Overpay works:** on a stall where a smaller subset than my roll total would close tiles,
-   spending an overpay lets me flip that subset — except I still cannot close my final tile
-   unless the roll pays it exactly.
-9. **Auto-select conserves overpay:** on a stall where *both* an overpay and a 1-for-2 I hold
-   would resolve it, the game offers to spend the **1-for-2**, and my overpay count is unchanged
-   after.
-10. **Only-overpay case:** on a stall only overpay can resolve, the game offers overpay.
-11. **No-op case:** on a stall neither held boost can resolve, no spend is offered and I stall.
-12. I get a single spend-or-stay choice (never a two-boost picker or dropdown); declining leaves
-    me stalled with my inventory intact.
-13. I can never spend two boosts on the same turn.
-14. On a turn where I spend a boost, I am not also awarded one.
-15. My inventory resets to empty for everyone after an app reload.
-16. The leader is able to earn boosts when the front-runner starts stalling.
-17. Switching the overpay toggle to `D` greys out the boost checkbox and no boost prompts appear
-    (both MVP types are redundant under `D`).
-
-**Stop conditions.** If awards flood a game so stalling never meaningfully happens, **stop and
-report the observed award rate** rather than silently tightening constants. If the auto-select
-rule ever offers a boost that does **not** resolve the current stall, **stop and report** — the
-usable-here filter is wrong and must be fixed, not worked around.
-
+The two-type scope (typed `{overpay, oneForTwo}` inventory, 1-for-2 effect, auto-select spend,
+per-type reward pools, 17 acceptance criteria) that briefly lived here has moved to **M7** intact.
+See M7 below; not duplicated.
 </details>
 
 ---
 
-### M7 — Two-type boost system (overpay + 1-for-2)
+### M7 — Two-type boost expansion — SPECIFIED, NOT STARTED
 
-**Status: NOT STARTED.** Split out of M6 so M6 could close (D-41). **Design not yet finished
-by the orchestrator** — per `docs/DECISIONS.md` (2026-09-11), do not start building this
-without an explicit go-ahead; the two-type design (D-35–D-38) is written into §3.6 but has
-not been prepped for a build session the way M6's original single-type scope was.
+**Status: SPECIFIED, NOT STARTED. Do not begin without the orchestrator's design pass finishing
+first (D-41, and the DECISIONS.md note).** The live build is single-type overpay (M6); M7 layers
+the second type and the typed machinery on top, per §3.6b.
 
-**Goal.** Extend M6's shipped single-type boost mode into the full two-type inventory per
-§3.6/D-35–D-38: a second boost type (1-for-2 — ignores one whole die, plays the other as a
-single value), a typed `{ overpay: n, oneForTwo: m }` inventory, auto-selected spend that
-conserves the stronger overpay type, and a per-type reward-model split (MVP: 50/50, shared
-criteria).
+**Goal.** Add the **1-for-2 boost type** and the typed inventory / auto-select / per-type reward
+model of §3.6b, on top of the verified single-type M6.
 
-**Do-not-touch on entry.** Everything M6 shipped (the overpay boost's own logic, its award
-timing, the whole-rack-close generalization) stays as-is; this milestone only adds the second
-type and the machinery to arbitrate between two held types. The `A`/`D` rules, placement
-logic, and motion/tap paths are untouched, same as M6's own constraint.
+**Sequencing note.** Comes after real sessions on `A`, `D`, and single-type boosts, so criteria
+and award distribution tune against observed stall frequency. Values in §3.6b are labelled
+starting points.
 
-**Scope** (moved from M6's original text above, unchanged in substance):
-- Typed inventory, `{ overpay: n, oneForTwo: m }` or equivalent, cap raised to **3 total
-  across both types** (not 3 of each) — `boostMaxHeld`'s cap check in code is currently
-  single-type and will need reworking to sum across types.
-- The 1-for-2 effect itself: ignore one whole die, play the other as a single value.
-- Auto-select spend: compute which held types would resolve the current stall; both resolve
-  → offer 1-for-2 (conserve overpay); only one resolves → offer that one; none resolve → no
-  offer. Never a which-boost picker. The offer names the type being spent.
-- Reward model: each type owns a criteria pool (may overlap); a criterion shared by both
-  types picks the awarded type via a configurable distribution variable (default 50/50); MVP
-  both types share the existing D-24 criteria.
-- On-screen: per-player inventory shows counts **per type**, not one undifferentiated number;
-  the award announcement **names the type** granted.
+**Scope.**
+- Add the **1-for-2 effect** (ignore one whole die, play the other as a single value) alongside
+  overpay in the already-typed inventory. Cap stays **3 total across both types**.
+- **Auto-select spend (§3.6b), no picker.** Both resolve → offer 1-for-2 (conserve overpay); only
+  one resolves → offer it; neither → no offer. Single spend-or-stay; offer names the type.
+- **Per-type reward model (§3.6b):** each type owns a criteria pool; shared-criterion awards pick
+  the type by a configurable distribution variable (default 50/50). MVP: both share the M6
+  criteria, so every award is a 50/50 roll.
+- Inventory display becomes **type-aware** (counts per type, not one number — the "Overpay
+  boosts: N" counter changes); award announcement **names the type**.
 
-**Acceptance criteria** (moved from M6's original numbering — criteria 4, 7, 9, plus the
-type-aware framing of 2, 5, and 17):
-- Over many awards, the mix of both types roughly matches the configured distribution
-  (default ~50/50) — not always the same type.
-- **1-for-2 works:** with a rack like {3,7,8,9} and a roll of 3+3 that stalls under strict
-  rules, spending a 1-for-2 lets the player play a single 3 and close the {3}.
-- **Auto-select conserves overpay:** on a stall where both a held overpay and a held 1-for-2
-  would resolve it, the game offers to spend the 1-for-2, and the overpay count is unchanged
-  after.
-- Award announcements and the spend offer both name which type is involved.
-- Inventory display shows a count per type.
-- Switching the overpay toggle to `D` greys out the boost checkbox and suppresses prompts for
-  both types (both are redundant under `D`, same as M6's single type already is).
+**Out of scope.** Any purchase/currency/store. Cross-session persistence. The **block-dice** boost
+and any targeted / inter-player / duration boost (benched, §6). Changes to `A`/`D` rules,
+placement, motion.
 
-**Stop conditions** (carried from M6): if awards flood a game so stalling never meaningfully
-happens, stop and report the observed award rate rather than silently tightening constants.
-If auto-select ever offers a boost that does not resolve the current stall, stop and report.
+**Do-not-touch on entry.** The verified M6 single-type behaviour, `A`/`D` rules, placement, and
+motion/tap paths.
+
+**Acceptance criteria — checkable by playing with overpay `A` and the boost checkbox on:**
+1. I receive a mix of both types over many awards, roughly the configured distribution (~50/50).
+2. My inventory shows **how many of each type**, not one count.
+3. I never hold more than **3 boosts total** across both types.
+4. **1-for-2 works:** rack {3,7,8,9}, roll 3+3 stalls under strict rules; spending a 1-for-2 lets
+   me play a single 3 and close the {3}.
+5. **Auto-select conserves overpay:** on a stall both would resolve, the game offers the 1-for-2
+   and my overpay count is unchanged.
+6. **Only-overpay case:** on a stall only overpay resolves, overpay is offered.
+7. **No-op case:** on a stall neither held boost resolves, no spend is offered and I stall.
+8. Single spend-or-stay choice (never a two-boost picker); the offer names the type.
+9. Neither boost can close a selection that would shut the whole rack (the M6 whole-rack rule
+   still holds for both types).
+
+**Stop conditions.** If the auto-select rule ever offers a boost that does **not** resolve the
+current stall, **stop and report** — the usable-here filter is wrong. If awards flood the game,
+**stop and report the rate** rather than silently tightening constants.
+
+---
+
+### M8 — Dev-mode tab (development surface) — SPECIFIED
+
+**Goal.** A separate **dev-mode tab** in the settings menu that holds exploratory, debug, and
+testable controls, keeping the **production settings surface clean and shaped toward the final
+product.** The split is the container several in-flight experiments need.
+
+**Why.** Playtest-driven experiments (the two-dice force, the time challenge, future probes) should
+be reachable during development without polluting the settings a real user sees. §3.3's "no
+production settings toggle for the single-die rule" is satisfied by putting the two-dice force
+*here*, not on the main surface.
+
+**Scope.**
+- A dev-mode tab/section in settings, visually and structurally separate from the production
+  settings. How it is gated (always visible in dev, hidden/flagged for production) is a build
+  decision — the requirement is only that production and exploratory controls are **separated**.
+- Relocate the **two-dice force** control here: default remains **one die** (§3.3 unchanged, the
+  single-die endgame rule is untouched); this control simply lets a tester force two dice mid-game
+  to exercise that path. It is a dev instrument, not a gameplay rule, and does not decide any
+  player's endgame — the mandatory single-die availability (tile-closing that requires one die)
+  still holds unconditionally.
+- Host the **time challenge** (M9) as its first exploratory feature.
+
+**Out of scope.** Deciding the final production settings layout (design-session territory). Any
+production-facing behaviour change — this is purely a container and relocation.
+
+**Acceptance criteria:**
+1. The settings menu has a clearly separate dev-mode area; production settings do not show the
+   exploratory controls.
+2. The two-dice force lives in dev mode; the main settings surface contains no single-die/two-dice
+   toggle (§3.3 preserved).
+3. Default play is still one die at the endgame; forcing two dice from dev mode exercises the
+   two-dice path and can be turned off again.
+
+**Stop conditions.** If separating the surfaces would require touching the `A`/`D`/boost/placement
+rules, **stop and report** — the dev tab is a container, not a rules change.
+
+---
+
+### M9 — Time challenge (dev-mode feature) — SPECIFIED
+
+**Goal.** A quick, cuttable time-cap feature to stop games dragging on, built to try the idea fast
+and react to real feedback. Lives in the M8 dev-mode surface.
+
+**Origin and intent.** Games can drag, especially two-dice endgames that leave awkward low tiles
+(e.g. {1,2} needing two dice takes forever). The time challenge is an **anti-drag circuit-breaker**:
+it ends a game that won't end, gracefully, **without declaring a false winner.**
+
+**Scope.**
+- A dev-mode option: a **time picker** (smallest unit 15 s) plus a **Set** button to activate the
+  challenge for the group.
+- A **timer on the in-game HUD** (new persistent UI element) counting down the set time.
+- The timer **pauses while a player/turn screen is showing and resumes on the active rack** — it
+  measures *play* time, not pass-the-phone time. The paused state must be **visibly** paused
+  (greyed/struck), so a tester can see it working.
+- On timeout: the game **ends immediately** with a deliberate **no-ranking** screen — "Time's up!
+  Better luck finishing next time!" — showing **no placement table.** The absence of a ranking is
+  **intentional**, not a stub: nobody shut their box, so there is no winner, and leaving the "so
+  who won?" question open is the design probe (it surfaces whether the family wants tiles-left
+  tracking, which is a real future design input). **Do not add a ranking table to this screen.**
+
+**Out of scope.** Any ranking or scoring on the timeout screen (deliberately — see above). Random
+placeholder rankings (rejected: a random table undercuts the very tension being tested and teaches
+testers the race is meaningless). Making the timer a production feature yet (it is exploratory).
+
+**Acceptance criteria:**
+1. From dev mode I can set a time (15 s increments) and Set it; the HUD shows a counting-down timer.
+2. The timer visibly pauses on a turn/player screen and resumes on the rack.
+3. When it reaches zero the game ends at once with the "Time's up" message and **no ranking table**.
+4. A game finished normally (someone shuts) before timeout ends normally, not via the timer.
+
+**Risks.** A timer treats the *symptom* (drag), not the disease (unwinnable-slow endgames). Watch
+the test result: if games *routinely* hit the timer instead of finishing, that indicates the
+**endgame rules** need a fix (single-die availability, or something new), **not** that the timer
+needs tuning. Do not read "games always time out" as "the timer works."
+
+**Stop conditions.** If building the HUD timer requires changing turn/rack state handling in a way
+that touches the core loop, **stop and report** — the timer overlays the loop, it does not rewrite
+it.
 
 ---
 
 ## 6. Explicitly out of scope for this prototype
 
 - **Single-player mode.** Playable in principle but the design has not been worked out.
-- **The boost system is a post-MVP milestone (M6), not part of the A/D MVP.** Fully specified
-  (§3.6): two self-affecting stall-rescue boosts (overpay + 1-for-2), a typed inventory capped at
-  3 total, and a per-type criteria-pool reward model. In M2 the boost checkbox exists but is inert.
+- **The single-type overpay boost (M6) is CLOSED and verified; the two-type expansion (M7) is
+  specified but not built.** M6 shipped the single overpay boost; the 1-for-2 second type, typed
+  inventory, auto-select, and per-type reward model are M7 (§3.6b), not started until the
+  orchestrator design pass finishes.
 - **Any purchase, currency, or store for boosts.** Earned-only, in-memory; monetisation is intent,
   not scope.
 - **The block-dice boost, and any targeted / inter-player / duration-based boost — BENCHED.**
-  Considered and parked as too big a stretch for now: unlike the two MVP boosts (holder-spent,
-  self-affecting, resolved at one's own stall), block is spent *on another player*, affects their
-  *next* turn, and needs a target picker, a duration, and active-effect-on-target state — a whole
-  subsystem the current architecture has nowhere to put. If it ever returns it is **its own future
-  milestone**, and these open questions must be answered first: the two clocks ("one block per
-  turn" vs "affects next turn"); whether a block on an already-single-die player is wasted or
-  disallowed; whether/how the target is told they were blocked and by whom. Recorded so it is not
-  lost; not built.
-- **Further boost types beyond the two MVP ones.** The system is typed and the reward model is
-  per-type-pool, so more types are additive — but the MVP ships exactly overpay + 1-for-2.
+  Considered and parked as too big a stretch for now: unlike the self-affecting boosts (holder-spent,
+  resolved at one's own stall), block is spent *on another player*, affects their *next* turn, and
+  needs a target picker, a duration, and active-effect-on-target state — a whole subsystem the
+  current architecture has nowhere to put. If it ever returns it is **its own future milestone**,
+  and these open questions must be answered first: the two clocks ("one block per turn" vs "affects
+  next turn"); whether a block on an already-single-die player is wasted or disallowed; whether/how
+  the target is told they were blocked and by whom. Recorded so it is not lost; not built.
+- **Further boost types beyond overpay + 1-for-2.** The system is typed and the reward model is
+  per-type-pool, so more types are additive — but the scoped set is overpay (M6) + 1-for-2 (M7).
 - **Cross-session persistence of boosts or player identity.** Boosts live only within a single
   app session and are lost on reload.
 - **Sound and haptics.**
@@ -1024,7 +1018,7 @@ though it were known:
 | D-15 | Public GitHub repo `flip`, served by GitHub Pages | Locked |
 | D-16 | Neutral landing page at `/`, app at a sub-path; presentational, not a security measure | Locked |
 | D-17 | No real family or child names committed to a public repo | Locked |
-| D-18 | Overpay is an A/D toggle (A strict default; D overpay ≤ total, last tile exact); MVP ships A and D | Locked |
+| D-18 | Overpay is an A/D toggle (A strict default; D overpay ≤ total, **a whole-rack-shutting selection must be exact** — D-45); MVP ships A and D | Locked |
 | D-19 | ~~B is a reserved slider position~~ **Superseded by D-27:** overpay is a toggle + a boost checkbox, not a 3-way slider; there is no B button | Superseded |
 | D-20 | ~~max 3 per player~~ **Superseded by D-35:** inventory capped at 3 *total across types*; boosts never close the last tile; monetisation is intent not scope; in-memory session-only | Superseded |
 | D-21 | Motion mechanic on/off toggle, default ON; OFF uses the existing tap-only path, not a new one | Locked |
@@ -1040,11 +1034,16 @@ though it were known:
 | D-31 | Rest-to-flip delay is an M0-measured constant with a debug slider; too long in M4; must beat a fast tap while staying bump-safe; crossed bounds = stop condition | Locked |
 | D-32 | Avatars are future; roster models an avatar as an assignable attribute from day one; random-avatar start, customisation as a post-game reward; Flip-vs-avatar hierarchy is an open design question | Locked (intent) |
 | D-33 | Lap boundary is anchored to the earliest active seat (P1 or earliest unfinished), not the requesting player's seat | Locked |
-| D-34 | Theme flip is the overpay signal: sustained inversion while mode D is active, momentary inversion during a boost-spend overpay move; predicate is "D active OR boost overpay move in progress", never per-roll resolvability; turn card / launch / boost banner stay theme-independent | Locked |
-| D-35 | Two MVP boost types — overpay (voids some pips, subset ≤ total) and 1-for-2 (voids one whole die); typed inventory capped at 3 total across types; both self-affecting stall-rescues | Locked |
-| D-36 | Spend is offered (spend-or-stay) with the type **auto-selected**, never a player which-boost picker; offer names the type; only boosts that resolve *this* stall are offered | Locked |
-| D-37 | Auto-select prefers 1-for-2 when both resolve (conserve overpay); overpay strictly dominates 1-for-2, so branches are: both→1-for-2, only-overpay→overpay, neither→no offer; the "could-score-higher" case is locked as by-design | Locked |
-| D-38 | Reward model: each type owns a criteria pool (may overlap); shared-criterion awards pick a type by a configurable distribution variable (default 50/50); MVP both types share the D-24 criteria | Locked |
+| D-34 | Theme flip is the overpay signal — inverted **exactly when an overpay move is currently legal** for the current player. Predicate: (mode D active AND current player has >1 tile open) OR a boost overpay move in progress. The >1-tile carve-out (commit `077dc7d`) prevents a false "you can overpay" signal at the whole-rack/last-tile exact-match point. Turn card / launch / boost banner stay theme-independent | Locked (rev per DECISIONS.md 2026-09-11) |
+| D-35 | **(M7, not built)** Two boost types — overpay (voids some pips, subset ≤ total) and 1-for-2 (voids one whole die); typed inventory capped at 3 total across types; both self-affecting stall-rescues. Live build is single-type overpay only (M6) | Locked (M7) |
+| D-36 | **(M7, not built)** Spend is offered (spend-or-stay) with the type **auto-selected**, never a which-boost picker; offer names the type; only boosts that resolve *this* stall are offered | Locked (M7) |
+| D-37 | **(M7, not built)** Auto-select prefers 1-for-2 when both resolve (conserve overpay); overpay strictly dominates 1-for-2, so branches are: both→1-for-2, only-overpay→overpay, neither→no offer; the "could-score-higher" case is by-design | Locked (M7) |
+| D-38 | **(M7, not built)** Reward model: each type owns a criteria pool (may overlap); shared-criterion awards pick a type by a configurable distribution variable (default 50/50); MVP both types share the D-24 criteria | Locked (M7) |
 | D-39 | Block-dice and any targeted / inter-player / duration boost is benched; if revived it is its own milestone with targeting/duration state and the parked open questions answered first | Locked |
-| D-40 | M4 (continuous-rotation handoff) is cut, not merely deferred: M3's tap/motion turn-card handoff feel is confirmed good in real multi-kid play, so there is no open problem left for M4 to solve; not built, not scheduled | Locked |
-| D-41 | M6 is closed at single-type (overpay-only) scope; the two-type boost expansion (D-35–D-38) is split into a new milestone M7, not started, design still pending from the orchestrator | Locked |
+| D-40 | M4 (continuous-rotation handoff) CUT — never attempted, no open problem it solves; M3 tap/motion handoff feels fine; do not revisit without a new decision (per DECISIONS.md 2026-09-11) | Locked |
+| D-41 | M6 CLOSED at single-type overpay scope (verified); the two-type expansion is split into M7, specified but not started until the orchestrator design pass finishes (per DECISIONS.md 2026-09-11) | Locked |
+| D-42 | Dev-mode tab (M8) separates exploratory/debug controls from the clean production settings surface; the two-dice-force control lives there — §3.3 unchanged, default one die, single-die endgame rule untouched; the once-per-game-toggle idea is not adopted as a production rule | Locked |
+| D-43 | Time challenge (M9, dev-mode) is an anti-drag circuit-breaker: 15s-min picker + Set, HUD timer paused (visibly) on turn screens, on timeout the game ends with a deliberate **no-ranking** "Time's up" screen. Random placeholder rankings rejected | Locked |
+| D-44 | Boost timing distinguishes **earned** (award criterion fires) from **granted** (credit delivered + announced at the start of the earning player's next turn); §3.6 "announced when granted" refers to the granted moment (per DECISIONS.md 2026-09-11) | Locked |
+| D-45 | Overpay/boost may not close a selection that would **shut the whole rack** (any selection covering every open tile needs exact match), generalising the earlier singular "final tile" wording; shipped commit `f262a7d` | Locked |
+| D-46 | Reconciliation rule: DECISIONS.md entries are folded into this §8 at the start of each orchestrator session before new work; once folded, the entry is stamped "Reconciled into §8" so pending vs absorbed is visible | Locked (process) |
