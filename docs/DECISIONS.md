@@ -347,3 +347,71 @@ duplicated here.
   live game" posture). Flagged as urgent because it's a real-play gap, not a hypothetical one:
   this session's own reporter got stuck (before the wording fix above) with no way out but to
   end the whole game.
+
+### 2026-09-12 — Real bug: a boost could close the whole rack, incl. via full-set-only offers
+- **Report:** on a real device, with two tiles {4, 1} left open and rolling two dice, a
+  1-for-2 boost was offered and spent to resolve a die face of 5 (4+1), which finished the
+  round. The player who reported it correctly judged this must never be legal - "the game
+  must not be completed with a boost" - even though the sum matched a rolled die face exactly.
+- **Root cause, two layers:**
+  1. `RULES.oneForTwoResolvable` (and therefore `selectBoostTypeToOffer`) used
+     `subsetSumExists`, which is satisfied by the full set of open tiles - so a die face only
+     reachable by using *every* remaining tile was still being offered as a boost, even though
+     spending it could only ever end the game.
+  2. Nothing blocked *confirming* such a selection either: `wholeRackOverpayBlocked()`
+     explicitly exempted 1-for-2 (reasoning at the time: "an exact match can never overpay, so
+     it's always fine to legitimately finish the rack this way" - this reasoning is exactly
+     what's now overturned), and the overpay-boost path only enforced D-45's "must be exact to
+     close the whole rack," not "may not close the whole rack at all."
+- **Decision (generalizes beyond 1-for-2):** a boost-spent move, of either type, may never be
+  the move that shuts the whole rack - not just when it would overpay, unconditionally, even
+  on an exact match. This is stricter than D-45 (which governs plain, non-boost overpay) and
+  sits alongside it, not in place of it.
+- **Fix:**
+  - `RULES.properSubsetSumExists` (new, `app/rules.js`): true iff some subset *smaller than
+    the full open set* sums to target. `oneForTwoResolvable` now uses this instead of
+    `subsetSumExists`, so an offer is only ever made when a non-rack-closing resolution
+    actually exists. (The overpay-boost offer check, `anyLegalMoveExists(..., 'D')`, was
+    already proper-subset-safe by construction for >1 open tile - a lone open tile is always
+    a valid proper-subset partial move under D - so it needed no change; see its own comment
+    in `rules.js`.)
+  - `currentSelectionValid` (`app/app.js`) now rejects any selection covering every open tile
+    whenever `boostSpentType` is set, before the per-type shape check runs - a single,
+    type-agnostic guard so `onConfirm` and the Confirm-button enablement can't disagree, same
+    pattern as the existing centralised-validity comment describes. This is the actual
+    load-bearing fix; the offer-side fix above just stops the game from dangling a boost in
+    front of a player that it wouldn't have let them use anyway.
+  - Added `boostWholeRackBlocked()` + a `renderPlayMessage` case so Confirm being disabled in
+    this state isn't silent - the player sees why, same UX pattern as the existing D-45
+    "closing the whole rack needs an exact match" notice.
+- **Verified** via a temporary debug hook (removed before commit): reproduced the exact
+  reported case (rack down to {4,1}, dice forced to [5,2] via a `Math.random` stub, two-dice
+  roll forced through the dev dice-test toggle) - confirmed the boost is no longer offered at
+  all for that roll; separately forced `boostSpentType` and a whole-rack selection directly to
+  confirm `currentSelectionValid` now rejects it even on an exact sum; confirmed a boost
+  selection that leaves a tile open still validates normally. Ran 6 full automated games across
+  both overpay modes and both rack sizes, boosts enabled, with a solver that treats "would
+  close the whole rack while boosted" as an error if the game logic ever let it through - zero
+  such errors, zero console errors.
+
+### 2026-09-12 — Roster rotates after a completed game; scoped to the win screen only
+- **Request:** after a completed game, rotate the roster by one so a different player starts
+  the next game by default (the same player going first every time was the report).
+- **Decision:** rotate on the normal `#screen-end` "New game" button only (`roster.push(
+  roster.shift())`, i.e. whoever went first moves to the back) - **not** on `#screen-timeout`'s
+  "New game." A time-challenge timeout has no winner and is deliberately not treated as "a
+  completed round" anywhere else in this codebase (see the M9 no-ranking-table rule) - rotating
+  the turn order as a reward/consequence of a round nobody actually finished didn't seem like
+  the intended trigger, and reusing the same starting player after an aborted round is more
+  consistent with "nothing was really decided here."
+- Also added drag-to-reorder on the setup screen's player list (Pointer Events, not HTML5
+  drag-and-drop, for touch support - a manual pick-and-drag: the dragged row's centre is
+  pinned to the pointer's Y and cascades through as many neighbour swaps as a single move
+  warrants, recomputed from each row's natural position rather than a compounding transform,
+  so a fast flick doesn't stall after one swap). Disabled (handle hidden, same as Remove)
+  whenever a game is in progress, matching the existing roster-editability rule.
+- **Verified** via a temporary debug hook and scripted Pointer Events (removed before commit):
+  rotation confirmed after both a debug-forced game end and a fully-played automated game;
+  drag-to-reorder confirmed to cascade multiple slots in one gesture via dispatched
+  `pointerdown`/`pointermove`/`pointerup` events, confirmed persisted via `STORAGE.saveRoster`,
+  confirmed the handle is hidden and inert mid-game.

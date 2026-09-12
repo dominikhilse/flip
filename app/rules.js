@@ -33,6 +33,20 @@
     return reachable.has(target);
   }
 
+  // Whether some PROPER subset of openValues (strictly fewer than all of
+  // them) sums exactly to target - i.e. a resolution exists that would not
+  // require using every open tile. Checked by removing one tile at a time
+  // and asking whether the rest can still reach target: if any proper
+  // subset S reaches target, some tile outside S exists (S being proper),
+  // so S is found by skipping that tile here.
+  function properSubsetSumExists(openValues, target) {
+    for (var skip = 0; skip < openValues.length; skip++) {
+      var rest = openValues.slice(0, skip).concat(openValues.slice(skip + 1));
+      if (subsetSumExists(rest, target)) return true;
+    }
+    return false;
+  }
+
   function createRack(size) {
     var tiles = [];
     for (var v = 1; v <= size; v++) tiles.push({ value: v, open: true });
@@ -72,21 +86,27 @@
   // Whether a selection is legal as a spent 1-for-2 boost (§3.6b, M7): one
   // whole die is ignored, the other is played as a single value, so the
   // selection must sum EXACTLY to one of the two rolled dice faces - never
-  // the combined total, never <= either face. Needs no whole-rack carve-out
-  // of its own: an exact match can never "overpay", so it's always fine to
-  // legitimately finish the rack this way, same as any other exact move.
+  // the combined total, never <= either face. Whether it's also allowed to
+  // shut the whole rack is NOT decided here (that carve-out is a property
+  // shared by every boost type, not specific to 1-for-2's exact-match shape)
+  // - see the boost-vs-whole-rack check in app.js's currentSelectionValid.
   function isValidOneForTwoSelection(selectedValues, dice) {
     if (selectedValues.length === 0 || dice.length < 2) return false;
     var selectedSum = sum(selectedValues);
     return selectedSum === dice[0] || selectedSum === dice[1];
   }
 
-  // Whether spending a 1-for-2 boost would resolve the current stall - feeds
-  // the auto-select offer logic (§3.6b/D-36). Only meaningful with two dice
-  // rolled; there is nothing to "ignore" with one.
+  // Whether spending a 1-for-2 boost would resolve the current stall WITHOUT
+  // shutting the whole rack - feeds the auto-select offer logic (§3.6b/D-36).
+  // A boost may never be the move that finishes the game (real-device
+  // report: a 2-tile rack matching a die face exactly was being offered and
+  // let a boost close it out), so this must use properSubsetSumExists, not
+  // subsetSumExists - a die face that only resolves via every open tile
+  // isn't a real offer. Only meaningful with two dice rolled; there is
+  // nothing to "ignore" with one.
   function oneForTwoResolvable(openValues, dice) {
     if (dice.length < 2) return false;
-    return subsetSumExists(openValues, dice[0]) || subsetSumExists(openValues, dice[1]);
+    return properSubsetSumExists(openValues, dice[0]) || properSubsetSumExists(openValues, dice[1]);
   }
 
   // Whether any legal move exists for this roll, under the given overpay
@@ -105,6 +125,7 @@
     rollDice: rollDice,
     sum: sum,
     subsetSumExists: subsetSumExists,
+    properSubsetSumExists: properSubsetSumExists,
     createRack: createRack,
     openValues: openValues,
     singleDieUnlocked: singleDieUnlocked,

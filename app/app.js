@@ -119,11 +119,21 @@
     return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
+  var DRAG_HANDLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+    '<line x1="4" y1="9" x2="20" y2="9"></line>' +
+    '<line x1="4" y1="15" x2="20" y2="15"></line></svg>';
+
   function renderRosterList() {
     var blocked = game !== null;
     rosterListEl.innerHTML = '';
     roster.forEach(function (p) {
       var li = document.createElement('li');
+      li.dataset.playerId = p.id;
+
+      var handle = document.createElement('span');
+      handle.className = 'drag-handle' + (blocked ? ' disabled' : '');
+      handle.innerHTML = DRAG_HANDLE_SVG;
+      if (!blocked) handle.addEventListener('pointerdown', onRosterDragStart);
 
       var swatch = document.createElement('span');
       swatch.className = 'swatch';
@@ -144,11 +154,94 @@
         renderSetup();
       });
 
+      li.appendChild(handle);
       li.appendChild(swatch);
       li.appendChild(name);
       li.appendChild(removeBtn);
       rosterListEl.appendChild(li);
     });
+  }
+
+  // ---- Roster drag-to-reorder (manual pick-and-drag) ----
+  // Pointer Events (not HTML5 drag-and-drop, which has no reliable touch
+  // support) so this works on the phone this game is actually played on.
+  // See repositionRosterDrag for how the dragged row tracks the pointer and
+  // swaps with neighbours. On release the DOM's final order (read back via
+  // each li's data-player-id) becomes the new `roster` order and is
+  // persisted.
+  var rosterDrag = null;
+
+  function onRosterDragStart(e) {
+    if (game !== null) return;
+    var li = e.target.closest('li');
+    if (!li) return;
+    e.target.setPointerCapture(e.pointerId);
+    li.classList.add('dragging');
+    rosterDrag = { li: li, pointerId: e.pointerId, handle: e.target };
+    e.target.addEventListener('pointermove', onRosterDragMove);
+    e.target.addEventListener('pointerup', onRosterDragEnd);
+    e.target.addEventListener('pointercancel', onRosterDragEnd);
+  }
+
+  // Keeps the dragged row's visual centre pinned exactly to the pointer's Y
+  // and cascades as many neighbour swaps as the jump warrants. Each pass
+  // clears the transform to read the row's current NATURAL (untransformed)
+  // slot, derives the transform that would pin it to pointerY from there,
+  // and only then checks whether that still overshoots the next neighbour -
+  // recomputing from the natural position each time (rather than
+  // compounding an old transform) is what lets one big jump - a fast flick,
+  // or a coarse test drag with few move events - cascade through more than
+  // one swap instead of stalling after the first.
+  function repositionRosterDrag(li, pointerY) {
+    var swapped = true;
+    while (swapped) {
+      swapped = false;
+      li.style.transform = '';
+      var naturalRect = li.getBoundingClientRect();
+      var naturalMid = naturalRect.top + naturalRect.height / 2;
+      var deltaY = pointerY - naturalMid;
+      li.style.transform = 'translateY(' + deltaY + 'px)';
+      var movingDown = deltaY > 0;
+      var siblings = Array.prototype.slice.call(rosterListEl.children).filter(function (el) { return el !== li; });
+      for (var i = 0; i < siblings.length; i++) {
+        var sib = siblings[i];
+        var sibRect = sib.getBoundingClientRect();
+        var sibMid = sibRect.top + sibRect.height / 2;
+        var sibFollows = !!(li.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_FOLLOWING);
+        if (movingDown && pointerY > sibMid && sibFollows) {
+          rosterListEl.insertBefore(li, sib.nextSibling);
+          swapped = true;
+          break;
+        }
+        if (!movingDown && pointerY < sibMid && !sibFollows) {
+          rosterListEl.insertBefore(li, sib);
+          swapped = true;
+          break;
+        }
+      }
+    }
+  }
+
+  function onRosterDragMove(e) {
+    if (!rosterDrag || e.pointerId !== rosterDrag.pointerId) return;
+    repositionRosterDrag(rosterDrag.li, e.clientY);
+  }
+
+  function onRosterDragEnd(e) {
+    if (!rosterDrag || e.pointerId !== rosterDrag.pointerId) return;
+    var handle = rosterDrag.handle;
+    handle.removeEventListener('pointermove', onRosterDragMove);
+    handle.removeEventListener('pointerup', onRosterDragEnd);
+    handle.removeEventListener('pointercancel', onRosterDragEnd);
+    rosterDrag.li.classList.remove('dragging');
+    rosterDrag.li.style.transform = '';
+
+    var order = Array.prototype.map.call(rosterListEl.children, function (li) { return li.dataset.playerId; });
+    roster = order.map(function (id) {
+      return roster.find(function (p) { return p.id === id; });
+    });
+    STORAGE.saveRoster(roster);
+    rosterDrag = null;
   }
 
   function renderColorSwatches() {
@@ -574,12 +667,27 @@
   function currentSelectionValid(p) {
     if (!game.currentRoll) return false;
     var selectedVals = Array.from(game.selected);
+    var openVals = RULES.openValues(p.rack);
+    // A boost-spent move (either type) may never be the move that shuts the
+    // whole rack, even on an exact match - the game must not be completed
+    // with a boost (real-device report/DECISIONS.md). Checked once here,
+    // ahead of the per-type shape checks below, so it applies uniformly.
+    if (game.currentRoll.boostSpentType && selectedVals.length === openVals.length) return false;
     if (game.currentRoll.boostSpentType === 'oneForTwo') {
       return RULES.isValidOneForTwoSelection(selectedVals, game.currentRoll.dice);
     }
-    var openVals = RULES.openValues(p.rack);
     var effectiveMode = game.currentRoll.boostSpentType === 'overpay' ? 'D' : game.overpayMode;
     return RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, effectiveMode);
+  }
+
+  // Whether the current selection is blocked specifically because it's a
+  // boost-spent move covering every open tile (see currentSelectionValid) -
+  // drives the explanatory message so Confirm being disabled isn't silent.
+  function boostWholeRackBlocked() {
+    if (!game.currentRoll || game.currentRoll.stalled || game.currentRoll.boostOfferPending) return false;
+    if (!game.currentRoll.boostSpentType) return false;
+    var openVals = RULES.openValues(currentPlayer().rack);
+    return game.selected.size === openVals.length;
   }
 
   // Whether the current selection is the specific case isValidSelection
@@ -953,7 +1061,10 @@
     if (diceAnimationIntervalId !== null) clearInterval(diceAnimationIntervalId);
 
     dieEls.forEach(function (el) { el.classList.add('rolling'); });
-    if (totalEl) totalEl.hidden = true;
+    // visibility, not the `hidden` attribute: this must keep reserving its
+    // box's layout space throughout the roll, or the board jumps as the
+    // total line's height comes and goes (bug: real-device report).
+    if (totalEl) totalEl.style.visibility = 'hidden';
 
     // innerHTML, not textContent, since each face is now a small SVG - the
     // .rolling wobble (a CSS transform on the .die box itself) and this
@@ -972,7 +1083,7 @@
           el.classList.remove('rolling');
           el.innerHTML = dieFaceSVG(finalDice[i]); // settle on the predetermined result
         });
-        if (totalEl) totalEl.hidden = false;
+        if (totalEl) totalEl.style.visibility = '';
       }
     }, CONFIG.diceAnimationFrameMs);
   }
@@ -982,6 +1093,9 @@
     if (game.currentRoll && game.currentRoll.stalled && !game.currentRoll.boostOfferPending) {
       playMessageEl.textContent = 'Stalled — no legal move for this roll.';
       playMessageEl.className = 'stalled';
+    } else if (boostWholeRackBlocked()) {
+      playMessageEl.textContent = 'A boost can never close the whole rack — leave a tile open, or decline and stay stalled.';
+      playMessageEl.className = 'notice';
     } else if (wholeRackOverpayBlocked()) {
       playMessageEl.textContent = 'Closing the whole rack needs an exact match — exclude a tile to overpay instead.';
       playMessageEl.className = 'notice';
@@ -1142,7 +1256,21 @@
     applyTheme();
   }
 
+  // After a completed game, a different player should start the next one
+  // by default (real-device request) - move whoever went first to the back
+  // of the roster, so roster[0] (startNewGame's turnIndex 0) is now the
+  // player who went second last time. Scoped to the normal win flow only;
+  // a time-challenge timeout has no winner and isn't "a completed round" in
+  // this sense (see the deliberate no-ranking rule on #screen-timeout), so
+  // that New game button leaves roster order untouched.
+  function rotateRosterAfterGame() {
+    if (roster.length < 2) return;
+    roster.push(roster.shift());
+    STORAGE.saveRoster(roster);
+  }
+
   endNewGameBtn.addEventListener('click', function () {
+    rotateRosterAfterGame();
     game = null;
     renderSetup();
     showScreen('setup');

@@ -111,6 +111,33 @@ button.secondary:active { background: var(--bg-subtle); }
   gap: 0.6rem;
   padding: 0.5em 0.2em;
   border-bottom: 1px solid var(--border-faint);
+  background: var(--bg);
+  position: relative;
+}
+#roster-list li.dragging {
+  z-index: 2;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+#roster-list .drag-handle {
+  flex-shrink: 0;
+  width: 1.4em;
+  height: 1.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-soft);
+  cursor: grab;
+  touch-action: none;
+}
+#roster-list .drag-handle.disabled {
+  visibility: hidden;
+}
+#roster-list .drag-handle svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 #roster-list .swatch {
   width: 1.2em;
