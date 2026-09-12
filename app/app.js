@@ -1032,15 +1032,27 @@
     return '<svg class="die-face" viewBox="0 0 100 100" aria-hidden="true">' + circles + '</svg>';
   }
 
+  // Pre-roll (no game.currentRoll yet), this renders the SAME die-count and
+  // total-line markup a real roll would, just invisible - not merely absent
+  // - so the block's rendered height is identical before, during, and after
+  // a roll. Rendering nothing pre-roll (the earlier approach) reserved the
+  // right space only once a roll was already in flight; the rack above it
+  // still grew to fill that larger gap before the very first roll of a turn
+  // and visibly shrank back the moment dice appeared (GitHub issue #1, an
+  // extension of the roll-animation jump fixed earlier the same way).
+  // effectiveDiceCount is pure w.r.t. current state (rack/dev settings), not
+  // the eventual random roll, so the placeholder count always matches what
+  // a real roll would show right now.
   function renderPlayDice() {
-    if (!game.currentRoll) {
-      playDiceAreaEl.innerHTML = '';
-      return;
+    var rolled = !!game.currentRoll;
+    var diceCount = rolled ? game.currentRoll.dice.length : effectiveDiceCount(currentPlayer());
+    var html = '';
+    for (var i = 0; i < diceCount; i++) {
+      var face = rolled ? game.currentRoll.dice[i] : 1;
+      html += '<span class="die"' + (rolled ? '' : ' style="visibility:hidden"') + '>' + dieFaceSVG(face) + '</span>';
     }
-    var html = game.currentRoll.dice.map(function (d) {
-      return '<span class="die">' + dieFaceSVG(d) + '</span>';
-    }).join('');
-    html += '<div id="total">Total: ' + game.currentRoll.total + '</div>';
+    var totalText = rolled ? 'Total: ' + game.currentRoll.total : 'Total: 0';
+    html += '<div id="total"' + (rolled ? '' : ' style="visibility:hidden"') + '>' + totalText + '</div>';
     playDiceAreaEl.innerHTML = html;
   }
 

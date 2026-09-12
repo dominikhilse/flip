@@ -415,3 +415,30 @@ duplicated here.
   drag-to-reorder confirmed to cascade multiple slots in one gesture via dispatched
   `pointerdown`/`pointermove`/`pointerup` events, confirmed persisted via `STORAGE.saveRoster`,
   confirmed the handle is hidden and inert mid-game.
+
+### 2026-09-13 — GitHub issue #1: rack grid still resizing pre-roll (extension of the total-line fix)
+- **Report** (`dominikhilse/flip#1`): the previous fix reserved space for the dice "Total"
+  line only once a roll was already in flight (`totalEl.style.visibility`, toggled inside
+  `animateDiceRoll`). The same principle wasn't applied to the moment *before* the first roll
+  of a turn: with no `game.currentRoll` yet, `renderPlayDice` rendered nothing at all into
+  `#play-dice-area`, which fell back to its CSS `min-height: 3.5rem` - less than the block's
+  real height once dice + the total line are actually drawn. Since `#play-rack` is `flex: 1 1
+  0` in the same flex column, it silently absorbed that extra slack, then visibly shrank the
+  instant the first roll of a turn rendered real content - the same jump as before, just at a
+  different transition.
+- **Fix:** `renderPlayDice` (`app/app.js`) now always renders the same shape of markup - N
+  die spans plus the `#total` div - whether or not a roll has happened yet; pre-roll, the
+  dice are placeholder value `1` and everything is `visibility: hidden`, not absent. Die count
+  pre-roll comes from `effectiveDiceCount(currentPlayer())`, which is already pure with
+  respect to current rack/dev-settings state (it doesn't depend on the eventual random roll),
+  so the placeholder count always matches what a real roll would show right now - no
+  guessed/hand-measured pixel value involved, matching the "reserve by always rendering,
+  toggle visibility" approach used for the animation-phase fix rather than inventing a new
+  min-height number.
+- **Verified** via a temporary debug hook (removed before commit): measured `#play-rack`'s
+  rendered height at turn start (pre-roll), immediately after `onRoll()`, and once the roll
+  animation settled - identical (509.9375px) at all three points. Ran a full automated game
+  with height sampled every animation frame; the only height changes recorded were pre-existing,
+  unrelated UI (`#play-boost-offer` and the boost-earned announcement banner appearing/
+  disappearing with real game events) - none from the dice/total/rack area this fix targets.
+  Zero console errors.
