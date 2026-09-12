@@ -29,29 +29,63 @@ design-token spec. Plus a hero app icon and a name recommendation.
 
 ---
 
-## 2. The core direction — DECIDED, validate don't reopen
+## 2. The core direction
 
-These are settled. The session's job is to **execute** them and to **sanity-check** them once —
-raise a concrete objection only if something genuinely breaks, otherwise proceed.
-
+**Decided, unconditionally — true whether or not Spudlings end up starring (see §2.1):**
 - **Flip is CUT.** The earlier mascot "Flip" (a bent-numeral character) is dropped. Do not design,
   reference, or revive him.
-- **Spudlings carry the game.** The existing, already-designed Spudling characters (see §4
-  reference) become the game's visual identity. This reuses proven production value — including an
-  existing **Spudling avatar creator** — which is the reason for the direction.
+- **The name stays "Flip the Number."** Settled in the design session: the name does **not** depend
+  on Flip existing as a character — it reads fine as a plain description of the game's core verb
+  (flipping tile numbers), no wordplay required. **Do not revisit the name further** unless the
+  Spudling question below lands somewhere that makes a different name obviously better — the session
+  is not obligated to find one.
+- **Tiles stay plain numerals**, regardless of what (if anything) carries character identity
+  elsewhere. Numerals and any character system are separate visual layers.
+- **If any character is used, there is no host** — nothing announces turns or reacts to events. A
+  character, if present, is a *face* (icon/avatar/flavour), not a narrator.
+
+### 2.1 OPEN — do Spudlings star at all?
+
+**This is reopened, not decided.** An earlier pass in this brief locked "Spudlings carry the game" as
+settled — that was premature. The actual client position, as of the design session, is a genuine
+either/or with a real cost on each side, and the session's job is to **weigh it**, not just execute
+one branch:
+
+- **Include Spudlings** (as hero + cast, §2.2 below, if this branch is taken): more charm, reuses a
+  real, already-built asset (characters + an avatar creator) — but it is **a stretch**, i.e. real
+  additional design/production work and risk (character consistency across separate Nano Banana
+  generations, the hero pick, the palette-vs-cast-outfit interaction).
+- **Exclude Spudlings**: a **faster road to a finished product** — and a real gameplay risk is
+  named, not hypothetical: **Spudling *creation* (the avatar creator) can compete with the core
+  game**, and in a room of kids this is **amplified**, not reduced — multiple kids each wanting a
+  turn customising their character before anyone actually plays Flip the Number. This is the same
+  risk that originally justified D-32's "random avatar at start, customisation only as a post-game
+  reward" pattern — the client is now naming it more sharply, and it argues for caution about how
+  deeply Spudling customisation gets woven into the pre-game flow, if it's used at all.
+- If Spudlings are excluded, the game's visual identity has to come from **the board itself** — tile
+  colour, type, and theme, no character system at all. This is not a fallback to be ashamed of: it's
+  a legitimate, fast, low-risk identity model that plenty of strong number/board games use, and it
+  was this brief's original working assumption before Spudlings entered the conversation.
+
+**The design session's task on this point:** weigh the trade-off above and **recommend a direction**
+— include (hero + cast, §2.2) or exclude (board-carries-identity) — with reasoning, rather than
+silently defaulting to either. If included, execute §2.2. If excluded, the deliverables in §6 shift
+accordingly (no hero icon subject, no avatar-creator review — see §5.4's note).
+
+### 2.2 If Spudlings are included — the hero + cast model (unchanged from the earlier pass)
+
 - **One hero Spudling anchors recognition; the cast fills the world.** A single hero Spudling is the
   face on the **app icon** and the primary recognition point. The broader cast populates splash,
   loading, marketing, and the **player-screen avatars** (via the creator). *Which* Spudling is the
   hero is the session's to decide (§5).
-- **No host character.** The game has **no** character that announces turns or reacts to events. The
-  hero Spudling is a *face*, not a host — it appears as identity, it does not narrate gameplay. There
-  is therefore **no event-driven expression set** to design.
-- **Tiles stay plain numerals.** Spudlings are **not** bent, shaped, or stylised into numbers. The
-  board tiles are legible plain digits (this is locked game-side as D-13). Keep characters and
-  numerals as separate visual systems.
+- **No host character** (restated from §2's unconditional list): the hero Spudling is a face, not a
+  narrator.
 - **The Spudling aesthetic is canonical as drawn** (see §4): a warm burlap/sackcloth-textured figure,
   stitched seams, sparkle button eyes, simple stitched smile, dressed in apparel. Describe and match
   this on its own terms.
+- **Guard against the exact risk named in §2.1:** if this branch is taken, avatar customisation
+  should still default to **random-at-start**, with any deeper creator access deferred (e.g. a
+  post-game reward, per D-32) — not exposed as a pre-game step every player has to sit through.
 
 ---
 
@@ -121,61 +155,67 @@ doesn't cover.** Concretely:
 
 ## 4. Reference material — the canonical anchor
 
-**[SETUP DEPENDENCY — the client is providing these; the brief is not final until they are attached.]**
+**[SETUP DEPENDENCY — the client is providing these; needed only if §2.1 resolves toward
+"include."]**
 
-- **Spudling reference characters** — the existing designed Spudlings. These are the **locked visual
-  anchor**: the hero and cast are drawn from this set, and the written direction (§6) points to them
-  as "match this." One reference already seen: a burlap/sackcloth figure with stitched seams, sparkle
-  button eyes, a simple stitched smile, dressed in streetwear. (Note the branded-apparel constraint,
-  §3 — the game's own assets must swap identifiable brands for original apparel.)
-- **The Spudling avatar creator — output range.** The creator generates the cast/avatars. The session
-  must review its **actual variation range** as an early step (see §5, the 9–12 distinguishability
-  question) — because how much avatars can carry per-player distinction depends on how *different* the
-  creator's outputs are (outfit/colour variation on one base vs. distinct characters).
+- **Spudling reference characters** — the existing designed Spudlings. If included, these are the
+  **locked visual anchor**: the hero and cast are drawn from this set, and the written direction
+  (§6) points to them as "match this." One reference already seen: a burlap/sackcloth figure with
+  stitched seams, sparkle button eyes, a simple stitched smile, dressed in streetwear. (Note the
+  branded-apparel constraint, §3 — the game's own assets must swap identifiable brands for original
+  apparel.)
+- **The Spudling avatar creator — output range.** If included, the session must review its **actual
+  variation range** as an early step (see §5.4, the 9–12 distinguishability question) — how much
+  avatars can carry per-player distinction depends on how *different* the creator's outputs are.
+  **This review is also part of the §2.1 weighing itself** — seeing the creator's actual UX (how
+  many taps, how much time it invites per player) informs whether the "competes with the core game"
+  risk is real or manageable.
 
-Character consistency across *separate* Nano Banana generations is the known weak spot, so the written
-direction (§6) must lean hard on explicit "always / never" rules plus these locked references, so the
-hero and cast stay on-model when generated in separate passes.
+Character consistency across *separate* Nano Banana generations is the known weak spot **if this
+branch is taken**, so the written direction (§6) must lean hard on explicit "always / never" rules
+plus these locked references, so the hero and cast stay on-model when generated in separate passes.
 
 ---
 
 ## 5. Open questions — the session decides these
 
-Stated with the client's leans on record. These are genuinely the design session's to resolve.
+The name is **settled** (§2: "Flip the Number," no further debate needed). Everything below is
+genuinely open, and #1 gates #2–#4.
 
-1. **The game's name.** Working title "Flip the Number" — but it was named around Flip, who is now
-   cut, so the "Flip"-as-character wordplay is gone. Options: keep "Flip the Number" as a plain
-   game-verb name (flipping tiles still justifies it — this is the safe fallback), adjust (e.g.
-   "Number Flip"), or a new name the hero Spudling / cast suggests. Client is relaxed about it and
-   wants the name settled *with* the hero pick, since they inform each other. **Recommend a name.**
-   Note: a name *change* (vs. keeping "Flip the Number") has downstream cost — repo (`flip`), Pages
-   URL, plan title, D-rows — so a change is a conscious trade, not free; flag it, don't block on it.
-2. **Which Spudling is the hero.** Pick or designate the single hero from the Spudling set. Must read
-   well **small** (app-icon legibility — one clear subject at ~60px, not a crowd) and carry the
-   game's feel. This is the one character choice that survives cutting Flip; treat it as a real
-   deliverable, not an afterthought.
-3. **The refined palette itself** (within §3.2's constraints).
-4. **Do avatars alone carry 9–12 player distinction?** Review the avatar creator's real output range
-   (§4) and confirm whether avatar + name give enough per-player distinction beyond 8 players, or
-   whether an additional non-colour cue is still needed. Report the finding.
+1. **Include or exclude Spudlings (§2.1) — the primary fork.** Weigh charm-and-reuse against
+   faster-to-finished-product-and-avoids-competing-with-play, and **recommend a direction with
+   reasoning.** This is the one question that reshapes everything else in this brief.
+2. **If included: which Spudling is the hero.** Pick or designate the single hero from the Spudling
+   set. Must read well **small** (app-icon legibility — one clear subject at ~60px, not a crowd) and
+   carry the game's feel. Treat as a real deliverable, not an afterthought.
+3. **The refined palette itself** (within §3.2's constraints) — needed either way, but if Spudlings
+   are excluded, §3.2's "beyond 8 players, avatar + name carry the load" fallback **no longer has an
+   avatar to lean on** — the session must propose a different non-colour distinguishing cue (e.g.
+   player name alone, a simple shape/icon system) for 9–12 players in that branch.
+4. **If included: do avatars alone carry 9–12 player distinction?** Review the avatar creator's real
+   output range (§4) and confirm whether avatar + name give enough per-player distinction beyond 8
+   players, or whether an additional non-colour cue is still needed. Report the finding.
 
 ---
 
 ## 6. Deliverables
 
-- **Concept art (reference-grade, Nano-Banana-finishable).** Enough to see the direction — the hero
-  Spudling and a sense of the cast — not final pixels. Anchored to the §4 references.
-- **Written art direction.** The "always / never" rules that keep Spudlings on-model across separate
-  Nano Banana generations: what a Spudling always is, never is, proportions, texture, finish, the
-  original-apparel rule, how the hero relates to the cast, how characters sit against both themes.
-  This document carries unusual weight because finishing is Nano-Banana-external and cross-generation
-  consistency is the known risk.
-- **Design-token spec.** Implementable values: the refined palette (with the 8-safe / 12-graceful and
-  both-themes-including-inversion properties documented), the type tokens (§3.1), and the theme/colour
-  rules. This is what the code and the UI track consume directly.
-- **Hero app icon.** The hero Spudling as a single, high-contrast, small-size-legible subject. This is
-  the one asset the neutral landing page doesn't cover.
-- **Name recommendation** (per §5.1).
+- **A recommendation on §2.1** (include or exclude Spudlings), with reasoning — this is now the
+  first deliverable; everything below depends on which way it lands.
+- **If included:**
+  - **Concept art (reference-grade, Nano-Banana-finishable).** Enough to see the direction — the
+    hero Spudling and a sense of the cast — not final pixels. Anchored to the §4 references.
+  - **Written art direction.** The "always / never" rules that keep Spudlings on-model across
+    separate Nano Banana generations: what a Spudling always is, never is, proportions, texture,
+    finish, the original-apparel rule, how the hero relates to the cast, how characters sit against
+    both themes. Carries unusual weight because finishing is Nano-Banana-external.
+  - **Hero app icon.** The hero Spudling as a single, high-contrast, small-size-legible subject.
+- **If excluded:** a brief statement of what carries the app icon and identity instead (the board /
+  tile / colour system itself is the expected answer — no character deliverable needed).
+- **Design-token spec (needed either way).** The refined palette (with the 8-safe / 12-graceful
+  properties documented, and — if Spudlings are excluded — the alternate 9–12 distinguishing cue
+  from §5.3), the type tokens (§3.1), and the theme/colour rules. This is what the code and the UI
+  track consume directly.
 
 ---
 
@@ -183,29 +223,35 @@ Stated with the client's leans on record. These are genuinely the design session
 
 - **All screen layout** — that is the UI track (written after this one). Do not lay out the title,
   player setup, rack, settings, turn card, or end screens here.
-- **A host character / event-driven expressions** — cut with Flip; the game has no host (§2).
-- **Bending Spudlings into numerals** — tiles stay plain digits (§2).
+- **A host character / event-driven expressions** — cut with Flip; if any character is used, the
+  game has no host (§2).
+- **Bending Spudlings into numerals (if included)** — tiles stay plain digits (§2) regardless.
 - **Sound.**
 - **Redesigning the theme mechanic or any game rule** (§3).
-- **Final production art** — this track is direction + reference; Nano Banana finishes.
-- **The avatar creator's internals** — it is an existing asset to be used and reviewed, not rebuilt.
+- **Final production art** — this track is direction + reference; Nano Banana finishes (if included).
+- **The avatar creator's internals** — if included, it is an existing asset to be used and reviewed,
+  not rebuilt.
+- **Re-litigating the name** — settled (§2).
 
 ---
 
 ## 8. Setup dependencies (resolve before this brief is final)
 
-1. **Attach the Spudling reference characters** (§4) — the locked anchor.
-2. **Provide the avatar creator's output range** (§4) — for the 9–12 distinguishability review (§5.4).
-   May be shown at session time rather than embedded here, but the session must review it early.
-3. **Confirm the Spudling type-loading method fits a no-build static site** (§3.1) and record the
-   offline-vs-network font decision.
+1. **Attach the Spudling reference characters and the avatar creator's output range** (§4) — needed
+   to *make* the §2.1 recommendation, not just to execute an "include" outcome, since seeing the
+   actual creator UX is part of what informs whether it competes with the core game.
+2. **Confirm the Spudling type-loading method fits a no-build static site** (§3.1) and record the
+   offline-vs-network font decision. Needed either way — type is inherited regardless of §2.1.
 
 ---
 
 ## 9. Reconciliation note (for the orchestrator, after the session)
 
-When the design session returns with name, hero pick, palette, and the distinguishability finding,
-run **one** clean reconciliation pass on `FlipTheNumber_MilestonePlan.md`: fold in the Flip-cut /
-Spudling direction, revise or supersede the affected D-rows (D-13 Flip framing, D-32 avatars), record
-the chosen name (and any repo/URL cost), and add the palette/type tokens as decisions. Do **not** do
+The **name is already settled** ("Flip the Number," no character dependency) and needs no
+reconciliation beyond confirming D-13's Flip framing is superseded (Flip cut, name stands on its
+own). When the design session returns with the §2.1 recommendation (and, if included, the hero pick,
+palette, and distinguishability finding), run **one** clean reconciliation pass on
+`FlipTheNumber_MilestonePlan.md`: fold in whichever direction was chosen, revise or supersede the
+affected D-rows (D-13 Flip framing, D-32 avatars), and add the palette/type tokens as decisions. Do
+**not** do
 this before the session runs — the direction is intent until the session resolves its open questions.

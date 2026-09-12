@@ -4,7 +4,26 @@
 **Audience:** a Claude Code session with no prior context. Everything needed is in this file.
 **Supersedes:** nothing. This is the first plan for this project.
 
-**Revision note (latest pass — reconciling DECISIONS.md 2026-09-11):** M4 cut (D-40); M6 closed
+**Revision note (latest pass — reconciling DECISIONS.md 2026-09-12):** M7, M8, M9 all status-flipped
+from SPECIFIED to **BUILT, VERIFIED**; M7's die-choice-on-differing-faces interpretation confirmed
+correct (exact match to either die, no forced choice). A stricter whole-rack rule added (**D-48**):
+a boost-spent move may never close the whole rack, not even on an exact match — corrects M6's
+original enforcement, not just an M7 addition. Production single-die-endgame behaviour revised a
+second time (**D-49**, supersedes D-42's production-facing part): the shipped game is now a **silent
+single die once unlocked, no player-facing choice at all**; the old "1 or 2, changeable with a tap"
+model survives only as a dev-mode testing affordance. Roster now **rotates by one seat after a
+completed game** (win screen only, not timeout) plus **drag-to-reorder** in setup (**D-50**). **M10**
+(dice roll animation) added. **M11** (navigation/escape-hatch fixes) added and fully resolved:
+Pause button on Play reuses the existing tabbed screen; Restart resets boosts (New Game still
+carries them forward); undo confirmed out of scope. **M12** (tabbed settings/menu redesign) written
+against all four now-wireframed tabs (Rules/Players/App/Dev) — structural implementation now, skin
+deferred to the brand drop landing the next day — with a stated resolution rule (prototype wins on
+functionality the wireframe is silent on or conflicts with) applied to keep drag-to-reorder and the
+full player-colour count, both flagged as mismatches for the design session; one new detail adopted
+(time-challenge `0 = off`) and one factual correction flagged (the Dev tab's "not shown in shipped
+build" claim, which this no-build-step project cannot actually deliver).
+
+**Prior pass (reconciling DECISIONS.md 2026-09-11):** M4 cut (D-40); M6 closed
 at single-type overpay scope and verified, with the two-type expansion split into a new **M7**
 (specified, not started — D-41); new **M8** dev-mode tab (D-42) and **M9** time challenge (D-43)
 added; the two-dice-force relocated to dev mode with §3.3 left unchanged; boost **earned-vs-granted**
@@ -78,7 +97,7 @@ acceptable because the project contains no secrets and no personal data.
 
 **Consequence of a public repo — treat as a hard rule.** Do not commit real family or
 child names anywhere: not as default players, not in test fixtures, not in comments, not in
-`docs/FINDINGS.md`. The player roster lives in `localStorage` and is never committed. Use
+`FINDINGS.md`. The player roster lives in `localStorage` and is never committed. Use
 placeholder names (`Player 1`, `Player 2`) in all code and documents.
 
 ---
@@ -116,13 +135,25 @@ bad state, **stop and report** — do not adjust the rules.
 - The single-die option **unlocks for a player when every one of that player's remaining
   open tiles is ≤ 6.** (This generalises correctly to the 12-tile rack: it unlocks once
   all tiles above 6 are closed.)
-- Once unlocked, that player chooses **one die or two dice** before each roll.
-  **Default the choice to one die**, changeable with a single tap.
-- This rule is **mandatory, not optional, and must not be made a settings toggle.**
-  Reason: two dice cannot total 1. A player whose only remaining open tile is `{1}` can
-  never close it with two dice, and since the win condition is closing every tile (§3.4),
-  the game would hang forever. The single-die endgame is the only thing that guarantees a
-  rack can always be finished.
+- **Production behaviour (revised — see D-49): once unlocked, the player rolls one die,
+  silently, with no choice surfaced.** There is no toggle, no per-turn prompt, no tap-to-change
+  in the shipped product. This supersedes the earlier "chooses one die or two, default one,
+  changeable with a tap" wording — that model is **not** shipped; see the next bullet.
+- **The interactive "choose 1 or 2 each turn" model exists only as a dev-mode testing
+  affordance** (`devDiceChoice: 'ask'`, behind an off-by-default `devDiceTestEnabled` checkbox
+  in M8's dev surface), used to hand-test both the one-die and two-dice code paths. It is not a
+  production mechanic. The dev surface also allows hard-forcing `1` or `2` for testing.
+- This rule is **mandatory, not optional, and must not be made a *production* settings
+  toggle.** Reason: two dice cannot total 1. A player whose only remaining open tile is `{1}`
+  can never close it with two dice, and since the win condition is closing every tile (§3.4),
+  the game would hang forever. The single-die endgame is the only thing that guarantees a rack
+  can always be finished — and the current production behaviour (always one die once unlocked,
+  unconditionally) satisfies this trivially, since two dice are never rolled once unlocked in
+  production at all.
+- **The last-tile-is-1 safety net is unconditional and overrides every dev-mode setting,
+  including a dev-forced `2`.** If a player's only remaining open tile is `1`, one die is
+  forced regardless of any dev override. This is independent of, and stricter than, the
+  production/dev split above.
 
 ### 3.4 Winning and placement
 - **A player wins by closing every tile on their rack.** This is the only win condition.
@@ -209,10 +240,26 @@ What ships today is the single overpay type only.
 selection that would shut the entire rack.** The exact-match requirement applies to *any* selection
 covering every currently-open tile, however many that is — not only when a single tile remains. A
 strict subset (leaving ≥1 tile open) keeps the normal overpay ≤ total rule; an exact whole-rack sum
-still legitimately finishes the game. This supersedes the earlier "final remaining tile" (singular)
-wording, which had an exploit: with 2+ tiles open, one big overpaid roll could close them all at
-once, losing the endgame tension the rule exists to protect. The UI shows "Closing the whole rack
-needs an exact match — exclude a tile to overpay instead." when a selection hits this case.
+still legitimately finishes the game **when no boost is being spent.** This supersedes the earlier
+"final remaining tile" (singular) wording, which had an exploit: with 2+ tiles open, one big
+overpaid roll could close them all at once, losing the endgame tension the rule exists to protect.
+The UI shows "Closing the whole rack needs an exact match — exclude a tile to overpay instead." when
+a selection hits this case.
+
+**Boost-spent moves may never close the whole rack — stricter than the rule above, no exception
+(LIVE — M6, corrected).** A move made **by spending a boost, of either type**, may never be the move
+that shuts the entire rack — **not even on an exact match.** This is stricter than the whole-rack
+rule above (which governs plain, non-boost overpay, where an exact whole-rack match is fine) and
+sits alongside it, not in place of it. The principle: **a boost may advance a player, but must never
+be the move that finishes their rack.** This was found live via the 1-for-2 boost (a 5-total roll on
+{4,1} was being offered and let through, finishing the game), but the fix generalizes to the overpay
+boost too — the original M6 implementation only enforced "must be exact to close the whole rack,"
+not "may not close the whole rack at all," for boost-spent moves. Both the **offer** (a boost is
+never offered when it would only be usable to close the whole rack) and the **confirm** (a whole-rack
+selection is rejected outright whenever a boost is being spent, before any per-type shape check)
+must enforce this — a single, type-agnostic guard, not two that could disagree. The player sees why
+("closing the whole rack can't be done with a boost" or equivalent) rather than a silently-disabled
+Confirm.
 
 **Boost lifetime (LIVE — M6):** held in the in-memory roster, stacking across replays **within one
 app session only.** Fresh app launch → everyone at zero. No cross-session persistence, no stored
@@ -520,7 +567,7 @@ beyond the single button. This is instrumentation only.
    shortest bump-safe delay is still slow enough to out-tap — that is a stop condition**
    (see below): the flip needs a different trigger, not just a shorter delay.
 
-**Deliverable beyond the harness:** a short `docs/FINDINGS.md` recording the measured
+**Deliverable beyond the harness:** a short `FINDINGS.md` recording the measured
 thresholds, the phone model and iOS version, the date, and the answers to criteria 5 and 6.
 
 **Risks.**
@@ -784,11 +831,20 @@ See M7 below; not duplicated.
 
 ---
 
-### M7 — Two-type boost expansion — SPECIFIED, NOT STARTED
+### M7 — Two-type boost expansion — BUILT, VERIFIED
 
-**Status: SPECIFIED, NOT STARTED. Do not begin without the orchestrator's design pass finishing
-first (D-41, and the DECISIONS.md note).** The live build is single-type overpay (M6); M7 layers
-the second type and the typed machinery on top, per §3.6b.
+**Status: BUILT, matches §3.6b as written (2026-09-11).** Implements the 1-for-2 type, typed
+inventory/credits (`{ overpay, oneForTwo }`), the cross-type 3-boost cap, auto-select spend (1-for-2
+preferred when both resolve), the shared-pool 50/50 reward roll (`CONFIG.boostTypeDistribution`), and
+type-aware inventory/announcement/offer text. All 9 acceptance criteria verified individually plus
+full automated multi-type games with zero console errors.
+
+**Orchestrator ruling on one flagged interpretation.** §3.6b's "ignore one whole die, play the other
+as a single value" doesn't say which die when the two faces differ and either could resolve the
+stall. Shipped as **exact match to either individual die face** (not a forced die choice) — this
+matches the §3.6b {3,7,8,9}/roll-3+3 worked example, stays player-driven like every other move in
+this game, and is a safe superset reading not contradicted by any acceptance criterion. **Confirmed
+correct; no change needed.**
 
 **Goal.** Add the **1-for-2 boost type** and the typed inventory / auto-select / per-type reward
 model of §3.6b, on top of the verified single-type M6.
@@ -826,8 +882,10 @@ motion/tap paths.
 6. **Only-overpay case:** on a stall only overpay resolves, overpay is offered.
 7. **No-op case:** on a stall neither held boost resolves, no spend is offered and I stall.
 8. Single spend-or-stay choice (never a two-boost picker); the offer names the type.
-9. Neither boost can close a selection that would shut the whole rack (the M6 whole-rack rule
-   still holds for both types).
+9. **Neither boost type can EVER close a selection that would shut the whole rack while spending a
+   boost — not even on an exact match** (the stricter rule above, corrected from an earlier draft
+   of this criterion that wrongly implied the exact-match D-45 carve-out applied to boost-spent
+   moves too — it does not).
 
 **Stop conditions.** If the auto-select rule ever offers a boost that does **not** resolve the
 current stall, **stop and report** — the usable-here filter is wrong. If awards flood the game,
@@ -835,7 +893,25 @@ current stall, **stop and report** — the usable-here filter is wrong. If award
 
 ---
 
-### M8 — Dev-mode tab (development surface) — SPECIFIED
+### M8 — Dev-mode tab (development surface) — BUILT, VERIFIED
+
+**Status: BUILT, matches spec (2026-09-11).** Implemented as a collapsed
+`<details id="dev-mode-section"><summary>Dev mode</summary>...</details>` on the settings screen,
+styled distinctly (dashed warning-toned border) from the production `<fieldset>` above it, closed
+by default. Not hard-gated — this static-file project has no build variant to gate on, so "always
+present but visually/structurally separate and closed by default" satisfies the spec's actual intent
+(criterion 1: production doesn't *show* exploratory controls). All acceptance criteria verified.
+
+**Note — M8 is likely to be superseded by M12** (the tabbed settings redesign) once that lands; M8's
+`<details>` approach was the right interim answer with no build step to gate on, but M12's design
+puts Dev behind its own top-level tab instead. Not urgent; M8's shipped behaviour remains correct
+until M12 replaces it.
+
+**Dice-count history — see §3.3 for the current, twice-revised production behaviour.** M8 originally
+just relocated a two-dice *force* here; production dice-count has since gone through two further
+revisions (a return of the full 1/2/? choice, then dropping the player-facing choice from production
+entirely) — §3.3 and D-49 carry the current state; this section's original scope text below is kept
+for the historical record of what M8 itself delivered.
 
 **Goal.** A separate **dev-mode tab** in the settings menu that holds exploratory, debug, and
 testable controls, keeping the **production settings surface clean and shaped toward the final
@@ -873,7 +949,16 @@ rules, **stop and report** — the dev tab is a container, not a rules change.
 
 ---
 
-### M9 — Time challenge (dev-mode feature) — SPECIFIED
+### M9 — Time challenge (dev-mode feature) — BUILT, VERIFIED
+
+**Status: BUILT, matches spec (2026-09-11).** Dev-mode time picker + Set (rounds to nearest 15s,
+persists the duration only — the live countdown is in-memory game state, never persisted, per §2's
+"never persist game-in-progress state"), a persistent countdown HUD on both the turn card (visibly
+paused, struck-through) and the rack (running), delta-time-based ticking so a long pause never jumps
+on resume, and a dedicated `screen-timeout` (not a branch of the normal end screen) so "no ranking,
+ever, here" is structural rather than something a future edit could reintroduce. Implemented as a
+pure overlay — no turn/rack function was touched to build it, matching the stop condition's own bar.
+All 4 acceptance criteria verified, including real (non-simulated) multi-second timing checks.
 
 **Goal.** A quick, cuttable time-cap feature to stop games dragging on, built to try the idea fast
 and react to real feedback. Lives in the M8 dev-mode surface.
@@ -957,6 +1042,198 @@ Sound (M-later / out of scope generally).
 **Stop conditions.** If making the animation display the predetermined result cleanly would require
 deriving the result *from* the animation, **stop** — that inverts the load-bearing rule. Keep result
 and animation decoupled or report why it can't be done.
+
+---
+
+### M11 — Navigation & escape-hatch fixes — SPECIFIED
+
+**Status: fully resolved (2026-09-12) — this is the direct answer to the URGENT flag in
+DECISIONS.md** ("no recovery/undo path when a player is stuck," raised after a report where the only
+way out of a confusing state was End game, discarding the whole match). All three open points from
+the prior draft are now settled.
+
+**The gap, as mapped by the design session's screen-flow review** (solid arrows = exists in code;
+the gaps below = a player would reasonably expect these but they aren't there):
+1. **Play → menu/Back is missing entirely when Motion is off.** The turn card has a corner Settings
+   button; Play (the rack screen — roll, pick tiles, Confirm, Next) has none. The *only* exit from
+   Play is picking the phone up, which does nothing when Motion is off — a genuine dead end.
+2. Restart match with the same roster — missing (New Game exists but discards to Setup).
+3. Confirm-guard before End / New game — missing (one mis-tap currently erases everything).
+
+(An earlier version of this diagram also listed "undo a confirmed flip" as expected-but-missing —
+that line is **stale**: undo was separately ruled out in conversation with the design session before
+any playtest surfaced a real desire for it, and that ruling never made it back into the diagram. It
+is **not** part of this milestone; see the out-of-scope note below.)
+
+**P0 — Pause/Menu button on Play.**
+- **Where:** top corner of Play, mirroring the turn card's existing `corner-btn` so it feels native
+  and consistent rather than a bolted-on addition.
+- **What:** gives a tap route off Play **regardless of motion state** — closes gap 1 unconditionally.
+  This is the load-bearing fix for the urgent flag: whatever else this milestone does, this alone
+  removes the literal dead end.
+- **Destination: reuses the existing tabbed Setup/Settings screen** (the same one the turn card's
+  corner button already opens), **not** a separate new sheet. Mid-game, that screen's footer already
+  shows "Back to game / Restart match / End match" (per the wireframe and M12) — Play's new button is
+  simply a second entry point into it. No new UI surface to build.
+
+**P1 — Restart match.**
+- **Where:** the Pause/Menu screen (i.e. the reused tabbed screen above), and the End and Timeout
+  screens (labelled "Rematch" there).
+- **What:** keeps the **exact roster and settings**, re-racks everyone, jumps straight to the first
+  player's turn card. Explicitly **distinct from "New game,"** which discards to Setup — Restart is
+  a fast same-group replay; New Game is for changing who's playing or what's configured.
+- **Boosts reset to zero on Restart** — this is a deliberate divergence from "New Game," which
+  carries boosts forward per §3.6's "stacking across replays within one app session." **Restart does
+  not count as a replay for this purpose.** Rationale: a restart is a do-over of the *same* match,
+  and resetting boosts incentivises actually finishing a match to keep what you've earned, rather
+  than restarting mid-game to shed a bad position while keeping accumulated boosts. New Game (a
+  genuinely new match) still carries boosts forward as before — this milestone does not change that.
+- **Guarded** by the P1 confirm dialog below whenever a match is in progress (not needed from the End
+  or Timeout screens, where the match is already over).
+
+**P1 — Confirm guards on destructive exits.**
+- **Where:** wraps **End game**, **Restart** (when a match is live), and **New game** (when a match
+  is live) in the design system's existing `.dialog` component — e.g. "End this match? Scores and
+  progress will be lost. This can't be undone." Reuses an existing component; no new dialog system.
+- Closes gap 3. Cheap, and removes the one-mis-tap-erases-everything risk directly reported.
+- **Not needed** when there's no live match to lose (End/Timeout screens' own New Game/Rematch
+  buttons don't need a guard — nothing is in progress to discard).
+
+**Out of scope.** **Per-move undo** (undoing a confirmed tile flip) — confirmed out, not merely
+deferred. Already ruled out with the design session prior to this milestone; no playtest has
+surfaced a real desire for it. P0 (an exit always exists) + Restart (a coarse full reset) are the
+complete answer to the urgent flag. If a genuine need for finer-grained undo surfaces later, it is a
+new, separately-scoped milestone — not a gap in this one.
+
+**Do-not-touch on entry.** The motion/tap turn-advance logic itself — the Pause button is a new,
+independent exit, not a change to how motion or tap already work. The boost-carryover rule for New
+Game (unchanged; only Restart diverges from it, per above).
+
+**Acceptance criteria:**
+1. From Play, with Motion off, tapping the corner button opens the same tabbed Setup/Settings screen
+   the turn card already opens — the game is never a dead end regardless of motion state.
+2. Attempting End game, Restart, or New game while a match is live always shows a confirm dialog
+   first; declining leaves the match untouched; confirming proceeds.
+3. End/Timeout screens' own New Game / Rematch buttons need no confirm guard (nothing live to lose).
+4. Restart re-racks all players, keeps the roster and settings, resets every player's boost inventory
+   to zero, and jumps to the first player's turn card — verified distinct in behaviour from New Game
+   (which returns to Setup and carries boosts forward).
+5. There is no undo affordance for a confirmed tile flip anywhere in the app.
+
+**Stop conditions.** If closing gap 1 (P0) turns out to require touching the motion/tap turn-advance
+logic itself, **stop and report** — the Pause button is a new, independent exit, not a change to how
+motion or tap already work.
+
+---
+
+### M12 — Tabbed settings/menu redesign — SPECIFIED (structural), skin lands tomorrow
+
+**Status:** all four tabs are now wireframed (2a Rules, 3a Players, 3b App, 3c Dev) — the
+"extrapolate the pattern" approach from the previous draft is **no longer needed**; every tab has a
+real spec below. **Brand specs (palette, final type application) land tomorrow, not today** — this
+milestone is written to the wireframe's *structure*, with the skin still explicitly deferred one
+more day. Do not treat the wireframe's colours/fonts/placeholder display font as final.
+
+**Resolution rule for this milestone (apply throughout): where the wireframe's static mock doesn't
+show — or actively conflicts with — functionality that already exists in the shipped prototype, the
+prototype's functionality wins and is kept. The mismatch is recorded below for the design session to
+fold into a future pass, not resolved unilaterally by dropping the feature to match the mock.** This
+is not a license to add anything new — only to keep what's already real when the wireframe is silent
+or behind on it.
+
+**Supersedes M8's interim implementation.** M8 shipped the dev surface as a collapsed `<details>`
+element for lack of a better container at the time. M12's Dev tab replaces that with a proper
+top-level tab. M8's underlying content carries over unchanged; only the container changes.
+
+**Scope — tab by tab, from the real wireframe.**
+
+**Tab bar:** top segmented tabs with icons, order **Players / Rules / App / Dev**, per 2a/3a/3b/3c.
+
+**Rules tab (2a):** rack size (segmented 9/12, `next game` chip), placement (segmented Win/Top
+2/All, `next lap` chip), overpay (segmented A/D, `next lap` chip), boost mode (switch, `next lap`
+chip, sub-labelled "A only" — **must render visibly disabled/greyed when overpay = D**, an
+interactive state the static wireframe can't show but is an acceptance criterion here). The
+`next game`/`next lap` chips are a visual implementation of **D-30's** three-tier rule — carry the
+tiering exactly as D-30 specifies. A mid-game banner ("Match in progress — rule changes apply at the
+next lap") shows across the whole menu whenever a match is live.
+
+**Players tab (3a):** roster list (colour dot + name + remove), an "Add player" row (name input +
+Add), a colour-swatch picker, and a banner ("Add at least 2 players to start · roster edits apply
+next game" — matches the existing 2-player minimum and D-30's blocked-until-next-game tier for
+roster edits, no change needed).
+- **Mismatch — drag-to-reorder not shown.** The wireframe's roster rows have no reorder handle;
+  the shipped prototype has drag-to-reorder (D-50, Pointer Events, disabled mid-game). **Kept per
+  the resolution rule above.** Build the reorder interaction into 3a's row style (a handle affordance
+  fits naturally into the existing row layout); flag to the design session that the mock should grow
+  a drag-handle glyph in its next pass.
+- **Mismatch — swatch count.** The wireframe shows 6 grey placeholder swatches; the shipped
+  `theme.js` already defines more player colours than that (at least 10, per the P4/P5/P10 additions
+  on record). **Kept — do not truncate the real colour set to 6 to match the mock.** This will
+  naturally resolve once tomorrow's refined palette (colour-blind-safe to 8, graceful to 12 per the
+  brand brief) lands; no separate fix needed now beyond not regressing the count.
+- **Deferred, not a mismatch:** no avatar picker appears here, because whether avatars exist at all
+  is still open in the brand brief (§2.1, Spudlings include/exclude). Nothing to build now; this tab
+  simply doesn't have an avatar row yet.
+
+**App tab (3b):** a "Handoff" group (Motion switch, Tap-to-proceed switch, and a banner — "One of
+Motion / Tap must stay on — turning both off isn't allowed" — **this is a precise, correct rendering
+of the §3.9 mutual invariant**, nothing to change) and a "Display" group (Theme, segmented
+Light/Dark).
+- **Clarify, not a mismatch:** this Theme control sets the player's **preferred base theme**. It does
+  not override or replace the automatic overpay theme-inversion (§3.11/D-34) — that flips
+  independently on top of whichever base is selected here. The wireframe doesn't spell this
+  relationship out; note it for the design session so a future pass doesn't try to reconcile the two
+  into one control.
+
+**Dev tab (3c):** a "Dice test" group (`Test dice #` switch, `Dice choice` segmented 1/2/?) and a
+"Time challenge" group (a numeric seconds input rounding to 15 s steps + Set button, `next game`
+chip, a status line — "Currently 1:30 — applies next game"). This **already matches the current,
+twice-revised dice-test model (D-49)**, not the older single-force toggle — good sign the design
+session is working from current information.
+- **New detail to adopt (not a conflict — the plan never specified this and the wireframe fills a
+  real gap):** the time-challenge input defines **`0` seconds as the off state.** Lock this in: `0` =
+  no challenge active; the smallest active duration is still 15 s per M9's existing rule.
+- **Flag for the design session — a claim the mock makes that the stack can't deliver.** The Dev
+  tab's banner reads "Developer tools — not shown in the shipped build." This project has **no build
+  step** (§2 of this plan) — there is no mechanism to conditionally exclude anything from a "shipped
+  build" versus a dev one; it's the same static files always. M8's actual approach (a
+  visually-distinct, always-present section) is the correct realization of "developer tools kept out
+  of the way," but the banner's literal wording overpromises something the architecture cannot do.
+  **Do not implement hiding-from-shipped-build; keep the always-present-but-visually-separate model.**
+  Reword the banner copy when this tab is built (e.g. "Developer tools — not part of normal play") so
+  it doesn't assert a false guarantee. This is a correction, not a mismatch to preserve either side of.
+
+**Mid-game footer state (all tabs, same menu screen):** "Back to game" (primary) plus a secondary row
+of "Restart match" / "End match" — matches M11 exactly (M11 resolved the Pause button to reuse this
+same screen). Pre-game: "Start game" only, as shown on 3a/3b/3c (those wireframes reuse the pre-game
+footer since the mid-game state was already shown once, on 2a).
+
+**Out of scope.** Final visual skin (brand-track-dependent; lands tomorrow). Any new settings or
+rules not already specified elsewhere in this plan — this milestone re-organizes and re-skins
+existing controls into the new tabbed structure, plus the two kept mismatches above; it does not
+invent new functionality.
+
+**Do-not-touch on entry.** No settings value, default, or mid-game-mutability tier changes — this is
+a container/layout change over the existing settings model (D-30), not a rules change.
+
+**Acceptance criteria:**
+1. The settings screen shows four top tabs (Players / Rules / App / Dev) with icons; switching tabs
+   shows the right content, no page reload.
+2. Rules tab matches 2a: segmented/switch controls only, with next-game/next-lap chips exactly
+   matching D-30's tiers; the boost-mode switch visibly disables when overpay = D.
+3. Players tab matches 3a **plus** keeps drag-to-reorder and the full existing colour-swatch count
+   (both mismatches above resolved toward keeping prototype functionality).
+4. App tab matches 3b exactly; the mutual motion/tap invariant banner is present and correct.
+5. Dev tab matches 3c, with `0` seconds established as the time-challenge off-state, and the banner
+   copy corrected to not claim build-time exclusion.
+6. The mid-game banner appears whenever a match is live, on every tab, and disappears when none is.
+7. Mid-game, the footer shows "Back to game" + "Restart match" + "End match"; pre-game, "Start game".
+8. Visual polish still reads as a wireframe/placeholder skin — confirms this milestone did **not**
+   attempt to guess at final brand colours/fonts ahead of tomorrow's brand drop.
+
+**Stop conditions.** If any tab's real content requires inventing a setting that doesn't already
+exist elsewhere in this plan, **stop and report** — this milestone re-arranges and preserves, it
+does not invent.
 
 ---
 
@@ -1089,9 +1366,14 @@ though it were known:
 | D-39 | Block-dice and any targeted / inter-player / duration boost is benched; if revived it is its own milestone with targeting/duration state and the parked open questions answered first | Locked |
 | D-40 | M4 (continuous-rotation handoff) CUT — never attempted, no open problem it solves; M3 tap/motion handoff feels fine; do not revisit without a new decision (per DECISIONS.md 2026-09-11) | Locked |
 | D-41 | M6 CLOSED at single-type overpay scope (verified); the two-type expansion is split into M7, specified but not started until the orchestrator design pass finishes (per DECISIONS.md 2026-09-11) | Locked |
-| D-42 | Dev-mode tab (M8) separates exploratory/debug controls from the clean production settings surface; the two-dice-force control lives there — §3.3 unchanged, default one die, single-die endgame rule untouched; the once-per-game-toggle idea is not adopted as a production rule | Locked |
+| D-42 | Dev-mode tab (M8) separates exploratory/debug controls from the clean production settings surface — **this part still holds.** ~~§3.3 unchanged, default one die, single-die endgame rule untouched; the once-per-game-toggle idea is not adopted as a production rule~~ **superseded by D-49:** production dice-count went through a further revision after this row — see D-49 for the current, twice-revised state | Partially superseded |
 | D-43 | Time challenge (M9, dev-mode) is an anti-drag circuit-breaker: 15s-min picker + Set, HUD timer paused (visibly) on turn screens, on timeout the game ends with a deliberate **no-ranking** "Time's up" screen. Random placeholder rankings rejected | Locked |
 | D-44 | Boost timing distinguishes **earned** (award criterion fires) from **granted** (credit delivered + announced at the start of the earning player's next turn); §3.6 "announced when granted" refers to the granted moment (per DECISIONS.md 2026-09-11) | Locked |
-| D-45 | Overpay/boost may not close a selection that would **shut the whole rack** (any selection covering every open tile needs exact match), generalising the earlier singular "final tile" wording; shipped commit `f262a7d` | Locked |
+| D-45 | Overpay/boost may not close a selection that would **shut the whole rack** (any selection covering every open tile needs exact match) **when no boost is being spent**; generalising the earlier singular "final tile" wording; shipped commit `f262a7d` | Locked |
 | D-46 | Reconciliation rule: DECISIONS.md entries are folded into this §8 at the start of each orchestrator session before new work; once folded, the entry is stamped "Reconciled into §8" so pending vs absorbed is visible | Locked (process) |
 | D-47 | M10 dice animation is the face-cycle (+ optional CSS shake), result decided by `Math.random()` before the animation which only displays it; covers the single-die endgame; must not fight the theme-inversion signal; CSS-3D dice explicitly out of scope | Locked |
+| D-48 | **Stricter than D-45:** a move made by spending a boost, of either type, may never close the whole rack — not even on an exact match. Principle: a boost may advance a player, never finish them. Found live via 1-for-2 on a {4,1}/5+2 case; generalizes to the overpay boost too, correcting M6's original enforcement, which only checked "must be exact," not "must not happen at all," for boost-spent moves | Locked |
+| D-49 | **Supersedes the production-facing part of D-42.** Production dice-count once unlocked is a **silent single die, no player-facing choice, no toggle, no prompt** — not "chooses 1 or 2, default 1, changeable with a tap" as §3.3 originally read. The interactive per-turn choice model exists only as a dev-mode testing affordance (`devDiceChoice: 'ask'`, off by default). The last-tile-is-1 safety net remains unconditional and overrides every dev override | Locked |
+| D-50 | Roster rotates by one seat after a **completed** game (the normal win screen's "New game" only — `roster.push(roster.shift())`) so a different player starts next by default; **not** applied on the M9 timeout screen's "New game," since a timeout is deliberately not treated as a completed round anywhere else (consistent with M9's no-ranking rule). Drag-to-reorder added to the setup roster list (Pointer Events, for touch support); disabled mid-game, matching existing roster-editability rules | Locked |
+| D-51 | M11 (navigation/escape fixes), fully resolved: Pause button on Play reuses the existing tabbed Setup/Settings screen (not a new sheet); Restart match keeps roster/settings but **resets boosts to zero** (diverges deliberately from New Game, which still carries boosts forward); confirm guards wrap End/Restart/New-game while live; per-move undo confirmed **out of scope** (already ruled out pre-playtest, not a gap) | Locked |
+| D-52 | M12 implements all four wireframed tabs (2a Rules, 3a Players, 3b App, 3c Dev) structurally now; skin lands the next day. Resolution rule: where the wireframe is silent on or conflicts with existing prototype functionality, the prototype wins and the mismatch is recorded for the design session — applied to keep drag-to-reorder (wireframe doesn't show it) and the full player-colour count (wireframe shows only 6 swatches). Time-challenge `0 seconds = off` adopted as a new clarifying detail. Dev-tab banner's "not shown in shipped build" claim flagged as undeliverable (no build step exists) and to be reworded. Supersedes M8's `<details>` container | Locked (structure); skin deferred |
