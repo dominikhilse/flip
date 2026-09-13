@@ -67,6 +67,8 @@
   var turncardTimerEl = document.getElementById('turncard-timer');
 
   var playPlayerNameEl = document.getElementById('play-player-name');
+  var playAvatarBtn = document.getElementById('play-avatar-btn');
+  var playAvatarImgEl = document.getElementById('play-avatar-img');
   var playTimerEl = document.getElementById('play-timer');
   var playBoostCountEl = document.getElementById('play-boost-count');
   var playBoostAnnouncementEl = document.getElementById('play-boost-announcement');
@@ -599,6 +601,55 @@
     game.pendingSettings = null;
   }
 
+  // ---- Avatars (M13, D-55) ----
+  // Files are app/avatars/01.png..NN.png where NN = CONFIG.avatarCount -
+  // that count is the one place a static site (no directory listing at
+  // runtime) records how many exist.
+  function avatarFilename(n) {
+    return String(n).padStart(2, '0') + '.png';
+  }
+
+  function avatarPool() {
+    var pool = [];
+    for (var i = 1; i <= CONFIG.avatarCount; i++) pool.push(avatarFilename(i));
+    return pool;
+  }
+
+  // Randomly assigned without replacement at every game start (including
+  // Restart, which re-racks everyone the same way) - unique per player as
+  // long as the pool covers the seat count, which D-55's fixed 20 guarantees
+  // against the 12-tile rack max. Player COUNT itself has no cap (§3.1)
+  // though, so if a roster ever exceeds the pool size this degrades to
+  // repeating the shuffled pool rather than erroring - every player still
+  // gets an avatar, just not a unique one past the pool size. An edge case
+  // no real pass-the-phone session will hit.
+  function assignAvatars(players) {
+    var pool = avatarPool();
+    for (var i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+    players.forEach(function (p, idx) {
+      p.avatar = pool[idx % pool.length];
+    });
+  }
+
+  // Cycling (D-55): tap the avatar on the play screen to browse to the next
+  // one not currently held by another player THIS game, wrapping around the
+  // full set - keeps every player's avatar unique through cycling too, not
+  // just at initial assignment (the point of "primary 9-12 distinguisher"
+  // breaks if two players can end up sharing one by cycling into it).
+  function cycleAvatar(p) {
+    var pool = avatarPool();
+    var taken = new Set(game.players.filter(function (pl) { return pl !== p; }).map(function (pl) { return pl.avatar; }));
+    var startIdx = pool.indexOf(p.avatar);
+    for (var step = 1; step <= pool.length; step++) {
+      var candidate = pool[(startIdx + step) % pool.length];
+      if (!taken.has(candidate)) { p.avatar = candidate; break; }
+    }
+    renderPlay();
+  }
+
   function startNewGame() {
     var players = roster.map(function (p) {
       return {
@@ -616,6 +667,7 @@
         pendingBoostAnnouncement: false
       };
     });
+    assignAvatars(players);
     game = {
       players: players,
       turnIndex: 0,
@@ -666,6 +718,7 @@
       p.rollHistory = [];
       p.pendingBoostAnnouncement = false;
     });
+    assignAvatars(game.players); // fresh deal, same as a genuine game start
     game.turnIndex = 0;
     game.finishedOrder = [];
     game.pendingSettings = null;
@@ -1121,16 +1174,18 @@
     playRackEl.innerHTML = '';
     p.rack.forEach(function (tile) {
       var btn = document.createElement('button');
-      btn.className = 'tile' + (game.selected.has(tile.value) ? ' selected' : '');
+      btn.className = 'tile' + (tile.open ? '' : ' closed') + (game.selected.has(tile.value) ? ' selected' : '');
       btn.textContent = tile.value;
       btn.disabled = !tile.open || !game.currentRoll || game.currentRoll.stalled;
-      if (tile.open) {
-        btn.style.background = THEME.tileColors[tile.value];
-        btn.style.color = THEME.tileTextColor;
-      } else {
-        btn.style.background = THEME.closedTileColor;
-        btn.style.color = THEME.closedTileTextColor;
-      }
+      // M13/D-53-55: fill/edge/ink per tile, not a flat colour - edge is the
+      // tile's border (a non-hue identity channel), ink the numeral. Closed
+      // tiles use THEME.closedTile regardless of value - the desaturated
+      // fill plus the CSS inset shadow (.tile.closed) are two of the three
+      // redundant closed-state cues; the dim `ink` here is the third.
+      var colors = tile.open ? THEME.tileColors[tile.value] : THEME.closedTile;
+      btn.style.background = colors.fill;
+      btn.style.borderColor = colors.edge;
+      btn.style.color = colors.ink;
       btn.addEventListener('click', function () { onTileClick(tile); });
       playRackEl.appendChild(btn);
     });
@@ -1360,6 +1415,8 @@
     var p = currentPlayer();
     playPlayerNameEl.textContent = p.name;
     playPlayerNameEl.style.color = p.color;
+    playAvatarImgEl.src = 'avatars/' + p.avatar;
+    playAvatarImgEl.alt = p.name + '’s avatar';
     renderPlayBoostCount();
     renderPlayBoostAnnouncement();
     renderPlayRack();
@@ -1377,6 +1434,7 @@
   playPassBtn.addEventListener('click', onPass);
   playBoostSpendBtn.addEventListener('click', onBoostSpend);
   playBoostDeclineBtn.addEventListener('click', onBoostDecline);
+  playAvatarBtn.addEventListener('click', function () { cycleAvatar(currentPlayer()); });
 
   // ---- End screen ----
 

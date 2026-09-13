@@ -38,5 +38,12 @@ window.CONFIG = {
   // and how fast the face-cycle flashes before settling. Starting values,
   // not measured - tune by feel.
   diceAnimationDurationMs: 400,
-  diceAnimationFrameMs: 60
+  diceAnimationFrameMs: 60,
+
+  // Avatars (M13, D-55). Files live at app/avatars/01.png..NN.png - this is
+  // the one place the actual count is recorded, since a static site can't
+  // list its own directory at runtime. D-55 locks the number at 20; only 19
+  // placeholders exist right now (see app/avatars/README.md) - update this
+  // the moment a 20th file is added, nothing else needs to change.
+  avatarCount: 19
 };

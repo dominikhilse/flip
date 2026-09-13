@@ -537,3 +537,58 @@ duplicated here.
   Settings button, Restart, confirm dialogs, and End/Timeout Rematch all re-verified working
   unchanged through the new tab structure; a full automated game (boosts on, overpay A, 12-tile
   rack) completed cleanly end to end. Zero console errors throughout, in both themes.
+
+### 2026-09-13 — Built M13 (brand/skin application + avatars)
+- **Only 19 of D-55's locked 20 avatar files exist.** The user supplied 19 placeholder PNGs
+  (real photos, not Spudling art - explicitly temp per D-55's "provisional/swappable" framing).
+  Renamed from their original camera filenames to the `01.png`..`19.png` convention documented
+  in `app/avatars/README.md`. **Not silently padded to 20** - `CONFIG.avatarCount` (`app/
+  config.js`) is the single source of truth for the actual count a static site can't discover
+  at runtime by listing its own directory, currently `19`. Dropping a 20th file in as `20.png`
+  and bumping this one number is the entire fix when it's available; nothing else reads a
+  hardcoded avatar count. Flagging here per the "20 is a locked spec number" note rather than
+  treating it as resolved.
+- **Palette, tile renderer, fonts, and radii applied verbatim from the design handoff**
+  (`docs/DevHandoff_BrandSpec.dc.html`): `theme.js`'s `tileColors` moved from a flat hex string
+  per value to `{fill, edge, ink}` (edge = dark-partner border/light-fill numeral, a non-hue
+  identity channel that survives the theme flip; ink = numeral colour); `closedTileColor`/
+  `closedTileTextColor` folded into a single `closedTile` object. `renderPlayRack` (`app.js`)
+  updated to read the new shape and add a `.closed` class; `.tile.closed`'s CSS inset shadow is
+  one of three redundant closed-state cues (desaturated fill + dim hollow `ink` are the other
+  two, both already inline per-tile) - verified all three independently visible with the tile
+  screenshot inspected at full colour. Bagel Fat One + Figtree added via network `<link>` in
+  `index.html` `<head>` (the §3.1 offline-purity caveat is knowingly accepted, per the handoff -
+  `system-ui` is the fallback). `--radius-tile`/`--radius-btn`/`--tile-closed-shadow` added to
+  the single shared `:root` block (theme-independent, unlike the colour tokens) rather than
+  duplicated into `body.theme-light`.
+- **Avatar assignment and cycling (D-55), the one genuinely new mechanic this milestone adds:**
+  `assignAvatars(players)` shuffles the avatar pool and deals one per player without
+  replacement, called from both `startNewGame()` and `restartMatch()` (a Restart is a fresh
+  deal, same as any other game start, consistent with it also resetting boosts/racks). Shown as
+  a circular, tap-to-cycle image (`#play-avatar-btn`) next to the name in Play's header - the
+  spec's own UI mockup doesn't actually depict where the avatar goes (none of the six mockup
+  screens shows one), so the exact placement was this session's call, not the handoff's.
+  **Judgment call the spec didn't fully resolve: cycling also enforces uniqueness against every
+  other player's CURRENT avatar**, not just the initial deal - `cycleAvatar()` skips any
+  filename another player already holds, wrapping through the full pool. Reasoning: D-55's
+  stated purpose for avatars is "primary 9-12 distinguisher," which two players sharing one
+  (by cycling into it) would directly undermine; enforcing it only at deal-out and not after
+  seemed like an oversight risk rather than an intended relaxation.
+- **Player-count edge case, noted not solved:** the roster has no upper limit (§3.1), but the
+  avatar pool is finite (19 now, 20 at D-55's spec). `assignAvatars` degrades gracefully past
+  the pool size by repeating the shuffled pool (`pool[idx % pool.length]`) rather than crashing
+  or leaving players without an avatar - guarantees at least one full unique pass before any
+  repeats. No real pass-the-phone session will hit this; recorded so it isn't a silent surprise
+  if one ever does.
+- **Verified** via a temporary debug hook (removed before commit), after first hitting and
+  fixing a stale-`config.js`-cache issue (rotated the dev-server port per the standing
+  convention, confirmed `CONFIG.avatarCount` loaded correctly after): tile fill/edge/ink render
+  correctly per value in both themes, with **pixel-identical background RGB values confirmed
+  across the theme flip** (the acceptance criterion that player hues never move); closed tiles
+  show all three redundant cues; avatars assign uniquely per game (checked via `Object.keys`/
+  direct player inspection) and cycling was driven through all 18 alternatives for one player
+  without ever landing on the other's held avatar; turn card and launch screens confirmed
+  unaffected by both the theme toggle and the new fonts/palette (fixed contrast preserved,
+  matching the do-not-touch instruction); the Setup tab bar, buttons, and headings all confirmed
+  using the new display/UI fonts; a full automated game completed cleanly. Zero console errors
+  throughout.

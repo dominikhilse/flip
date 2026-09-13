@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flip the Number — prototype</title>
+<!-- M13/D-53: Bagel Fat One (display) + Figtree (UI), via network link -
+     the §3.1 offline-purity caveat is knowingly accepted (first load needs
+     network; system-ui is the fallback if the request fails or is blocked). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -152,7 +158,12 @@
   <section id="screen-play" class="screen" hidden>
     <button id="settings-from-play" class="corner-btn">Settings</button>
     <div class="play-header">
-      <h1 id="play-player-name"></h1>
+      <div id="play-identity">
+        <button type="button" id="play-avatar-btn" class="avatar-btn" title="Tap to change your avatar">
+          <img id="play-avatar-img" alt="">
+        </button>
+        <h1 id="play-player-name"></h1>
+      </div>
       <div id="play-boost-announcement" hidden></div>
     </div>
     <div id="play-timer" hidden></div>
