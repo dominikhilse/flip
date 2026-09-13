@@ -20,19 +20,28 @@
   };
   var activeScreen = 'launch';
 
+  // M12: tab bar + per-tab panels. Elements inside the panels (roster list,
+  // rack size, etc.) keep their pre-M12 ids unchanged - this is a container
+  // reorganisation, not a rebuild of the controls themselves.
+  var setupMidgameBannerEl = document.getElementById('setup-midgame-banner');
+  var setupTabbarEl = document.getElementById('setup-tabbar');
+  var setupTabPanels = {
+    players: document.getElementById('setup-tab-players'),
+    rules: document.getElementById('setup-tab-rules'),
+    app: document.getElementById('setup-tab-app'),
+    dev: document.getElementById('setup-tab-dev')
+  };
+  var activeSetupTab = 'players';
+
   var rosterListEl = document.getElementById('roster-list');
   var addPlayerForm = document.getElementById('add-player-form');
   var playerNameInput = document.getElementById('player-name-input');
   var colorSwatchesEl = document.getElementById('color-swatches');
   var rosterNoteEl = document.getElementById('roster-note');
   var rackSizeToggleEl = document.getElementById('rack-size-toggle');
-  var rackSizeNoteEl = document.getElementById('rack-size-note');
   var placementModeEl = document.getElementById('placement-mode');
-  var placementModeNoteEl = document.getElementById('placement-mode-note');
   var overpayToggleEl = document.getElementById('overpay-toggle');
-  var overpayNoteEl = document.getElementById('overpay-note');
   var boostCheckboxEl = document.getElementById('boost-checkbox');
-  var boostNoteEl = document.getElementById('boost-note');
   var devDiceTestEnabledEl = document.getElementById('dev-dice-test-enabled');
   var devDiceChoiceRowEl = document.getElementById('dev-dice-choice-row');
   var devDiceChoiceToggleEl = document.getElementById('dev-dice-choice-toggle');
@@ -41,7 +50,7 @@
   var devTimeChallengeStatusEl = document.getElementById('dev-time-challenge-status');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
-  var themeToggleEl = document.getElementById('theme-toggle');
+  var themeToggleGroupEl = document.getElementById('theme-toggle-group');
   var startGameBtn = document.getElementById('start-game');
   var backToGameBtn = document.getElementById('back-to-game');
   var restartMatchBtn = document.getElementById('restart-match');
@@ -297,11 +306,12 @@
   }
 
   // Settings reachable mid-game (§3.10): rack size and the roster are
-  // blocked-until-next-game (visibly disabled, not hidden, with a note);
-  // placement, overpay, the boost checkbox, and the two handoff toggles are
-  // live-at-end-of-lap (editable mid-game, but deferred - see
-  // queueSettingChange/notePlayerCompletedTurn). The blocked/live notes only
-  // need to be shown while a game is actually in progress.
+  // blocked-until-next-game (visibly disabled); placement, overpay, and the
+  // boost checkbox are live-at-end-of-lap (editable mid-game, but deferred -
+  // see queueSettingChange). D-30's tiering is now shown as a static "next
+  // game"/"next lap" chip next to each control's label (M12) rather than a
+  // conditionally-hidden note - the one dynamic, mid-game-only message is
+  // the single banner at the top of the menu (see renderSetupTabs).
   function renderSettingsControls() {
     var midGame = game !== null;
 
@@ -311,28 +321,27 @@
       btn.classList.toggle('active', settings.rackSize === size);
       btn.disabled = midGame;
     });
-    rackSizeNoteEl.hidden = !midGame;
 
     placementModeEl.value = settings.placementMode;
-    placementModeNoteEl.hidden = !midGame;
 
     var overpayBtns = overpayToggleEl.querySelectorAll('.toggle-btn');
     overpayBtns.forEach(function (btn) {
       btn.classList.toggle('active', settings.overpayMode === btn.getAttribute('data-overpay'));
     });
-    overpayNoteEl.hidden = !midGame;
 
     boostCheckboxEl.checked = settings.boostEnabled;
     boostCheckboxEl.disabled = settings.overpayMode !== 'A';
     boostCheckboxEl.closest('.setting-row').classList.toggle('disabled', boostCheckboxEl.disabled);
-    boostNoteEl.hidden = !midGame;
 
     // Motion, tap-to-proceed, and theme are input/cosmetic preferences, not
     // rules - they apply immediately (see queueSettingChange), so unlike
-    // the settings above they carry no "applies next lap" note.
+    // the settings above they carry no next-game/next-lap chip.
     motionToggleEl.checked = settings.motionEnabled;
     tapToggleEl.checked = settings.tapToProceed;
-    themeToggleEl.checked = settings.theme === 'light';
+    var themeBtns = themeToggleGroupEl.querySelectorAll('.toggle-btn');
+    themeBtns.forEach(function (btn) {
+      btn.classList.toggle('active', settings.theme === btn.getAttribute('data-theme'));
+    });
 
     // Dev mode (M8) dice-choice test instrument - applies immediately like
     // the preferences above, carries no "applies next lap" note. The
@@ -371,12 +380,36 @@
     rosterNoteEl.hidden = !blocked;
   }
 
+  // M12: tab bar + the one standing mid-game banner (replaces the old
+  // scattered per-control "applies next lap" notes - see
+  // renderSettingsControls). activeSetupTab persists across renders (a
+  // module-level var, not part of `game`/`settings`) so reopening the menu
+  // doesn't reset the player back to Players every time.
+  function renderSetupTabs() {
+    var tabBtns = setupTabbarEl.querySelectorAll('.tab-btn');
+    tabBtns.forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === activeSetupTab);
+    });
+    Object.keys(setupTabPanels).forEach(function (key) {
+      setupTabPanels[key].hidden = key !== activeSetupTab;
+    });
+    setupMidgameBannerEl.hidden = game === null;
+  }
+
+  setupTabbarEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    activeSetupTab = btn.getAttribute('data-tab');
+    renderSetupTabs();
+  });
+
   function renderSetup() {
     renderRosterList();
     renderColorSwatches();
     renderRosterEditability();
     renderSettingsControls();
     renderPrimaryAction();
+    renderSetupTabs();
     applyTheme();
   }
 
@@ -497,8 +530,11 @@
     renderSettingsControls();
   });
 
-  themeToggleEl.addEventListener('change', function () {
-    queueSettingChange('theme', themeToggleEl.checked ? 'light' : 'dark');
+  themeToggleGroupEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    queueSettingChange('theme', btn.getAttribute('data-theme'));
+    renderSettingsControls();
     applyTheme();
   });
 

@@ -195,17 +195,6 @@ button.secondary:active { background: var(--bg-subtle); }
   border-color: var(--fg);
 }
 
-fieldset {
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  margin: 0 0 1rem;
-  padding: 0.75rem;
-}
-legend {
-  padding: 0 0.4em;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
 .setting-row {
   display: flex;
   align-items: center;
@@ -240,24 +229,6 @@ legend {
   font-size: 0.75rem;
   color: var(--text-dim);
   margin: -0.4rem 0 0.6rem;
-}
-/* Dev mode (M8): deliberately distinct from the production fieldset above -
-   a dashed warning-toned border and matching summary color, so it reads as
-   "not a real setting" at a glance rather than blending into the rest. */
-#dev-mode-section {
-  border: 1px dashed var(--accent-danger);
-  border-radius: 6px;
-  padding: 0.6rem 0.75rem;
-  margin: 0 0 1rem;
-}
-#dev-mode-section summary {
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--accent-danger);
-}
-#dev-mode-section .setting-row {
-  margin-top: 0.6rem;
 }
 .dev-time-row {
   display: flex;
@@ -613,3 +584,88 @@ legend {
   font-size: 1rem;
 }
 #confirm-dialog .action-row button.secondary { flex: 1; }
+
+/* ---- M12: tabbed settings/menu ---- */
+/* Structural pass only - placeholder icons/colours, not brand-final (skin
+   lands with M13). Deliberately plain so it still reads as a wireframe
+   (M12 acceptance criterion 8), not a finished screen. */
+
+.tab-bar {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5em 0.2em;
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.tab-btn svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tab-btn.active {
+  color: var(--fg);
+  border-color: var(--fg);
+  font-weight: 600;
+}
+
+.setup-tab {
+  margin-bottom: 1rem;
+}
+
+/* A static "next game"/"next lap" tag next to a control's label (D-30's
+   tiers) - always visible, unlike the old conditionally-hidden per-control
+   note it replaces. The one dynamic, mid-game-only message is
+   #setup-midgame-banner below, not a per-control note anymore. */
+.chip {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 0.15em 0.55em;
+  margin-left: 0.4em;
+  vertical-align: middle;
+}
+
+.menu-banner {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  margin-bottom: 1rem;
+}
+/* The mid-game banner in particular is a live status, not ambient copy -
+   an accent border makes it read as "this is telling you something right
+   now" rather than blending in with the App tab's static invariant note. */
+#setup-midgame-banner {
+  border-color: var(--fg);
+}
+.dev-banner {
+  color: var(--accent-danger);
+  border-color: var(--accent-danger);
+}
+
+#setup-footer {
+  margin-top: 1rem;
+}

@@ -491,3 +491,49 @@ duplicated here.
   2026-09-12 revision note flipped M7/M8/M9 to `BUILT, VERIFIED` but didn't mention M10. Likely
   just missed in that pass; flagging so the next reconciliation flips M10's header too rather
   than leaving it looking unbuilt.
+
+### 2026-09-13 — Built M12 (tabbed settings/menu redesign, structural pass)
+- **Picked up after M13 (brand/skin) was resolved and folded in as its own milestone** - per the
+  plan's own sequencing, M12's structural pass still comes first (M13 lands skin/avatars on top
+  of it), so this session built M12 rather than jumping ahead to M13.
+- **Restructured `#screen-setup`** into the four wireframed tabs (Players/Rules/App/Dev) with a
+  top tab bar (simple placeholder inline SVG icons - person, list, sliders, `<>` chevrons -
+  monochrome `currentColor`, deliberately unpolished per the acceptance criterion that this
+  milestone must still read as a wireframe, not final skin). Every existing control kept its
+  pre-M12 element id; this was a pure container reorganisation, not a rebuild - `renderSetup()`
+  and friends needed no logic changes beyond the new tab-switching and banner code.
+- **D-30's tiering, re-expressed as static chips.** The old per-control notes ("Applies next
+  lap", conditionally hidden until a game was live) are gone, replaced by an always-visible
+  `next game`/`next lap` chip next to each Rules-tab control's label - a static category tag
+  rather than a live status message. The one genuinely dynamic, mid-game-only message is now a
+  single banner at the top of the whole menu ("Match in progress — rule changes apply at the
+  next lap"), shown on every tab via `renderSetupTabs()`, replacing four scattered conditional
+  notes with one. No tier, default, or mid-game-mutability behavior changed - confirmed via the
+  boost-mode-greys-out-under-D and rack-size/time-challenge-disabled-mid-game checks below.
+- **Theme control changed shape**, checkbox → segmented Dark/Light toggle-group, to match 3b's
+  spec exactly. Same underlying `settings.theme` value and `queueSettingChange('theme', ...)`
+  path as before - only the control's shape changed, verified applying immediately in both
+  directions.
+- **Dev tab supersedes M8's `<details>` container** (per M12's own stated scope) - dropped the
+  collapse/dashed-border treatment (redundant now that Dev has its own tab for segregation) and
+  added the corrected banner ("Developer tools — not part of normal play"), avoiding the
+  wireframe's undeliverable "not shown in shipped build" claim (this project has no build step
+  to exclude anything from - see §2/M12's own flag). Time-challenge `0 = off` needed no code
+  change - already the existing behavior throughout (`timeChallengeSeconds > 0` gates every use
+  site) - just confirmed it, per M12's "new detail to adopt."
+- **Kept both flagged mismatches, per M12's resolution rule:** drag-to-reorder (D-50) built into
+  the Players tab's row style unchanged; the full player-colour set (10, not the wireframe's 6
+  placeholder swatches) left untruncated.
+- `activeSetupTab` is a plain module-level var (not persisted to `settings` or `game`) so
+  reopening the menu mid-session keeps the player's last tab instead of resetting to Players -
+  a small UX call the spec didn't dictate either way.
+- **Verified** via a temporary debug hook (removed before commit): all four tabs render and
+  switch with no reload; boost-mode row visibly greys out when Overpay = D and re-enables
+  switching back to A; rack size buttons and the time-challenge input/Set button are disabled
+  mid-game while the theme toggle and dev dice-test remain live; the mid-game banner appears on
+  every tab exactly when a match is live and disappears when it ends; the theme toggle-group
+  flips the whole screen immediately in both light and dark; drag-to-reorder re-tested via
+  scripted Pointer Events post-restructure and still cascades correctly; M11's Play-screen
+  Settings button, Restart, confirm dialogs, and End/Timeout Rematch all re-verified working
+  unchanged through the new tab structure; a full automated game (boosts on, overpay A, 12-tile
+  rack) completed cleanly end to end. Zero console errors throughout, in both themes.
