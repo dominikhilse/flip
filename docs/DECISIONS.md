@@ -672,3 +672,17 @@ duplicated here.
   on tile `1` specifically - worth a real-device look before assuming it's fine for the target
   age group, since misreading a tile number is a correctness-adjacent legibility issue in a
   number-matching game, not just a cosmetic one.
+
+### 2026-09-14 — Font swap (Figtree → Overpass)
+- **Request:** replace `--font-ui` with Overpass. Straightforward substitution - `--font-ui`
+  already sat behind a variable read by everything (the two-font audit the previous session had
+  just finished confirmed there was no third font and no stray hardcoded `'Figtree'` anywhere),
+  so this needed no structural change, only the value itself and the font `<link>` request.
+- Swapped `family=Figtree:wght@400;600;700;800` to `family=Overpass:wght@400;600;700;800` in
+  `index.html`'s Google Fonts `<link>` (same weight set requested, since nothing about which UI
+  weights are used changed) and `--font-ui: 'Overpass', system-ui, sans-serif;` in `style.css`.
+- **Verified** via a temporary debug hook (removed before commit; dev-server port rotated to
+  avoid a stale-cache re-serve of the old font link): `document.body`'s and a representative
+  UI-face element's (`#turncard-instruction`) computed `font-family` both confirmed `Overpass,
+  system-ui, sans-serif`; `#turncard-name` (display face) confirmed still `Vollkorn, Georgia,
+  serif`, unaffected; a full automated game completed cleanly with zero console errors.
