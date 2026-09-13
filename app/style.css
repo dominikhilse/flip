@@ -430,7 +430,7 @@ button.secondary:active { background: var(--bg-subtle); }
   position: absolute;
   top: 0;
   left: 50%;
-  width: 190%;
+  width: 150%;
   height: auto;
   transform: translateX(-50%);
 }
