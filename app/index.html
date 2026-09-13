@@ -161,7 +161,13 @@
   </section>
 
   <section id="screen-play" class="screen" hidden>
-    <button id="settings-from-play" class="corner-btn">Settings</button>
+    <!-- Issue #3: two header rows - settings/toast, then avatar+name/counter -
+         replacing the old fixed-corner Settings button and standalone
+         centered timer block. -->
+    <div class="play-toprow">
+      <button type="button" id="settings-from-play" class="settings-inline">Settings</button>
+      <div id="play-boost-announcement" hidden></div>
+    </div>
     <div class="play-header">
       <div id="play-identity">
         <button type="button" id="play-avatar-btn" class="avatar-btn" title="Tap to change your avatar">
@@ -169,13 +175,11 @@
         </button>
         <h1 id="play-player-name"></h1>
       </div>
-      <div id="play-boost-announcement" hidden></div>
+      <div id="play-timer" hidden></div>
     </div>
-    <div id="play-timer" hidden></div>
 
     <div id="play-boost-count" hidden></div>
 
-    <div id="play-message"></div>
     <div id="play-selection-sum"></div>
 
     <div id="play-rack"></div>
@@ -184,7 +188,6 @@
     <div id="play-dice-area"></div>
 
     <div id="play-boost-offer" hidden>
-      <div id="play-boost-offer-text"></div>
       <div class="action-row">
         <button id="play-boost-spend" class="primary">Use boost</button>
         <button id="play-boost-decline" class="secondary">Stay stalled</button>
@@ -195,6 +198,18 @@
       <button id="play-roll" class="primary">Roll</button>
       <button id="play-confirm" class="primary">Confirm</button>
     </div>
+
+    <!-- Issue #3: a reserved safe area below the buttons for every message-
+         style text (the plain stall notice, the whole-rack-block notices,
+         and the boost spend-or-stay prompt - see renderPlayMessage/
+         renderPlayBoostOffer) - frees the space above the buttons these
+         used to occupy, one less variably-sized element pushing the rack
+         around. -->
+    <div id="play-message-area">
+      <div id="play-message"></div>
+      <div id="play-boost-offer-text"></div>
+    </div>
+
     <button id="play-pass" class="primary" hidden>Next player</button>
   </section>
 

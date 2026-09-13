@@ -1248,13 +1248,30 @@
   // effectiveDiceCount is pure w.r.t. current state (rack/dev settings), not
   // the eventual random roll, so the placeholder count always matches what
   // a real roll would show right now.
+  // Issue #3: while a 1-for-2 boost is spent, once the current selection
+  // sums to exactly one die's face, highlight that die and dim the other -
+  // it's the one being "ignored" per the boost's own rule (RULES.
+  // isValidOneForTwoSelection). If the two dice show the same face, both
+  // are the "used" die (there's no meaningful other one to dim - they're
+  // visually identical anyway). Before any match, neither is marked -
+  // "after selecting the number" per the request, not before.
+  function oneForTwoDieClass(dice, index, selectedSum) {
+    if (dice[0] === dice[1]) return selectedSum === dice[0] ? 'die-used' : '';
+    if (selectedSum === dice[index]) return 'die-used';
+    if (selectedSum === dice[1 - index]) return 'die-unused';
+    return '';
+  }
+
   function renderPlayDice() {
     var rolled = !!game.currentRoll;
     var diceCount = rolled ? game.currentRoll.dice.length : effectiveDiceCount(currentPlayer());
+    var oneForTwo = rolled && diceCount === 2 && game.currentRoll.boostSpentType === 'oneForTwo';
+    var sum = oneForTwo ? selectedSum() : null;
     var html = '';
     for (var i = 0; i < diceCount; i++) {
       var face = rolled ? game.currentRoll.dice[i] : 1;
-      html += '<span class="die"' + (rolled ? '' : ' style="visibility:hidden"') + '>' + dieFaceSVG(face) + '</span>';
+      var extraClass = oneForTwo ? ' ' + oneForTwoDieClass(game.currentRoll.dice, i, sum) : '';
+      html += '<span class="die' + extraClass + '"' + (rolled ? '' : ' style="visibility:hidden"') + '>' + dieFaceSVG(face) + '</span>';
     }
     var totalText = rolled ? 'Total: ' + game.currentRoll.total : 'Total: 0';
     html += '<div id="total"' + (rolled ? '' : ' style="visibility:hidden"') + '>' + totalText + '</div>';
@@ -1359,7 +1376,14 @@
   function renderPlayBoostOffer() {
     var show = !!(game.currentRoll && game.currentRoll.boostOfferPending);
     playBoostOfferEl.hidden = !show;
-    if (!show) return;
+    if (!show) {
+      // Issue #3: the text moved out of #play-boost-offer (now hidden with
+      // the button row above) into the always-visible #play-message-area,
+      // so it must be cleared explicitly here - it's no longer hidden for
+      // free by an ancestor's `hidden` attribute.
+      playBoostOfferTextEl.textContent = '';
+      return;
+    }
     if (game.currentRoll.offeredBoostType === 'oneForTwo') {
       // "a single N" (not "the tile numbered N") - a real playtest read this
       // as needing tile N specifically, which is often exactly the closed
@@ -1528,9 +1552,12 @@
     turncardTimerEl.hidden = !active;
     playTimerEl.hidden = !active;
     if (!active) return;
+    // Issue #3: just the counter, no "Time challenge"/"(paused)" label -
+    // the turn card's strikethrough (.corner-timer, CSS) is what signals
+    // "paused" now, not text.
     var label = formatChallengeTime(game.timeChallenge.remainingMs);
-    turncardTimerEl.textContent = 'Time challenge (paused): ' + label;
-    playTimerEl.textContent = 'Time challenge: ' + label;
+    turncardTimerEl.textContent = label;
+    playTimerEl.textContent = label;
   }
 
   // Deliberately no ranking (§5/M9) - nobody shut their box, so there is no

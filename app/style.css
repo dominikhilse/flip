@@ -338,10 +338,13 @@ button.secondary:active { background: var(--bg-subtle); }
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.75);
 }
+/* Issue #3: settings upper-left, counter upper-right - matching Play's new
+   header layout (settings/toast row, then name/counter row), rather than
+   the turn card's old right/left arrangement. */
 .corner-btn {
   position: absolute;
   top: 1rem;
-  right: 1rem;
+  left: 1rem;
   padding: 0.5em 0.9em;
   font-size: 0.85rem;
   color: #ffffff;
@@ -352,11 +355,12 @@ button.secondary:active { background: var(--bg-subtle); }
 
 /* Time challenge HUD (M9). Fixed dark/light styling like the rest of the
    turn card - not theme-tokened. Visibly "paused" (struck, dimmer) here,
-   since the turn card is exactly when the challenge is paused. */
+   since the turn card is exactly when the challenge is paused - just the
+   counter, per issue #3, no "Time challenge"/"(paused)" label text. */
 .corner-timer {
   position: absolute;
   top: 1rem;
-  left: 1rem;
+  right: 1rem;
   padding: 0.5em 0.9em;
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.6);
@@ -394,23 +398,38 @@ button.secondary:active { background: var(--bg-subtle); }
   padding-bottom: calc(1rem + 48px);
   overflow-y: auto;
 }
-/* M11: unlike the turn card (never scrolls), #screen-play can scroll
-   (overflow-y: auto above) - fixed, not .corner-btn's default absolute,
-   so the Settings button stays pinned to the viewport corner rather than
-   scrolling away with the rack. */
-#screen-play .corner-btn {
-  position: fixed;
+/* Issue #3: Settings is now a normal flow item in .play-toprow (left-
+   aligned, next to the right-aligned boost toast) rather than an
+   absolutely/fixed-positioned corner chip - it moves with the rest of the
+   header instead of floating over the rack. */
+.play-toprow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  margin-bottom: 0.5rem;
+}
+.settings-inline {
+  flex: 0 0 auto;
+  padding: 0.5em 0.9em;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
 
 .play-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   flex: 0 0 auto;
 }
 .play-header h1 {
   margin: 0;
+  font-size: 1.5rem;
 }
 /* M13/D-55: the avatar sits left of the player's name, tap-to-cycle. Plain
    button reset so it reads as an avatar, not a button, with its own tap
@@ -510,6 +529,17 @@ button.secondary:active { background: var(--bg-subtle); }
   border-radius: 6px;
   padding: 0.2rem;
 }
+/* Issue #3: once a 1-for-2 boost selection matches one die's face exactly,
+   highlight that die and dim the other - it's the one being "ignored" per
+   the boost's own rule, not an interactive/clickable state (dice aren't
+   tappable), just a read of which die the current selection is using. */
+.die.die-used {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+.die.die-unused {
+  opacity: 0.35;
+}
 /* The pip SVG fills .die's own box (minus its padding) exactly, rather
    than being sized by font/glyph metrics the way the earlier Unicode-
    glyph approach was - see dieFaceSVG(). */
@@ -538,13 +568,21 @@ button.secondary:active { background: var(--bg-subtle); }
   margin-top: 0.4rem;
 }
 
-#play-message {
+/* Issue #3: every message-style text (plain stall notice, whole-rack-block
+   notices, and the boost spend-or-stay prompt - #play-boost-offer-text,
+   moved out of #play-boost-offer below) now lives in this one reserved
+   area below the buttons instead of above the rack - frees that space and
+   gives the rack one less variably-sized neighbour pushing it around.
+   min-height sized for the longest of these strings wrapping to two lines
+   on a phone-width screen, so the area's own height doesn't jump between
+   an empty turn and a wrapped one. */
+#play-message-area {
   text-align: center;
-  font-size: 1rem;
-  min-height: 1.4em;
-  margin-bottom: 0.5rem;
+  min-height: 2.8em;
+  margin-top: 0.5rem;
   flex: 0 0 auto;
 }
+#play-message { font-size: 1rem; }
 #play-message.stalled { color: var(--accent-danger); }
 #play-message.notice { color: var(--text-muted); }
 
@@ -584,6 +622,19 @@ button.secondary:active { background: var(--bg-subtle); }
   flex: 0 0 auto;
 }
 .action-row button.primary { flex: 1; }
+/* Issue #3: within Play's own action-rows specifically (Roll/Confirm and
+   the boost spend-or-stay row), every button - primary or secondary -
+   matches size exactly. Scoped to #screen-play rather than broadened
+   globally, so Setup/End's primary-vs-secondary buttons and the confirm
+   dialog's own sizing (already handled separately, just below) are
+   unaffected - this fixes a real, reported mismatch (button.secondary's
+   smaller padding/font-size than button.primary made "Stay stalled"
+   noticeably taller and wider than "Use boost"), not a cosmetic tweak. */
+#screen-play .action-row button {
+  flex: 1;
+  padding: 1em;
+  font-size: 1.1rem;
+}
 #play-pass {
   flex: 0 0 auto;
 }
@@ -592,11 +643,10 @@ button.secondary:active { background: var(--bg-subtle); }
    this screen while it's actively counting down (paused state lives on the
    turn card instead, .corner-timer). */
 #play-timer {
-  text-align: center;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
   color: var(--accent-danger);
-  margin-bottom: 0.5rem;
   flex: 0 0 auto;
 }
 
@@ -625,14 +675,14 @@ button.secondary:active { background: var(--bg-subtle); }
 }
 
 #play-boost-offer {
-  text-align: center;
   margin-bottom: 0.5rem;
   flex: 0 0 auto;
 }
+/* Text lives in #play-message-area now (issue #3); this is just the
+   spend-or-stay button row's position. */
 #play-boost-offer-text {
   font-size: 0.95rem;
   color: var(--accent-danger);
-  margin-bottom: 0.75rem;
 }
 
 /* End screen */

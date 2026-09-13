@@ -686,3 +686,62 @@ duplicated here.
   UI-face element's (`#turncard-instruction`) computed `font-family` both confirmed `Overpass,
   system-ui, sans-serif`; `#turncard-name` (display face) confirmed still `Vollkorn, Georgia,
   serif`, unaffected; a full automated game completed cleanly with zero console errors.
+
+### 2026-09-14 — GitHub issue #3: Play/turn-card UI fixes (pre design session direction)
+- **Scope resolved with the reporter before starting** (four points flagged as blocking,
+  answered before any code): (1) the "Total/Selected merged line" item is **deferred** - boost
+  UI/UX needs a broader pass first, revisit the merge question then; `#play-selection-sum`
+  stays exactly where and how it is. (2) The boost spend-or-stay **buttons stay in their
+  current position** (their own row, directly above Roll/Confirm) - only the **help text**
+  relocates to the new reserved area below the buttons; "Use boost" becomes the same width as
+  "Stay stalled" at that same position, not moved. (3) Header layout is **two explicit rows**,
+  not one: row 1 = Settings (left) / boost-earned toast (right); row 2 = avatar+name (left) /
+  time-challenge counter (right) - resolves what would otherwise be a real conflict (confirmed
+  via `renderPlayBoostAnnouncement`'s own logic that the toast can genuinely persist alongside
+  a running counter, not just a hypothetical overlap). (4) **All** message-style text moves to
+  the new bottom area - the plain "Stalled — no legal move," both whole-rack-block notices, and
+  the boost offer prompt - not just the boost-specific ones.
+- **Built:**
+  - `#play-boost-offer-text` moved out of `#play-boost-offer` (which now wraps only the
+    Use-boost/Stay-stalled button row, unchanged position) into a new `#play-message-area`
+    below the Roll/Confirm row, alongside the relocated `#play-message`. Found and fixed a real
+    bug this uncovered: `renderPlayBoostOffer()` used to rely on its parent's `hidden` attribute
+    to hide stale offer text when no longer pending - now that the text lives in an
+    always-visible container, it needed its own explicit clear on the `!show` path, or a
+    declined/expired offer's text would have stuck around silently.
+  - **Button-sizing bug fixed at its actual root cause**, not papered over: `button.primary`
+    and `button.secondary` have always carried different padding/font-size app-wide (by
+    design, for the visual weight difference between primary/secondary elsewhere). Inside
+    Play's own action-rows specifically, that's what made "Stay stalled" (secondary) taller
+    and differently-sized than "Use boost" (primary) - fixed via `#screen-play .action-row
+    button { flex: 1; padding: 1em; font-size: 1.1rem; }`, scoped so Setup/End's primary-vs-
+    secondary distinction and the confirm dialog's own sizing are untouched.
+  - Settings moved from an absolutely/fixed-positioned corner chip (`.corner-btn`, only ever
+    used by the turn card now) into a normal flow item in the new `.play-toprow`
+    (`.settings-inline`, visually similar chip, not position:fixed) - it now moves with the
+    header instead of floating over the rack.
+  - `#play-timer` restyled to `--font-display` at the same weight/size as `#play-player-name`
+    (both `1.5rem`, explicitly set on both rather than left to each element's differing
+    implicit default - h1's is UA-dependent, not something to match against blindly); its
+    "Time challenge:"/"(paused)" label text dropped everywhere (`renderChallengeTimer()`), on
+    the turn card relying on the existing strikethrough CSS alone to signal "paused."
+  - Turn card's `.corner-btn`/`.corner-timer` swapped left/right (settings now upper-left,
+    counter upper-right) to match the new Play convention - a straightforward swap of two
+    already-absolute-positioned classes, not a layout rebuild.
+  - **1-for-2 die highlight (new mechanic, not just a relayout):** once a boost-spent selection
+    sums to exactly one die's face, that die gets an outline and the other dims to 0.35 opacity
+    - purely a state readout (dice aren't interactive elements), added to `renderPlayDice()`.
+    When both dice show the same face, both highlight (there's no meaningful "other one" to dim
+    when they're visually identical). Nothing highlights before a match exists, per "after
+    selecting the number" in the request.
+- **Verified** via a temporary debug hook (removed before commit; dev-server port rotated to
+  avoid a stale-cache re-serve): forced the exact `{4,1}`-rack/`[4,6]`-roll 1-for-2 scenario and
+  confirmed selecting tile `4` outlines the die showing `4` and dims the one showing `6`, then
+  confirmed the move closes only that tile (not the whole rack, re-exercising D-48's existing
+  guard as a side effect); "Use boost"/"Stay stalled" confirmed equal-sized; boost-offer text
+  confirmed relocated below the buttons and correctly cleared (not stuck) after spending;
+  forced a simultaneous running time-challenge counter and boost-earned toast and confirmed
+  both rows render exactly as specified with no overlap; plain "Stalled — no legal move"
+  confirmed relocated to the same bottom area; turn card's settings/counter swap confirmed
+  (left/right, counter struck-through, label-free); a full automated game completed cleanly in
+  both themes with zero console errors.
