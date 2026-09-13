@@ -415,3 +415,79 @@ duplicated here.
   drag-to-reorder confirmed to cascade multiple slots in one gesture via dispatched
   `pointerdown`/`pointermove`/`pointerup` events, confirmed persisted via `STORAGE.saveRoster`,
   confirmed the handle is hidden and inert mid-game.
+
+### 2026-09-13 — GitHub issue #1: rack grid still resizing pre-roll (extension of the total-line fix)
+- **Report** (`dominikhilse/flip#1`): the previous fix reserved space for the dice "Total"
+  line only once a roll was already in flight (`totalEl.style.visibility`, toggled inside
+  `animateDiceRoll`). The same principle wasn't applied to the moment *before* the first roll
+  of a turn: with no `game.currentRoll` yet, `renderPlayDice` rendered nothing at all into
+  `#play-dice-area`, which fell back to its CSS `min-height: 3.5rem` - less than the block's
+  real height once dice + the total line are actually drawn. Since `#play-rack` is `flex: 1 1
+  0` in the same flex column, it silently absorbed that extra slack, then visibly shrank the
+  instant the first roll of a turn rendered real content - the same jump as before, just at a
+  different transition.
+- **Fix:** `renderPlayDice` (`app/app.js`) now always renders the same shape of markup - N
+  die spans plus the `#total` div - whether or not a roll has happened yet; pre-roll, the
+  dice are placeholder value `1` and everything is `visibility: hidden`, not absent. Die count
+  pre-roll comes from `effectiveDiceCount(currentPlayer())`, which is already pure with
+  respect to current rack/dev-settings state (it doesn't depend on the eventual random roll),
+  so the placeholder count always matches what a real roll would show right now - no
+  guessed/hand-measured pixel value involved, matching the "reserve by always rendering,
+  toggle visibility" approach used for the animation-phase fix rather than inventing a new
+  min-height number.
+- **Verified** via a temporary debug hook (removed before commit): measured `#play-rack`'s
+  rendered height at turn start (pre-roll), immediately after `onRoll()`, and once the roll
+  animation settled - identical (509.9375px) at all three points. Ran a full automated game
+  with height sampled every animation frame; the only height changes recorded were pre-existing,
+  unrelated UI (`#play-boost-offer` and the boost-earned announcement banner appearing/
+  disappearing with real game events) - none from the dice/total/rack area this fix targets.
+  Zero console errors.
+
+### 2026-09-13 — Built M11 (navigation & escape-hatch fixes); flag re: M10's stale status header
+- **Picked up from the latest milestone-plan revision** (reconciling DECISIONS.md through
+  2026-09-12): M11 is written up as "fully resolved" (design-wise) with D-51 locked, but its
+  section header still reads `SPECIFIED` and none of it existed in code - so it was the next
+  thing to actually build, and this entry covers doing so.
+- **Built, matching §M11/D-51 exactly:**
+  - **P0 - corner Settings button on `#screen-play`** (`app/index.html`/`app/app.js`), mirroring
+    the turn card's existing `.corner-btn`, into the *same* reused Setup/Settings screen (no new
+    UI surface). Closes the literal dead end: with Motion off, Play previously had no exit at
+    all. `position: fixed` rather than `.corner-btn`'s default `absolute`, since unlike the turn
+    card, `#screen-play` can scroll (`overflow-y: auto`) and the button must not scroll away.
+  - **Restart match** (`restartMatch()`): keeps `game.players` (identity/seat order/colors) and
+    every live setting, re-racks everyone fresh, **resets every player's boosts to zero**
+    (deliberately diverges from New Game's boost carryover, per D-51/§3.6's "stacking across
+    replays" - a Restart is a do-over of *this* match, not a replay), clears finishedOrder and
+    turnIndex, resets the time-challenge clock if one is set, and jumps straight to the first
+    player's turn card via the existing `beginTurn()`. Reachable from the mid-game Setup screen
+    (new "Restart match" button) and, unguarded and unrotated (see below), as "Rematch" on both
+    the End and Timeout screens.
+  - **Confirm guards**: a single generic native `<dialog>` (`#confirm-dialog`, `confirmAction()`
+    in `app.js`) wraps mid-game "End game" and "Restart match" - the two destructive actions
+    reachable while a match is live. Cleanup hangs off the dialog's own `close` event (not off
+    Cancel/OK directly) so a desktop Escape-dismiss can't leak listeners. End/Timeout screens'
+    own Rematch/New Game need no guard - nothing live to lose there, per spec.
+  - **Rematch does not rotate the roster.** D-50's rotation is tied specifically to New Game's
+    "discard to Setup" flow; Rematch keeps the same seats in the same order by design (verified
+    below), matching "keeps the exact roster and settings."
+  - Per-move undo: confirmed absent, as required - nothing built resembles it.
+  - Minor supporting CSS: buttons stacked in the same screen (`start-game`/`back-to-game`/
+    `restart-match`/`end-game`, and the two Rematch/New-Game pairs) previously had zero gap
+    between them with no rule providing one; added `.screen button + button { margin-top:
+    0.5rem }` so destructive/safe actions sitting side by side don't visually fuse into one
+    blob - directly in service of this milestone's own point (making dangerous actions
+    distinguishable), not a drive-by restyle.
+- **Verified** via a temporary debug hook (removed before commit): the Play-screen Settings
+  button reaches Setup with `motionEnabled: false` (the exact reported dead end); Restart's
+  Cancel leaves state untouched and Confirm resets rack/boosts/turnIndex/finishedOrder and lands
+  on the first player's turn card; End game's Confirm discards to Setup, Cancel leaves the match
+  running; both dialogs checked in light and dark theme; End-screen and Timeout-screen Rematch
+  both skip the confirm and leave `roster` order unchanged (`STORAGE`-persisted roster order
+  read back identical before/after); a full automated game (boosts on, overpay A, 12-tile rack)
+  completed cleanly. Zero console errors throughout.
+- **Flag for the orchestrator:** M10's section header in the milestone plan still reads
+  `SPECIFIED` even though the dice-roll animation has been built and verified for several
+  sessions now (commit `2298247` and its follow-ups) - D-47 is already `Locked` in §8, and the
+  2026-09-12 revision note flipped M7/M8/M9 to `BUILT, VERIFIED` but didn't mention M10. Likely
+  just missed in that pass; flagging so the next reconciliation flips M10's header too rather
+  than leaving it looking unbuilt.

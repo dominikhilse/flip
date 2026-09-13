@@ -97,6 +97,14 @@ button.secondary {
   border-radius: 6px;
 }
 button.secondary:active { background: var(--bg-subtle); }
+/* M11: End/Restart/Rematch sit right next to other primary/secondary
+   buttons on several screens now - without this they visually fuse into
+   one blob, which is exactly wrong for buttons whose whole point is to be
+   distinguishable destructive vs. safe actions. */
+.screen button.primary + button,
+.screen button.secondary + button {
+  margin-top: 0.5rem;
+}
 
 /* Setup screen */
 
@@ -374,6 +382,13 @@ legend {
   padding-bottom: calc(1rem + 48px);
   overflow-y: auto;
 }
+/* M11: unlike the turn card (never scrolls), #screen-play can scroll
+   (overflow-y: auto above) - fixed, not .corner-btn's default absolute,
+   so the Settings button stays pinned to the viewport corner rather than
+   scrolling away with the rack. */
+#screen-play .corner-btn {
+  position: fixed;
+}
 
 .play-header {
   display: flex;
@@ -576,3 +591,25 @@ legend {
 #finish-list li {
   margin-bottom: 0.5rem;
 }
+
+/* Confirm dialog (M11, D-51) - one generic native <dialog>, reused for
+   every destructive mid-game exit rather than a bespoke dialog per action.
+   ::backdrop is themed too, so a light-theme confirm doesn't sit on a
+   jarring default-grey scrim. */
+#confirm-dialog {
+  max-width: 320px;
+  width: calc(100% - 2rem);
+  padding: 1.25rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+}
+#confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+#confirm-dialog-text {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+#confirm-dialog .action-row button.secondary { flex: 1; }
