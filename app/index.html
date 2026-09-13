@@ -106,6 +106,7 @@
 
     <button id="start-game" class="primary" disabled>Start game</button>
     <button id="back-to-game" class="primary" hidden>Back to game</button>
+    <button id="restart-match" class="secondary" hidden>Restart match</button>
     <button id="end-game" class="secondary" hidden>End game</button>
   </section>
 
@@ -120,6 +121,7 @@
   </section>
 
   <section id="screen-play" class="screen" hidden>
+    <button id="settings-from-play" class="corner-btn">Settings</button>
     <div class="play-header">
       <h1 id="play-player-name"></h1>
       <div id="play-boost-announcement" hidden></div>
@@ -154,6 +156,7 @@
   <section id="screen-end" class="screen" hidden>
     <h1>Game over</h1>
     <ol id="finish-list"></ol>
+    <button id="end-rematch" class="secondary">Rematch</button>
     <button id="end-new-game" class="primary">New game</button>
   </section>
 
@@ -162,8 +165,21 @@
   <section id="screen-timeout" class="screen" hidden>
     <h1>Time's up!</h1>
     <p id="timeout-message">Better luck finishing next time!</p>
+    <button id="timeout-rematch" class="secondary">Rematch</button>
     <button id="timeout-new-game" class="primary">New game</button>
   </section>
+
+  <!-- M11 (D-51): a single generic confirm dialog, reused for every
+       destructive mid-game exit (End match, Restart) rather than a bespoke
+       dialog per action. Native <dialog> - no library, no custom modal
+       stack to build. -->
+  <dialog id="confirm-dialog">
+    <p id="confirm-dialog-text"></p>
+    <div class="action-row">
+      <button id="confirm-dialog-cancel" class="secondary">Cancel</button>
+      <button id="confirm-dialog-ok" class="primary">Confirm</button>
+    </div>
+  </dialog>
 
   <script src="theme.js"></script>
   <script src="storage.js"></script>

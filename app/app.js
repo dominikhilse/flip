@@ -44,7 +44,13 @@
   var themeToggleEl = document.getElementById('theme-toggle');
   var startGameBtn = document.getElementById('start-game');
   var backToGameBtn = document.getElementById('back-to-game');
+  var restartMatchBtn = document.getElementById('restart-match');
   var endGameBtn = document.getElementById('end-game');
+
+  var confirmDialogEl = document.getElementById('confirm-dialog');
+  var confirmDialogTextEl = document.getElementById('confirm-dialog-text');
+  var confirmDialogOkBtn = document.getElementById('confirm-dialog-ok');
+  var confirmDialogCancelBtn = document.getElementById('confirm-dialog-cancel');
 
   var turncardNameEl = document.getElementById('turncard-name');
   var turncardScreenEl = screens.turncard;
@@ -67,10 +73,13 @@
   var playRollBtn = document.getElementById('play-roll');
   var playConfirmBtn = document.getElementById('play-confirm');
   var playPassBtn = document.getElementById('play-pass');
+  var settingsFromPlayBtn = document.getElementById('settings-from-play');
 
   var finishListEl = document.getElementById('finish-list');
   var endNewGameBtn = document.getElementById('end-new-game');
+  var endRematchBtn = document.getElementById('end-rematch');
   var timeoutNewGameBtn = document.getElementById('timeout-new-game');
+  var timeoutRematchBtn = document.getElementById('timeout-rematch');
 
   function showScreen(name) {
     activeScreen = name;
@@ -81,6 +90,31 @@
     // HUD reflects that the instant the screen changes, not just on the
     // next tick (see tickChallenge, further down).
     renderChallengeTimer();
+  }
+
+  // ---- Confirm dialog (M11, D-51) ----
+  // One generic native <dialog>, reused for every destructive mid-game
+  // exit (End match, Restart) rather than a bespoke dialog per action.
+  // Listeners are attached/removed per call instead of once at boot, since
+  // each call needs its own onConfirm closure. Cleanup hangs off the
+  // dialog's own `close` event (fires however it closed - Cancel, OK, or a
+  // desktop Escape key) rather than off Cancel/OK directly, so an
+  // Escape-dismiss can't leak listeners or skip cleanup.
+  function confirmAction(message, onConfirm) {
+    confirmDialogTextEl.textContent = message;
+    var confirmed = false;
+    function onOk() { confirmed = true; confirmDialogEl.close(); }
+    function onCancel() { confirmDialogEl.close(); }
+    function onClose() {
+      confirmDialogOkBtn.removeEventListener('click', onOk);
+      confirmDialogCancelBtn.removeEventListener('click', onCancel);
+      confirmDialogEl.removeEventListener('close', onClose);
+      if (confirmed) onConfirm();
+    }
+    confirmDialogOkBtn.addEventListener('click', onOk);
+    confirmDialogCancelBtn.addEventListener('click', onCancel);
+    confirmDialogEl.addEventListener('close', onClose);
+    confirmDialogEl.showModal();
   }
 
   // Whether overpay-relaxed rules are in effect right now - a persistent
@@ -325,6 +359,7 @@
     var midGame = game !== null;
     startGameBtn.hidden = midGame;
     backToGameBtn.hidden = !midGame;
+    restartMatchBtn.hidden = !midGame;
     endGameBtn.hidden = !midGame;
     startGameBtn.disabled = roster.length < 2;
   }
@@ -411,11 +446,22 @@
     renderSettingsControls();
   });
 
+  // Guarded (M11, D-51): a match is always live whenever this button is
+  // visible (see renderPrimaryAction), so it always needs the confirm.
   endGameBtn.addEventListener('click', function () {
     if (!game) return;
-    game = null;
-    renderSetup();
-    showScreen('setup');
+    confirmAction('End this match? Progress will be lost. This can\'t be undone.', function () {
+      game = null;
+      renderSetup();
+      showScreen('setup');
+    });
+  });
+
+  // Guarded (M11, D-51): same reasoning as End - a match is always live
+  // whenever this button is visible.
+  restartMatchBtn.addEventListener('click', function () {
+    if (!game) return;
+    confirmAction('Restart this match? Racks and boosts reset for everyone. This can\'t be undone.', restartMatch);
   });
 
   // Motion and tap-to-proceed can never both be off at once (§3.9) - forcing
@@ -559,6 +605,42 @@
     beginTurn();
   }
 
+  // Restart match (M11, D-51): a same-group replay of THIS match, distinct
+  // from New Game (which discards to Setup and can change roster/settings).
+  // Keeps game.players (identity, seat order, color) and every setting the
+  // live game was started with, but re-racks everyone fresh and - unlike
+  // New Game's boost carryover (§3.6) - resets every player's boosts to
+  // zero. Rationale: this is a do-over of the same match, and resetting
+  // boosts incentivises actually finishing a match to keep what's earned,
+  // rather than restarting mid-game to shed a bad rack while keeping
+  // accumulated boosts. Rack size comes from the player's own current rack
+  // length, not settings.rackSize, so this can never disagree with what
+  // this particular match was actually playing (rack size is
+  // blocked-until-next-game anyway, so they can't have diverged, but this
+  // avoids relying on that invariant holding elsewhere).
+  function restartMatch() {
+    if (!game) return;
+    game.players.forEach(function (p) {
+      p.rack = RULES.createRack(p.rack.length);
+      p.finished = false;
+      p.place = null;
+      p.diceCount = 1;
+      p.boosts = { overpay: 0, oneForTwo: 0 };
+      p.pendingBoostCredits = { overpay: 0, oneForTwo: 0 };
+      p.rollHistory = [];
+      p.pendingBoostAnnouncement = false;
+    });
+    game.turnIndex = 0;
+    game.finishedOrder = [];
+    game.pendingSettings = null;
+    game.currentRoll = null;
+    game.selected = new Set();
+    game.timeChallenge = settings.timeChallengeSeconds > 0
+      ? { remainingMs: settings.timeChallengeSeconds * 1000 }
+      : null;
+    beginTurn();
+  }
+
   function currentPlayer() {
     return game.players[game.turnIndex];
   }
@@ -645,6 +727,17 @@
   // Settings are reachable mid-game without ending the match (§3.10) - this
   // just navigates to the settings screen; nothing here mutates game state.
   settingsFromTurncardBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    renderSetup();
+    showScreen('setup');
+  });
+
+  // M11/P0 (D-51): the load-bearing fix for the urgent no-recovery-path
+  // flag - Play previously had no exit at all when Motion was off (the
+  // only "exit," picking the phone up, is a no-op with Motion off). This
+  // gives Play the same corner exit the turn card already has, into the
+  // same reused Setup/Settings screen - not a new UI surface.
+  settingsFromPlayBtn.addEventListener('click', function (e) {
     e.stopPropagation();
     renderSetup();
     showScreen('setup');
@@ -1288,6 +1381,12 @@
     showScreen('setup');
   });
 
+  // Rematch (M11, D-51): no confirm needed here - the match is already
+  // over, nothing live to lose. Unlike New Game, does not rotate the
+  // roster (D-50's rotation is specifically tied to New Game's "go back to
+  // Setup" flow) - same seats, same order, straight back into play.
+  endRematchBtn.addEventListener('click', restartMatch);
+
   // ---- Time challenge (M9, dev mode) ----
   // An anti-drag circuit-breaker, not a rule: ends a game that won't end,
   // without declaring a false winner. Pure overlay on top of the existing
@@ -1355,6 +1454,10 @@
     renderSetup();
     showScreen('setup');
   });
+
+  // Rematch (M11, D-51): same reasoning as the End screen's - no confirm,
+  // no roster rotation (a timeout isn't a completed round either way).
+  timeoutRematchBtn.addEventListener('click', restartMatch);
 
   // ---- Launch screen (motion permission gate) ----
 
