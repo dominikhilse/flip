@@ -592,3 +592,42 @@ duplicated here.
   matching the do-not-touch instruction); the Setup tab bar, buttons, and headings all confirmed
   using the new display/UI fonts; a full automated game completed cleanly. Zero console errors
   throughout.
+
+### 2026-09-13 — GitHub issue #2: avatar iteration (Play crop, turn-card avatar)
+- **Report** (`dominikhilse/flip#2`): the Play-header avatar (built for M13) should crop to a
+  head/bust view rather than showing the full character shrunk small, always at the same
+  position; a second, full-size avatar should appear above the player's name on the turn card,
+  with the same tap-to-cycle behaviour - which means "tap anywhere to continue" must exclude
+  that avatar specifically.
+- **Play-header crop**: pure CSS, no source-file changes and no per-image tuning - the `<img>`
+  is oversized to 190% of its circular container and pinned to the top edge (`position:
+  absolute; top:0`), so the container's existing `overflow:hidden` clips it to the same
+  head/shoulders window on every avatar, since the source art consistently places the head near
+  the top of a square canvas. A very tall hat (checked against `19.png`'s wizard hat) loses its
+  tip but the face stays fully visible - an acceptable trade-off of one fixed crop for all 19+
+  images, matching "the avatar head position will always be the exact same."
+- **Turn card avatar**: full, uncropped, sized independently of the crop above (`.turncard-
+  avatar-btn`, `width:100%; height:auto`) - shows the whole character above the name. Reachable
+  via `showTurnCardFor(p)` (same function used by both a genuine turn start and the motion
+  lift-to-peek pause), so it stays correct without extra call sites to remember.
+- **Tap-to-cycle vs. tap-to-continue conflict, resolved by exclusion, not by suppressing either
+  behaviour:** the turn card's screen-wide click listener (`turncardScreenEl`) now bails via
+  `turncardAvatarBtn.contains(e.target)` before reaching the `effectiveTap()` gate - `.contains()`
+  rather than a direct `===` check (as the pre-existing Settings-button exclusion uses) because
+  the actual click target when tapping the avatar is the `<img>` inside the button, not the
+  button element itself. The avatar's own click handler calls `cycleAvatar()` unconditionally,
+  independent of `effectiveTap()`/the tap-to-proceed setting - cycling isn't a turn-advance
+  gesture, so it must keep working even when tap-to-proceed is off (motion handles advancement
+  instead) or when motion is currently working.
+- **`cycleAvatar()` no longer renders internally** - it mutates `p.avatar` only and returns; each
+  of its three call sites (Play header, turn card, and any future one) re-renders whatever it's
+  actually showing. It was calling `renderPlay()` unconditionally before, which was already a
+  layering smell (a rules/state function reaching into a specific screen's render), and would
+  have been outright wrong for the turn-card call site (Play isn't even the visible screen then).
+- **Verified** via a temporary debug hook (removed before commit): tapping the turn-card avatar
+  cycles the image and confirmed the screen stayed on `screen-turncard` (didn't advance); tapping
+  elsewhere on the card still advances to Play; the Settings corner button still works unaffected
+  by the new exclusion; a cycled avatar on the turn card correctly shows the same new avatar's
+  head/bust crop on the Play header afterward (shared `p.avatar` state, no desync); turn card
+  confirmed unaffected by the theme toggle (fixed contrast preserved) with the new big avatar in
+  place; a full automated game completed cleanly. Zero console errors throughout.

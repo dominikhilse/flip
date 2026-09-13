@@ -290,6 +290,25 @@ button.secondary:active { background: var(--bg-subtle); }
   background: rgba(0, 0, 0, 0.35);
   border-radius: 12px;
 }
+/* Full, uncropped, big (issue #2) - unlike the Play-header .avatar-btn's
+   head/bust crop, this shows the whole character. Plain button reset so it
+   reads as art, not a button; tap-to-cycle is wired separately from the
+   turn card's own tap-anywhere-to-continue handler (see turncardScreenEl's
+   click listener in app.js), which explicitly excludes this button. */
+.turncard-avatar-btn {
+  display: block;
+  width: 40vw;
+  max-width: 170px;
+  margin: 0 auto 0.75rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+.turncard-avatar-btn img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 #turncard-name {
   font-size: 2.4rem;
   font-weight: 800;
@@ -391,6 +410,7 @@ button.secondary:active { background: var(--bg-subtle); }
 }
 .avatar-btn {
   display: block;
+  position: relative;
   width: 2.4rem;
   height: 2.4rem;
   padding: 0;
@@ -400,11 +420,19 @@ button.secondary:active { background: var(--bg-subtle); }
   flex-shrink: 0;
   overflow: hidden;
 }
+/* Head/bust crop (issue #2): the source art is a full-body square
+   character with the head consistently near the top - oversizing the img
+   and pinning it to the top edge, then letting the circle's overflow:
+   hidden clip the rest, crops every avatar to the same head/shoulders
+   framing without touching the source files or picking a per-image crop. */
 .avatar-btn img {
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 190%;
+  height: auto;
+  transform: translateX(-50%);
 }
 
 #play-rack {

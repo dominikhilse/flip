@@ -65,6 +65,8 @@
   var turncardScreenEl = screens.turncard;
   var settingsFromTurncardBtn = document.getElementById('settings-from-turncard');
   var turncardTimerEl = document.getElementById('turncard-timer');
+  var turncardAvatarBtn = document.getElementById('turncard-avatar-btn');
+  var turncardAvatarImgEl = document.getElementById('turncard-avatar-img');
 
   var playPlayerNameEl = document.getElementById('play-player-name');
   var playAvatarBtn = document.getElementById('play-avatar-btn');
@@ -634,11 +636,14 @@
     });
   }
 
-  // Cycling (D-55): tap the avatar on the play screen to browse to the next
-  // one not currently held by another player THIS game, wrapping around the
-  // full set - keeps every player's avatar unique through cycling too, not
-  // just at initial assignment (the point of "primary 9-12 distinguisher"
-  // breaks if two players can end up sharing one by cycling into it).
+  // Cycling (D-55): tap an avatar (Play header or the turn card, issue #2)
+  // to browse to the next one not currently held by another player THIS
+  // game, wrapping around the full set - keeps every player's avatar
+  // unique through cycling too, not just at initial assignment (the point
+  // of "primary 9-12 distinguisher" breaks if two players can end up
+  // sharing one by cycling into it). Mutates p.avatar only - callers
+  // re-render whichever screen they're on, since this is reachable from
+  // more than one place.
   function cycleAvatar(p) {
     var pool = avatarPool();
     var taken = new Set(game.players.filter(function (pl) { return pl !== p; }).map(function (pl) { return pl.avatar; }));
@@ -647,7 +652,6 @@
       var candidate = pool[(startIdx + step) % pool.length];
       if (!taken.has(candidate)) { p.avatar = candidate; break; }
     }
-    renderPlay();
   }
 
   function startNewGame() {
@@ -737,6 +741,8 @@
   function showTurnCardFor(p) {
     turncardScreenEl.style.background = p.color;
     turncardNameEl.textContent = p.name;
+    turncardAvatarImgEl.src = 'avatars/' + p.avatar;
+    turncardAvatarImgEl.alt = p.name + '’s avatar';
     showScreen('turncard');
   }
 
@@ -791,8 +797,23 @@
 
   turncardScreenEl.addEventListener('click', function (e) {
     if (e.target === settingsFromTurncardBtn) return;
+    // Issue #2: the turn card's own avatar is now tap-to-cycle, so "tap
+    // anywhere to continue" must exclude it specifically - .contains(),
+    // not a direct === check, since the actual click target is the <img>
+    // inside the button, not the button itself.
+    if (turncardAvatarBtn.contains(e.target)) return;
     if (!effectiveTap()) return;
     goToRack();
+  });
+
+  // Issue #2: cycling here is independent of effectiveTap()/tap-to-proceed
+  // - it's not a turn-advance gesture, so it always works regardless of the
+  // motion/tap settings that gate goToRack() above.
+  turncardAvatarBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var p = currentPlayer();
+    cycleAvatar(p);
+    turncardAvatarImgEl.src = 'avatars/' + p.avatar;
   });
 
   // While on the rack mid-turn, picking the phone up shows the turn card
@@ -1434,7 +1455,7 @@
   playPassBtn.addEventListener('click', onPass);
   playBoostSpendBtn.addEventListener('click', onBoostSpend);
   playBoostDeclineBtn.addEventListener('click', onBoostDecline);
-  playAvatarBtn.addEventListener('click', function () { cycleAvatar(currentPlayer()); });
+  playAvatarBtn.addEventListener('click', function () { cycleAvatar(currentPlayer()); renderPlay(); });
 
   // ---- End screen ----
 
