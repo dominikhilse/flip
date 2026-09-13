@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/organic-ad4e9535-b5a6-4ddc-b94d-ce26fc9a3813/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: var(--color-bg); }
+  a { color: var(--color-accent-700); } a:hover { color: var(--color-accent); }
+  .doc { max-width: 1120px; margin:0 auto; padding: clamp(20px,4vw,52px) clamp(16px,4vw,40px) 140px; }
+  .kick { font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700; }
+  .sec { margin-top: clamp(46px,6vw,80px); }
+  .sec > h2 { font-size:clamp(25px,4.2vw,36px); margin:6px 0 4px; }
+  .lede { font-size:clamp(15px,1.6vw,17px); color:var(--color-neutral-700); max-width:64ch; }
+  code { font-family:ui-monospace,'SF Mono',Menlo,monospace; }
+  .codeblock { background:#201e1d; color:#e9e2d4; border-radius:var(--radius-lg); padding:20px 22px; overflow-x:auto; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; line-height:1.62; }
+  .codeblock pre { margin:0; white-space:pre; }
+  .cmt { color:#8f8577; }
+  .kw  { color:#f0b46b; }
+  .str { color:#a9c47f; }
+
+  /* ── game-brand screen tokens (the product's own look, not Organic) ── */
+  .g { --gbg:#141414; --gfg:#efefef; --gsub:#1d1d1d; --gbord:#333; --gmut:#9a9a9a;
+       --gdisp:'Bagel Fat One', system-ui; --gui:'Figtree', system-ui;
+       font-family:var(--gui); }
+  .g.light { --gbg:#f4f3ef; --gfg:#141414; --gsub:#fff; --gbord:#d8d5cd; --gmut:#6a655c; }
+  .frame { width:300px; background:var(--gbg); color:var(--gfg); border:10px solid #0c0c0c;
+           border-radius:34px; overflow:hidden; box-shadow:var(--shadow-lg); flex:none; }
+  .fstatus { display:flex; justify-content:space-between; padding:9px 20px 3px; font:600 11px var(--gui); color:var(--gfg); opacity:.8; }
+  .fpad { padding:14px 16px 20px; }
+  .flabel { text-align:center; font:600 11px var(--gui); color:var(--color-neutral-600); margin-top:10px; }
+  .tile { font-family:var(--gdisp); display:flex; align-items:center; justify-content:center; line-height:1; }
+  .rack { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+  .gbtn { font-family:var(--gdisp); text-align:center; border-radius:14px; padding:12px 0; font-size:16px; }
+  .gbtn.pri { background:var(--gfg); color:var(--gbg); }
+  .gbtn.sec { background:transparent; color:var(--gfg); border:1.5px solid var(--gbord); font-family:var(--gui); font-weight:600; font-size:13px; padding:10px 0; }
+  .corner { position:absolute; top:12px; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3); color:#fff; }
+  .screens { display:flex; flex-wrap:wrap; gap:26px; margin-top:26px; }
+
+  .swatchrow { display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:10px; }
+  .sw { border-radius:var(--radius-md); padding:12px; background:var(--color-surface); }
+  .sw .chip { height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:'Bagel Fat One'; font-size:24px; }
+  .sw .nm { font:700 12.5px var(--font-body); margin-top:8px; }
+  .sw .hx { font:400 10.5px ui-monospace,Menlo,monospace; color:var(--color-neutral-600); }
+</style>
+</helmet>
+<div class="doc">
+
+  <header>
+    <div class="kick">Flip the Number · Developer handoff · Brand spec + tokens + UI mockup</div>
+    <h1 style="font-size:clamp(34px,6.5vw,62px); line-height:1.03; margin:12px 0 10px; letter-spacing:-0.02em;">Everything the code session needs</h1>
+    <p class="lede" style="font-size:clamp(16px,1.8vw,18px);">One package: the settled <strong>brand spec</strong>, a <strong>full UI mockup</strong> of all six screens in the new look, and <strong>drop-in CSS + <code>theme.js</code> tokens</strong> that map straight onto the current build. Grounded on <code>app/style.css</code>, <code>theme.js</code>, <code>config.js</code>, <code>index.html</code> at <code>flip@main</code>.</p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
+      <span class="tag tag-accent">Name: Flip the Number (kept)</span>
+      <span class="tag tag-accent-2">Bagel Fat One + Figtree</span>
+      <span class="tag tag-neutral">8 CVD-safe · 12 graceful</span>
+      <span class="tag tag-outline">Dark root · light override · overpay XOR</span>
+    </div>
+  </header>
+
+  <!-- ══════════ PART 1 · BRAND SPEC ══════════ -->
+  <section class="sec">
+    <div class="kick">Part 1 · Brand spec</div>
+    <h2>The system, in brief</h2>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:22px;">
+      <div class="card elev-sm"><div class="card-kicker">Name</div><div class="card-title" style="font-size:20px;">Flip the Number</div><p class="card-body">Kept. The flip verb still describes the tile action; the retired mascot pun costs nothing to drop. Zero repo/URL churn. Charm lives in the wordmark + Spudling sidekicks, not the words.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Feel</div><div class="card-title" style="font-size:20px;">Warm, handmade, sturdy</div><p class="card-body">Storybook burlap world. Chunky rounded numerals, soft tiles, generous radii. Playful but legible — kids at a shared phone.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Themes</div><div class="card-title" style="font-size:20px;">Dark root + light</div><p class="card-body">Dark is <code>:root</code>; <code>.theme-light</code> overrides. Overpay XOR-flips the effective theme as its signal — player hues stay constant, only chrome flips.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Mascots</div><div class="card-title" style="font-size:20px;">Spudlings, as sidekicks</div><p class="card-body">Splash / loading / wordmark, never gameplay chrome. Original apparel only. Tiles stay plain numerals — characters and numbers are separate systems.</p></div>
+    </div>
+
+    <h3 style="margin-top:36px; font-size:19px;">Player palette — the 8 CVD-safe</h3>
+    <p style="font-size:13.5px; color:var(--color-neutral-700); max-width:62ch;">Replaces the ad-hoc 12 in the current <code>theme.js</code>. Warm-leaning, mid-value, spaced by hue <em>and</em> lightness. Each hue ships a dark partner (<code>edge</code>) used as tile border + light-fill numeral — a second, non-hue channel of identity that also survives the theme flip.</p>
+    <div class="swatchrow" style="margin-top:16px;">
+      <div class="sw"><div class="chip" style="background:#D34D4D;border:3px solid #99302F;color:#FBF5E9;">1</div><div class="nm">Chili</div><div class="hx">#D34D4D · #99302F</div></div>
+      <div class="sw"><div class="chip" style="background:#E5842A;border:3px solid #A45610;color:#3A2408;">2</div><div class="nm">Marigold</div><div class="hx">#E5842A · #A45610</div></div>
+      <div class="sw"><div class="chip" style="background:#E4BE2F;border:3px solid #9C7F16;color:#3A2E06;">3</div><div class="nm">Honey</div><div class="hx">#E4BE2F · #9C7F16</div></div>
+      <div class="sw"><div class="chip" style="background:#7E9E38;border:3px solid #4C641F;color:#FBF5E9;">4</div><div class="nm">Moss</div><div class="hx">#7E9E38 · #4C641F</div></div>
+      <div class="sw"><div class="chip" style="background:#26A69A;border:3px solid #146B62;color:#FBF5E9;">5</div><div class="nm">Teal</div><div class="hx">#26A69A · #146B62</div></div>
+      <div class="sw"><div class="chip" style="background:#3D7BC0;border:3px solid #21507E;color:#FBF5E9;">6</div><div class="nm">Denim</div><div class="hx">#3D7BC0 · #21507E</div></div>
+      <div class="sw"><div class="chip" style="background:#6A5AC8;border:3px solid #3E3583;color:#FBF5E9;">7</div><div class="nm">Indigo</div><div class="hx">#6A5AC8 · #3E3583</div></div>
+      <div class="sw"><div class="chip" style="background:#B45699;border:3px solid #77335F;color:#FBF5E9;">8</div><div class="nm">Plum</div><div class="hx">#B45699 · #77335F</div></div>
+    </div>
+
+    <h3 style="margin-top:30px; font-size:19px;">Player palette — the graceful 9–12 <span style="font-size:12px; font-weight:400; color:var(--color-neutral-600);">(not held to the CVD bar)</span></h3>
+    <div class="swatchrow" style="margin-top:16px; grid-template-columns:repeat(auto-fit,minmax(112px,1fr));">
+      <div class="sw"><div class="chip" style="background:#A65E38;border:3px solid #6E3A1F;color:#FBF5E9;">9</div><div class="nm">Rust</div><div class="hx">#A65E38 · #6E3A1F</div></div>
+      <div class="sw"><div class="chip" style="background:#6CB7E2;border:3px solid #2E6E96;color:#0E2A3A;">10</div><div class="nm">Sky</div><div class="hx">#6CB7E2 · #2E6E96</div></div>
+      <div class="sw"><div class="chip" style="background:#E08AA1;border:3px solid #A24C63;color:#3A1420;">11</div><div class="nm">Rose</div><div class="hx">#E08AA1 · #A24C63</div></div>
+      <div class="sw"><div class="chip" style="background:#8CA07D;border:3px solid #56674A;color:#1E2617;">12</div><div class="nm">Sage</div><div class="hx">#8CA07D · #56674A</div></div>
+    </div>
+    <p style="margin-top:14px; font-size:12.5px; color:var(--color-neutral-600); border-left:3px solid var(--color-accent-300); padding-left:14px; max-width:64ch;">Assign in this order so the first 8 seated always land on the safe set. Past 8, avatar + name carry primary distinction (both on the player screen); colour is the fast secondary tag.</p>
+
+    <h3 style="margin-top:34px; font-size:19px;">Tile state & type</h3>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:16px;">
+      <div class="card elev-sm"><div class="card-kicker">Open tile</div><div class="card-title" style="font-size:17px;">Full-chroma · cream/edge numeral</div><p class="card-body">Player hue fill, dark-partner border, numeral in cream or the edge shade — whichever clears 4.5:1.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Closed tile · 3 redundant cues</div><div class="card-title" style="font-size:17px;">Desaturate + press + hollow</div><p class="card-body">Drops toward grey <code>#5c625f</code>, inset shadow (pressed), dim hollow numeral. Any one cue reads state without colour.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">--font-display</div><div class="card-title" style="font-size:24px; font-family:'Bagel Fat One';">Bagel Fat One</div><p class="card-body">Numerals, hero numbers, titles, primary buttons.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">--font-ui</div><div class="card-title" style="font-size:22px; font-family:'Figtree'; font-weight:700;">Figtree</div><p class="card-body">All UI/body — labels, names, settings, scores. 400 / 600 / 700.</p></div>
+    </div>
+  </section>
+
+  <!-- ══════════ PART 2 · UI MOCKUP ══════════ -->
+  <section class="sec">
+    <div class="kick">Part 2 · Full UI mockup — all six screens</div>
+    <h2>The build, rebranded</h2>
+    <p class="lede">Each real screen from <code>index.html</code>, rendered in the new tokens. Dark theme shown (the root); the same markup under <code>.theme-light</code> flips chrome only. New this pass: <strong>the Pause corner button on Play</strong> (P0 escape) and the tabbed setup menu.</p>
+
+    <div class="screens">
+
+      <!-- 1 · LAUNCH -->
+      <div>
+        <div class="frame g">
+          <div class="fstatus"><span>9:41</span><span>▮▮▮ ▮</span></div>
+          <div style="height:430px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:20px;">
+            <div style="width:120px; height:120px; border-radius:50%; background:#1f1f1f; border:2px dashed #3a3a3a; display:flex; align-items:center; justify-content:center; color:#6a6a6a; font:600 11px var(--gui); text-align:center;">Spudling<br>wordmark</div>
+            <div style="font-family:var(--gdisp); font-size:30px; line-height:1.05; text-align:center;">Flip the<br>Number</div>
+            <div style="font-family:var(--gui); font-size:15px; color:var(--gmut); animation:none;">Tap to start</div>
+          </div>
+        </div>
+        <div class="flabel">1 · Launch <span style="color:var(--color-neutral-400);">— fixed dark</span></div>
+      </div>
+
+      <!-- 2 · SETUP (tabbed, Rules) -->
+      <div>
+        <div class="frame g">
+          <div class="fstatus"><span>9:41</span><span>▮▮▮ ▮</span></div>
+          <div style="padding:6px 14px 0;">
+            <div style="font-family:var(--gdisp); font-size:22px;">Menu</div>
+            <div style="display:flex; gap:4px; margin-top:8px; border-bottom:1.5px solid var(--gbord);">
+              <span style="flex:1; text-align:center; padding:7px 0; font:600 10px var(--gui); color:var(--gmut);">Players</span>
+              <span style="flex:1; text-align:center; padding:7px 0; font:600 10px var(--gui); color:var(--gfg); border-bottom:2.5px solid var(--gfg);">Rules</span>
+              <span style="flex:1; text-align:center; padding:7px 0; font:600 10px var(--gui); color:var(--gmut);">App</span>
+              <span style="flex:1; text-align:center; padding:7px 0; font:600 10px var(--gui); color:var(--gmut);">Dev</span>
+            </div>
+          </div>
+          <div class="fpad" style="padding-top:12px;">
+            <div style="background:#3a2f16; color:#e4be2f; border-radius:8px; padding:7px 10px; font:400 10px var(--gui); margin-bottom:12px;">Match in progress — rules apply next lap.</div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font:400 13px var(--gui);">Rack size</span><span style="display:inline-flex; border:1.5px solid var(--gfg); border-radius:8px; overflow:hidden; font:600 12px var(--gui);"><b style="padding:5px 11px; font-weight:600;">9</b><b style="padding:5px 11px; background:var(--gfg); color:var(--gbg); font-weight:600;">12</b></span></div>
+              <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font:400 13px var(--gui);">Placement</span><span style="display:inline-flex; border:1.5px solid var(--gfg); border-radius:8px; overflow:hidden; font:600 11px var(--gui);"><b style="padding:5px 8px; background:var(--gfg); color:var(--gbg);">Win</b><b style="padding:5px 8px; border-left:1.5px solid var(--gfg);">Top2</b><b style="padding:5px 8px; border-left:1.5px solid var(--gfg);">All</b></span></div>
+              <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font:400 13px var(--gui);">Overpay</span><span style="display:inline-flex; border:1.5px solid var(--gfg); border-radius:8px; overflow:hidden; font:600 12px var(--gui);"><b style="padding:5px 11px; background:var(--gfg); color:var(--gbg);">A</b><b style="padding:5px 11px; border-left:1.5px solid var(--gfg);">D</b></span></div>
+              <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font:400 13px var(--gui);">Boost mode</span><span style="width:38px; height:22px; border-radius:999px; border:2px solid var(--gfg); position:relative;"><i style="position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--gfg);"></i></span></div>
+            </div>
+          </div>
+          <div style="padding:0 14px 14px; display:flex; flex-direction:column; gap:7px;">
+            <div class="gbtn pri">Back to game</div>
+            <div style="display:flex; gap:7px;"><div class="gbtn sec" style="flex:1;">Restart match</div><div class="gbtn sec" style="flex:1; color:#e08a8a; border-color:#7a3b3b;">End match</div></div>
+          </div>
+        </div>
+        <div class="flabel">2 · Setup — tabbed menu <span style="color:var(--color-neutral-400);">(Rules)</span></div>
+      </div>
+
+      <!-- 3 · TURN CARD -->
+      <div>
+        <div class="frame g" style="position:relative;">
+          <div style="position:absolute; inset:0; background:#26A69A;"></div>
+          <div class="corner" style="right:12px;">⚙</div>
+          <div style="position:absolute; top:12px; left:12px; padding:5px 10px; border-radius:8px; background:rgba(0,0,0,.25); color:rgba(255,255,255,.7); font:600 11px var(--gui); text-decoration:line-through;">1:30</div>
+          <div style="position:relative; height:430px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px;">
+            <div style="font-family:var(--gdisp); font-size:34px; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.4);">Mia</div>
+            <div style="font:400 15px var(--gui); color:#fff; margin-top:10px;">Place the phone flat on the table</div>
+            <div style="font:400 12px var(--gui); color:rgba(255,255,255,.75); margin-top:16px;">Tap anywhere to continue</div>
+          </div>
+        </div>
+        <div class="flabel">3 · Turn card <span style="color:var(--color-neutral-400);">— player colour, fixed contrast</span></div>
+      </div>
+
+      <!-- 4 · PLAY -->
+      <div>
+        <div class="frame g" style="position:relative;">
+          <div class="fstatus"><span>9:41</span><span>▮▮▮ ▮</span></div>
+          <div class="fpad" style="padding-top:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-family:var(--gdisp); font-size:19px;">Mia</div>
+              <div style="width:30px; height:30px; border-radius:50%; background:#232323; border:1px solid var(--gbord); display:flex; align-items:center; justify-content:center; color:var(--gfg); font-size:14px;">⏸</div>
+            </div>
+            <div style="text-align:center; font:400 12px var(--gui); color:var(--gmut); margin:10px 0 8px; min-height:1.2em;">Pick tiles that add to 8</div>
+            <div class="rack">
+              <div class="tile" style="height:52px; border-radius:10px; background:#D34D4D; border:2.5px solid #99302F; color:#FBF5E9; font-size:26px;">1</div>
+              <div class="tile" style="height:52px; border-radius:10px; background:#5c625f; color:#9aa19d; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); font-size:26px;">2</div>
+              <div class="tile" style="height:52px; border-radius:10px; background:#E4BE2F; border:2.5px solid #9C7F16; color:#3A2E06; font-size:26px;">3</div>
+              <div class="tile" style="height:52px; border-radius:10px; background:#7E9E38; border:2.5px solid #4C641F; color:#FBF5E9; font-size:26px; outline:4px solid var(--gfg); outline-offset:-4px;">4</div>
+              <div class="tile" style="height:52px; border-radius:10px; background:#5c625f; color:#9aa19d; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); font-size:26px;">5</div>
+              <div class="tile" style="height:52px; border-radius:10px; background:#4d908e; border:2.5px solid #2b5a58; color:#FBF5E9; font-size:26px;">6</div>
+              <div class="tile" style="height:52px; border-radius:10px; background:#3D7BC0; border:2.5px solid #21507E; color:#FBF5E9; font-size:26px;">7</div>
+              <div class="tile" style="height:52px; border-radius:10px; background:#6A5AC8; border:2.5px solid #3E3583; color:#FBF5E9; font-size:26px;">8</div>
+              <div class="tile" style="height:52px; border-radius:10px; background:#B45699; border:2.5px solid #77335F; color:#FBF5E9; font-size:26px;">9</div>
+            </div>
+            <div style="text-align:center; margin:12px 0 8px;">
+              <span class="tile" style="display:inline-flex; width:38px; height:38px; border-radius:9px; background:#fff; color:#141414; font-size:22px; vertical-align:middle;">4</span>
+              <span class="tile" style="display:inline-flex; width:38px; height:38px; border-radius:9px; background:#fff; color:#141414; font-size:22px; vertical-align:middle; margin-left:6px;">4</span>
+              <div style="font:400 11px var(--gui); color:var(--gmut); margin-top:6px;">Total 8</div>
+            </div>
+            <div style="display:flex; gap:7px;"><div class="gbtn pri" style="flex:1;">Roll</div><div class="gbtn pri" style="flex:1;">Confirm</div></div>
+          </div>
+        </div>
+        <div class="flabel">4 · Play <span style="color:#99302F; font-weight:700;">— new ⏸ Pause escape</span></div>
+      </div>
+
+      <!-- 5 · END -->
+      <div>
+        <div class="frame g">
+          <div class="fstatus"><span>9:41</span><span>▮▮▮ ▮</span></div>
+          <div class="fpad" style="padding-top:16px;">
+            <div style="font-family:var(--gdisp); font-size:24px; margin-bottom:14px;">Game over</div>
+            <div style="display:flex; flex-direction:column; gap:9px;">
+              <div style="display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px; background:var(--gsub);"><span style="font-family:var(--gdisp); font-size:20px; color:#E4BE2F;">1</span><span style="width:16px;height:16px;border-radius:50%;background:#7E9E38;"></span><span style="font:600 14px var(--gui);">Theo</span></div>
+              <div style="display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px; background:var(--gsub);"><span style="font-family:var(--gdisp); font-size:20px; color:var(--gmut);">2</span><span style="width:16px;height:16px;border-radius:50%;background:#26A69A;"></span><span style="font:600 14px var(--gui);">Mia</span></div>
+              <div style="display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:12px; background:var(--gsub);"><span style="font-family:var(--gdisp); font-size:20px; color:var(--gmut);">3</span><span style="width:16px;height:16px;border-radius:50%;background:#B45699;"></span><span style="font:600 14px var(--gui);">Sam</span></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:7px; margin-top:18px;">
+              <div class="gbtn pri">Rematch — same players</div>
+              <div class="gbtn sec">New game</div>
+            </div>
+          </div>
+        </div>
+        <div class="flabel">5 · End <span style="color:var(--color-neutral-400);">— + Rematch (Restart)</span></div>
+      </div>
+
+      <!-- 6 · TIMEOUT + confirm guard -->
+      <div>
+        <div class="frame g" style="position:relative;">
+          <div class="fstatus"><span>9:41</span><span>▮▮▮ ▮</span></div>
+          <div class="fpad" style="padding-top:16px; filter:blur(1px); opacity:.5; height:430px;">
+            <div style="font-family:var(--gdisp); font-size:24px;">Time's up!</div>
+            <div style="font:400 13px var(--gui); color:var(--gmut); margin-top:10px;">Nobody shut their box — no winner this round.</div>
+          </div>
+          <div style="position:absolute; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; padding:22px;">
+            <div style="background:var(--gsub); border:1px solid var(--gbord); border-radius:16px; padding:18px 16px; width:100%;">
+              <div style="font-family:var(--gdisp); font-size:17px; margin-bottom:6px;">End this match?</div>
+              <div style="font:400 12px var(--gui); color:var(--gmut); margin-bottom:14px;">Scores and progress will be lost.</div>
+              <div style="display:flex; gap:8px;"><div class="gbtn sec" style="flex:1;">Cancel</div><div class="gbtn" style="flex:1; background:#e08a8a; color:#141414; font-family:var(--gui); font-weight:700; font-size:13px;">End match</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="flabel">6 · Timeout + confirm guard <span style="color:#99302F; font-weight:700;">(P0/P1)</span></div>
+      </div>
+
+    </div>
+    <p style="margin-top:18px; font-size:12.5px; color:var(--color-neutral-600); border-left:3px solid var(--color-accent-300); padding-left:14px; max-width:70ch;">The turn card and launch keep their <strong>fixed</strong> contrast (player colour / dark) independent of theme — unchanged from current behaviour. Only the tokened surfaces (setup, play, end) flip under <code>.theme-light</code> and the overpay XOR.</p>
+  </section>
+
+  <!-- ══════════ PART 3 · TOKENS ══════════ -->
+  <section class="sec">
+    <div class="kick">Part 3 · Drop-in tokens</div>
+    <h2>Code-ready</h2>
+    <p class="lede">Two edits. <code>theme.js</code> gets the new palette object; <code>style.css</code> gets the font links + a few token additions. The existing chrome tokens (<code>--bg/--fg/--border…</code>) and the overpay XOR logic in <code>applyTheme()</code> are unchanged — player hues live outside that system on purpose.</p>
+
+    <h3 style="margin-top:26px; font-size:18px;">A · <code>app/theme.js</code> — replace <code>window.THEME</code></h3>
+    <div class="codeblock" style="margin-top:12px;"><pre><span class="cmt">// The ONLY place tile/player colours live. { fill, edge, ink } per tile:</span>
+<span class="cmt">// edge = dark partner (border + numeral on light fills); ink = numeral.</span>
+<span class="kw">window</span>.THEME = {
+  tileColors: {
+     1:{fill:<span class="str">'#D34D4D'</span>,edge:<span class="str">'#99302F'</span>,ink:<span class="str">'#FBF5E9'</span>},  <span class="cmt">// Chili</span>
+     2:{fill:<span class="str">'#E5842A'</span>,edge:<span class="str">'#A45610'</span>,ink:<span class="str">'#3A2408'</span>},  <span class="cmt">// Marigold</span>
+     3:{fill:<span class="str">'#E4BE2F'</span>,edge:<span class="str">'#9C7F16'</span>,ink:<span class="str">'#3A2E06'</span>},  <span class="cmt">// Honey</span>
+     4:{fill:<span class="str">'#7E9E38'</span>,edge:<span class="str">'#4C641F'</span>,ink:<span class="str">'#FBF5E9'</span>},  <span class="cmt">// Moss</span>
+     5:{fill:<span class="str">'#26A69A'</span>,edge:<span class="str">'#146B62'</span>,ink:<span class="str">'#FBF5E9'</span>},  <span class="cmt">// Teal</span>
+     6:{fill:<span class="str">'#3D7BC0'</span>,edge:<span class="str">'#21507E'</span>,ink:<span class="str">'#FBF5E9'</span>},  <span class="cmt">// Denim</span>
+     7:{fill:<span class="str">'#6A5AC8'</span>,edge:<span class="str">'#3E3583'</span>,ink:<span class="str">'#FBF5E9'</span>},  <span class="cmt">// Indigo</span>
+     8:{fill:<span class="str">'#B45699'</span>,edge:<span class="str">'#77335F'</span>,ink:<span class="str">'#FBF5E9'</span>},  <span class="cmt">// Plum</span>
+     <span class="cmt">// 9-12: graceful, NOT CVD-safe. Avatar + name disambiguate.</span>
+     9:{fill:<span class="str">'#A65E38'</span>,edge:<span class="str">'#6E3A1F'</span>,ink:<span class="str">'#FBF5E9'</span>},  <span class="cmt">// Rust</span>
+    10:{fill:<span class="str">'#6CB7E2'</span>,edge:<span class="str">'#2E6E96'</span>,ink:<span class="str">'#0E2A3A'</span>},  <span class="cmt">// Sky</span>
+    11:{fill:<span class="str">'#E08AA1'</span>,edge:<span class="str">'#A24C63'</span>,ink:<span class="str">'#3A1420'</span>},  <span class="cmt">// Rose</span>
+    12:{fill:<span class="str">'#8CA07D'</span>,edge:<span class="str">'#56674A'</span>,ink:<span class="str">'#1E2617'</span>}   <span class="cmt">// Sage</span>
+  },
+  <span class="cmt">// Closed tile ignores hue: desaturate + darken (fill), pressed inset in CSS,</span>
+  <span class="cmt">// dim hollow numeral (ink). One non-hue cue is enough on its own.</span>
+  closedTile: {fill:<span class="str">'#5C625F'</span>, edge:<span class="str">'#3F4442'</span>, ink:<span class="str">'#9AA19D'</span>},
+
+  <span class="cmt">// Player picker draws from the tile fills, in the safe-first order above.</span>
+  playerColors: [<span class="str">'#D34D4D'</span>,<span class="str">'#E5842A'</span>,<span class="str">'#E4BE2F'</span>,<span class="str">'#7E9E38'</span>,<span class="str">'#26A69A'</span>,
+                 <span class="str">'#3D7BC0'</span>,<span class="str">'#6A5AC8'</span>,<span class="str">'#B45699'</span>,<span class="str">'#A65E38'</span>,<span class="str">'#6CB7E2'</span>,
+                 <span class="str">'#E08AA1'</span>,<span class="str">'#8CA07D'</span>],
+  playerNameTextColor: <span class="str">'#FBF5E9'</span>
+};</pre></div>
+    <p style="margin-top:10px; font-size:12px; color:var(--color-neutral-600); max-width:66ch;">Migration note: tile values change from a flat string to <code>{fill,edge,ink}</code>. The tile renderer sets background <code>fill</code>, a <code>3px</code> border <code>edge</code>, and text <code>ink</code>; the old <code>tileTextColor</code> / <code>closedTileTextColor</code> globals are folded into per-tile <code>ink</code>. If you'd rather not touch the renderer yet, keep the strings and add <code>edge/ink</code> as a parallel map — but the object form is the intended shape.</p>
+
+    <h3 style="margin-top:30px; font-size:18px;">B · <code>app/index.html</code> &lt;head&gt; — fonts (network &lt;link&gt;)</h3>
+    <div class="codeblock" style="margin-top:12px;"><pre><span class="kw">&lt;link</span> rel=<span class="str">"preconnect"</span> href=<span class="str">"https://fonts.googleapis.com"</span><span class="kw">&gt;</span>
+<span class="kw">&lt;link</span> rel=<span class="str">"preconnect"</span> href=<span class="str">"https://fonts.gstatic.com"</span> crossorigin<span class="kw">&gt;</span>
+<span class="kw">&lt;link</span> href=<span class="str">"https://fonts.googleapis.com/css2?family=Bagel+Fat+One&amp;family=Figtree:wght@400;600;700;800&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span><span class="kw">&gt;</span></pre></div>
+
+    <h3 style="margin-top:30px; font-size:18px;">C · <code>app/style.css</code> — token additions</h3>
+    <div class="codeblock" style="margin-top:12px;"><pre><span class="cmt">/* add to :root (dark) — chrome tokens already there stay as-is */</span>
+:root {
+  --font-display: <span class="str">'Bagel Fat One'</span>, system-ui, sans-serif;
+  --font-ui:      <span class="str">'Figtree'</span>, system-ui, sans-serif;
+  --radius-tile: 10px;   <span class="cmt">/* was 8px  */</span>
+  --radius-btn:  14px;   <span class="cmt">/* was 6px  */</span>
+  --tile-closed-shadow: inset 0 2px 6px rgba(0,0,0,.5);
+}
+<span class="cmt">/* body uses the UI face; numerals/titles/primary buttons use display */</span>
+html, body { font-family: <span class="kw">var</span>(--font-ui); }
+h1, .die, .tile, button.primary { font-family: <span class="kw">var</span>(--font-display); }
+.tile        { border-radius: <span class="kw">var</span>(--radius-tile); }
+.tile.closed { box-shadow: <span class="kw">var</span>(--tile-closed-shadow); }  <span class="cmt">/* + fill/ink from THEME.closedTile */</span>
+button.primary, button.secondary { border-radius: <span class="kw">var</span>(--radius-btn); }</pre></div>
+    <p style="margin-top:10px; font-size:12px; color:var(--color-neutral-600); max-width:66ch;">The dice-roll wobble (<code>.die.rolling</code>, M10) and the <code>cqh</code>-based tile font sizing already in <code>style.css</code> are compatible and untouched — Bagel Fat One just makes the numerals read chunkier at the same sizes.</p>
+  </section>
+
+  <!-- HANDOFF CHECKLIST -->
+  <section class="sec">
+    <div class="kick">Hand to the code session</div>
+    <h2>What changes, what doesn't</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-top:18px;">
+      <div style="background:var(--color-accent-2-100); border-radius:var(--radius-lg); padding:18px 20px;">
+        <h4 style="color:var(--color-accent-2-800); margin-bottom:8px;">Changes</h4>
+        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--color-accent-2-900); line-height:1.7;">
+          <li><code>theme.js</code> palette → new 8+4 with edge/ink</li>
+          <li>Fonts: Bagel Fat One + Figtree via &lt;link&gt;</li>
+          <li>Tile renderer: border + per-tile ink; closed = inset</li>
+          <li>Setup → tabbed menu (Players/Rules/App/Dev)</li>
+          <li>Play: <strong>Pause corner button</strong> (P0 escape)</li>
+          <li>Restart match + confirm guards (P1)</li>
+        </ul>
+      </div>
+      <div style="background:var(--color-surface); border-radius:var(--radius-lg); padding:18px 20px;">
+        <h4 style="margin-bottom:8px;">Stays exactly as-is</h4>
+        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--color-neutral-700); line-height:1.7;">
+          <li>Dark-root / <code>.theme-light</code> structure</li>
+          <li>Overpay XOR in <code>applyTheme()</code></li>
+          <li>Turn card + launch fixed contrast</li>
+          <li>Rules engine, motion thresholds, boost model</li>
+          <li>M10 dice wobble + <code>cqh</code> tile sizing</li>
+          <li><strong>No Undo/Redo</strong> — dropped per playtest</li>
+        </ul>
+      </div>
+      <div style="background:var(--color-accent-100); border-radius:var(--radius-lg); padding:18px 20px;">
+        <h4 style="color:var(--color-accent-800); margin-bottom:8px;">Open / needs a call</h4>
+        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--color-accent-900); line-height:1.7;">
+          <li>Pause sheet contents (Resume / Settings / Restart / End)</li>
+          <li>Spudling wordmark asset for launch (Nano Banana)</li>
+          <li>Closed-tile exact desaturation vs. the flat <code>#5C625F</code> shown</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:26px; font-size:12.5px; color:var(--color-neutral-600); text-align:center;">Flip the Number · dev handoff · brand spec + mockup + tokens · grounded on flip@main, no rules-engine changes.</p>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>
