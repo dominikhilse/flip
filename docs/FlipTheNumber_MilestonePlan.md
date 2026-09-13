@@ -21,7 +21,12 @@ deferred to the brand drop landing the next day — with a stated resolution rul
 functionality the wireframe is silent on or conflicts with) applied to keep drag-to-reorder and the
 full player-colour count, both flagged as mismatches for the design session; one new detail adopted
 (time-challenge `0 = off`) and one factual correction flagged (the Dev tab's "not shown in shipped
-build" claim, which this no-build-step project cannot actually deliver).
+build" claim, which this no-build-step project cannot actually deliver). **Brand track now RESOLVED
+via the design session's dev handoff** — added as **M13** (brand/skin application + avatars): Flip
+cut, name kept, Spudlings in as 20 pre-made avatar PNGs (random-assign + cycle) plus splash/wordmark;
+new 8-CVD-safe + 4-graceful `{fill,edge,ink}` palette; Bagel Fat One + Figtree via network `<link>`;
+closed-tile 3-cue redundancy; overpay XOR and turn-card/launch contrast unchanged (**D-53/54/55**;
+supersedes D-13's Flip framing and D-32's avatar deferral). The brand brief's open fork is closed.
 
 **Prior pass (reconciling DECISIONS.md 2026-09-11):** M4 cut (D-40); M6 closed
 at single-type overpay scope and verified, with the two-type expansion split into a new **M7**
@@ -1171,9 +1176,10 @@ roster edits, no change needed).
   on record). **Kept — do not truncate the real colour set to 6 to match the mock.** This will
   naturally resolve once tomorrow's refined palette (colour-blind-safe to 8, graceful to 12 per the
   brand brief) lands; no separate fix needed now beyond not regressing the count.
-- **Deferred, not a mismatch:** no avatar picker appears here, because whether avatars exist at all
-  is still open in the brand brief (§2.1, Spudlings include/exclude). Nothing to build now; this tab
-  simply doesn't have an avatar row yet.
+- **Avatar row — now resolved, belongs to M13.** Avatars are confirmed IN (20 pre-made Spudling
+  PNGs, random-assign + cycle — D-55). The Players tab will gain an avatar affordance, but that lands
+  with **M13** (which introduces avatars), not here. If M12 ships before M13, this tab simply has no
+  avatar row yet; M13 adds it. No conflict — just sequencing.
 
 **App tab (3b):** a "Handoff" group (Motion switch, Tap-to-proceed switch, and a banner — "One of
 Motion / Tap must stay on — turning both off isn't allowed" — **this is a precise, correct rendering
@@ -1237,6 +1243,90 @@ does not invent.
 
 ---
 
+### M13 — Brand / skin application + avatars — SPECIFIED
+
+**Status:** the design session delivered a grounded developer handoff (`DevHandoff_BrandSpec_dc.html`,
+built against `flip@main` — `app/style.css`, `theme.js`, `config.js`, `index.html`) with the settled
+brand spec, a full mockup of all six screens in the new look, and drop-in CSS + `theme.js` tokens.
+This milestone applies that skin across the app. It **depends on M11 and M12** (the Pause button and
+tabbed menu it skins must exist first) and is **skin + avatars only — no rules, engine, motion, or
+boost-model changes.** The handoff explicitly leaves those untouched.
+
+**This resolves the brand track.** The brand brief's open fork (§2.1, Spudlings include/exclude) is
+closed: **Spudlings are IN, as a fixed set of pre-made avatar PNGs** (see avatar handling below).
+Name kept ("Flip the Number"). Palette, type, and tokens are settled below.
+
+**Scope — tokens and skin (from the handoff, taken as-is unless noted):**
+- **Fonts via network `<link>`** in `index.html <head>`: Bagel Fat One (display) + Figtree
+  (400/600/700/800). `--font-display` for numerals, hero numbers, titles, primary buttons;
+  `--font-ui` for all other UI/body. Confirms the earlier §3.1 flagged decision **toward the network
+  `<link>` option** (not self-hosting) — record that the offline-purity caveat (§3.1) is knowingly
+  accepted: first load needs network, `system-ui` is the fallback.
+- **New `theme.js` palette** replacing the ad-hoc set: 8 CVD-safe player colours (Chili, Marigold,
+  Honey, Moss, Teal, Denim, Indigo, Plum) + 4 graceful 9–12 (Rust, Sky, Rose, Sage, **not** held to
+  the CVD bar). Each tile colour is now an object `{ fill, edge, ink }` — `edge` is the dark partner
+  used as tile border and light-fill numeral (a **second, non-hue identity channel that also survives
+  the theme flip**); `ink` is the numeral colour. Assign player colours **safe-8-first order** so the
+  first 8 seated always land on the safe set.
+- **Tile renderer change:** tiles set background `fill`, a 3px `edge` border, and text `ink`
+  per-tile; the old flat-string tile colours and the `tileTextColor`/`closedTileTextColor` globals
+  fold into per-tile `ink`. (Handoff offers a parallel-map fallback if the renderer isn't touched
+  yet, but the object form is the intended shape.)
+- **Closed tile — 3 redundant, individually-sufficient cues** (satisfies the §3.2 open/closed
+  colour-blindness requirement): desaturate+darken fill (`closedTile` ≈ `#5C625F`), inset pressed
+  shadow (CSS), and a dim hollow numeral. **Any one cue reads state without colour.**
+- **Token additions to `style.css` `:root`:** `--radius-tile: 10px`, `--radius-btn: 14px`,
+  `--tile-closed-shadow`, plus the font-family vars. Existing chrome tokens (`--bg/--fg/--border…`)
+  and the **overpay XOR logic in `applyTheme()` are unchanged** — player hues live outside the
+  chrome-token system on purpose, so the theme flip moves only chrome, never player identity.
+- **Apply the skin to the tokened surfaces only:** setup, play, end. **Turn card and launch keep
+  their fixed contrast** (player colour / fixed dark) independent of theme and overpay XOR —
+  unchanged from current behaviour.
+
+**Scope — avatars (this milestone introduces them):**
+- **20 avatar PNGs** in `app/avatars/`, served static (no-build, no network dependency).
+  **Provisional art** — treated as swappable: each player holds an avatar **reference (id/filename)**,
+  so replacing the art later is a file swap, not a code change.
+- **Randomly assigned at game start (without replacement — unique per player**, guaranteed since 20 ≥
+  the 12-player max), then **cycle-through** to change (browse the set from the assigned one).
+- Avatar appears on the **player screen (gameplay chrome)** — this **supersedes the handoff's
+  "Spudlings never gameplay chrome" line**, and is what makes the avatar the **primary 9–12 player
+  distinguisher** (order past 8 players: avatar → name → colour, since colour is not CVD-safe past 8).
+- The Spudling **avatar creator is out of scope and not referenced** — only its PNG output, as this
+  fixed 20-set. Spudlings also appear on splash/loading/wordmark per the handoff (art via Nano Banana,
+  later — the wordmark asset is a noted open item, not blocking).
+
+**Out of scope.** Any rules/engine/motion/boost-model change (the handoff changes none). The avatar
+creator or any in-app avatar *creation*. Final Spudling wordmark/splash art (Nano Banana, later).
+Self-hosting the fonts (network `<link>` accepted).
+
+**Do-not-touch on entry.** The dark-root/`.theme-light` structure; the overpay XOR in `applyTheme()`;
+turn-card and launch fixed contrast; the rules engine, motion thresholds, and boost model; the M10
+dice wobble and `cqh`-based tile sizing (all confirmed compatible by the handoff).
+
+**Acceptance criteria — checkable by using the app:**
+1. The app renders in the new look — Bagel Fat One numerals, Figtree UI, warmer palette, rounder
+   tiles/buttons — across setup, play, and end screens.
+2. Each player's tiles use their assigned hue's `fill`, a visible `edge` border, and a legible
+   numeral; open tiles are full-chroma.
+3. A closed tile is distinguishable from an open one **with colour vision simulated off** — the
+   desaturate, the pressed inset, and the hollow numeral each independently signal "closed."
+4. The first 8 players seated get the 8 CVD-safe colours in order; 9–12 get the graceful set.
+5. The overpay theme flip still flips **only chrome** — player tile hues stay constant through the
+   flip (regression check on the untouched XOR logic).
+6. Turn card and launch still show fixed contrast, unaffected by theme selection or overpay flip.
+7. Every player is assigned a **unique** avatar at game start; a player can cycle through the set to
+   change theirs; the avatar shows on their player screen.
+8. Replacing an avatar PNG file in `app/avatars/` changes what shows in-game with no code change
+   (swap-friendly reference confirmed).
+
+**Stop conditions.** If applying the palette requires changing the overpay XOR logic or moving player
+hues into the chrome-token system, **stop and report** — the whole point of the handoff's structure is
+that player identity lives *outside* the flipping chrome. If the tile-renderer change to `{fill,edge,
+ink}` risks breaking the M10 wobble or `cqh` sizing, **stop and report** rather than working around.
+
+---
+
 ## 6. Explicitly out of scope for this prototype
 
 - **Single-player mode.** Playable in principle but the design has not been worked out.
@@ -1259,14 +1349,15 @@ does not invent.
 - **Cross-session persistence of boosts or player identity.** Boosts live only within a single
   app session and are lost on reload.
 - **Sound and haptics.**
-- **Character/mascot art on tiles.** Tiles show plain numerals (D-13). "Flip" is a name only in
-  this prototype; the character design is a separate design-session track.
-- **Avatars for the player screen — FUTURE, doors kept open (see §9 open design questions).**
-  Not built now. The intent recorded so nothing forecloses it: start players with **random**
-  avatars (no pre-game character-creation gate — that was the known cost), and possibly hand
-  out avatar customisation to the winner(s) as a post-game reward. The only forward-compat cost
-  paid now is that the roster models an avatar as an **assignable attribute from day one** (it
-  can be just a colour today); adding real avatars later must not be a schema change.
+- **Character/mascot art on tiles.** Tiles show plain numerals (D-13) — unchanged and permanent.
+  Flip the character is cut (D-53); Spudlings (the brand's characters) appear as avatars and on
+  splash/wordmark, never on tiles.
+- **Avatars — now IN, built in M13 (was future).** Resolved: a fixed set of 20 pre-made Spudling
+  PNGs, random-assigned + cycle-through (D-55). No in-app avatar *creation* (the creator stays out
+  of scope); no per-game character-creation gate (the risk that drove the original deferral). See
+  M13.
+- **The Spudling avatar creator, and any in-app avatar creation flow.** Only the creator's PNG
+  output is used (the 20-set); the creator itself is never in or near the product.
 - **Tile theme customisation UI.** The theme config hook exists in code (M1); no UI.
 - **Monetisation, store presence, purchases of any kind.**
 - **Unity or any 3D/native implementation.** A later product decision, not this prototype.
@@ -1337,7 +1428,7 @@ though it were known:
 | D-10 | Plain static HTML/CSS/JS, no build step, no dependencies | Locked |
 | D-11 | Play origin must be HTTPS; ngrok is a dev tool only | Locked |
 | D-12 | Motion is an accelerator on a tap path that always works | Locked |
-| D-13 | Tiles show plain numerals; Flip does not appear on tiles in this prototype | Locked |
+| D-13 | Tiles show plain numerals. **(Flip framing superseded by D-53: Flip the character is cut; tiles-stay-plain-numerals still holds regardless — characters and numbers are separate systems.)** | Locked (numerals); Flip part superseded |
 | D-14 | Theme config hook exists from M1; no customisation UI | Locked |
 | D-15 | Public GitHub repo `flip`, served by GitHub Pages | Locked |
 | D-16 | Neutral landing page at `/`, app at a sub-path; presentational, not a security measure | Locked |
@@ -1356,7 +1447,7 @@ though it were known:
 | D-29 | Tap-to-proceed toggle: default ON in development, OFF in final build; motion and tap can never both be effectively off; `effective_tap = user_pref OR (motion not working)` | Locked |
 | D-30 | Settings reachable mid-game with three kinds: immediate (motion, tap), live-at-end-of-lap (placement, overpay, boost checkbox), blocked-until-next-game (rack size, roster) | Locked |
 | D-31 | Rest-to-flip delay is an M0-measured constant with a debug slider; too long in M4; must beat a fast tap while staying bump-safe; crossed bounds = stop condition | Locked |
-| D-32 | Avatars are future; roster models an avatar as an assignable attribute from day one; random-avatar start, customisation as a post-game reward; Flip-vs-avatar hierarchy is an open design question | Locked (intent) |
+| D-32 | ~~Avatars are future; random-avatar start, customisation as a post-game reward; Flip-vs-avatar hierarchy open~~ **Superseded by D-55:** avatars are now IN as a fixed set of 20 pre-made Spudling PNGs — random-assign-without-replacement at start, cycle-through to change; the avatar creator is out of scope (only its PNG output is used). The "random at start" intent carries; "customise as reward" is moot (no creator in-product) | Superseded |
 | D-33 | Lap boundary is anchored to the earliest active seat (P1 or earliest unfinished), not the requesting player's seat | Locked |
 | D-34 | Theme flip is the overpay signal — inverted **exactly when an overpay move is currently legal** for the current player. Predicate: (mode D active AND current player has >1 tile open) OR a boost overpay move in progress. The >1-tile carve-out (commit `077dc7d`) prevents a false "you can overpay" signal at the whole-rack/last-tile exact-match point. Turn card / launch / boost banner stay theme-independent | Locked (rev per DECISIONS.md 2026-09-11) |
 | D-35 | **(M7, not built)** Two boost types — overpay (voids some pips, subset ≤ total) and 1-for-2 (voids one whole die); typed inventory capped at 3 total across types; both self-affecting stall-rescues. Live build is single-type overpay only (M6) | Locked (M7) |
@@ -1377,3 +1468,6 @@ though it were known:
 | D-50 | Roster rotates by one seat after a **completed** game (the normal win screen's "New game" only — `roster.push(roster.shift())`) so a different player starts next by default; **not** applied on the M9 timeout screen's "New game," since a timeout is deliberately not treated as a completed round anywhere else (consistent with M9's no-ranking rule). Drag-to-reorder added to the setup roster list (Pointer Events, for touch support); disabled mid-game, matching existing roster-editability rules | Locked |
 | D-51 | M11 (navigation/escape fixes), fully resolved: Pause button on Play reuses the existing tabbed Setup/Settings screen (not a new sheet); Restart match keeps roster/settings but **resets boosts to zero** (diverges deliberately from New Game, which still carries boosts forward); confirm guards wrap End/Restart/New-game while live; per-move undo confirmed **out of scope** (already ruled out pre-playtest, not a gap) | Locked |
 | D-52 | M12 implements all four wireframed tabs (2a Rules, 3a Players, 3b App, 3c Dev) structurally now; skin lands the next day. Resolution rule: where the wireframe is silent on or conflicts with existing prototype functionality, the prototype wins and the mismatch is recorded for the design session — applied to keep drag-to-reorder (wireframe doesn't show it) and the full player-colour count (wireframe shows only 6 swatches). Time-challenge `0 seconds = off` adopted as a new clarifying detail. Dev-tab banner's "not shown in shipped build" claim flagged as undeliverable (no build step exists) and to be reworded. Supersedes M8's `<details>` container | Locked (structure); skin deferred |
+| D-53 | Brand track resolved (M13). Flip the character is **cut**; name **"Flip the Number" kept** (flip = tile verb, no mascot dependency, zero repo/URL churn). Spudlings are **in as sidekicks + chosen avatars**, never as tile art (tiles stay plain numerals, D-13). Feel: warm handmade burlap storybook. Type: Bagel Fat One (display) + Figtree (UI) via network `<link>` — the §3.1 offline caveat is knowingly accepted | Locked |
+| D-54 | Player palette (replaces the ad-hoc `theme.js` set): 8 CVD-safe hues + 4 graceful 9–12, each as `{fill, edge, ink}` (edge = dark partner = border + non-hue identity channel surviving the theme flip). Assign safe-8-first. Closed tiles use 3 individually-sufficient non-hue cues (desaturate + pressed inset + hollow numeral). Overpay XOR flips chrome only; player hues live outside the chrome-token system and never flip | Locked |
+| D-55 | Avatars: a fixed set of **20 pre-made Spudling PNGs** in `app/avatars/`, static, provisional/swappable (players hold an id/filename reference). **Randomly assigned without replacement at game start** (unique per player, 20 ≥ 12 max), **cycle-through to change**. Avatar shows on the player screen (**gameplay chrome — supersedes the handoff's "never gameplay chrome" line**) and is the **primary 9–12 distinguisher** (avatar → name → colour past 8). The avatar creator itself is out of scope, not referenced | Locked |
