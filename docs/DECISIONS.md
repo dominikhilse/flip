@@ -631,3 +631,44 @@ duplicated here.
   head/bust crop on the Play header afterward (shared `p.avatar` state, no desync); turn card
   confirmed unaffected by the theme toggle (fixed contrast preserved) with the new big avatar in
   place; a full automated game completed cleanly. Zero console errors throughout.
+
+### 2026-09-13 — Font swap (Bagel Fat One → Vollkorn Black) + two-font audit
+- **Request:** replace `--font-display` with Vollkorn (Black), extend it to the turn-card player
+  name (`#turncard-name`, previously plain UI-font text despite being exactly the kind of "hero
+  name" the display face is for), and audit every piece of text in the app so nothing renders in
+  a third font.
+- **Font link, `style.css` `--font-display`**: swapped to `'Vollkorn', Georgia, serif` (weights
+  600/700/900 requested from Google Fonts, in case a lighter/bolder variant is ever needed per
+  the request's own allowance - only 900 is used today). Unlike Bagel Fat One (a single
+  inherently-heavy weight, no lighter cuts exist), Vollkorn's regular weight is a normal-weight
+  serif - **every rule using `--font-display` now sets `font-weight: 900` explicitly**, since
+  nothing about the family itself guarantees "Black" the way the old font did. Found and fixed
+  one real bug this surfaced: `.tile`'s own rule still hardcoded `font-weight: 700` *after* the
+  shared display-font rule in source order, which would have silently won and left tile numerals
+  at 700 instead of 900 - removed the stale declaration rather than just adding a heavier one
+  elsewhere and leaving a footgun for the next edit.
+- **`#turncard-name`**: added `font-family: var(--font-display)` (it never had one - only
+  inheriting the UI face by omission) and bumped its own `font-weight: 800` to `900` to match
+  every other display-face use exactly, per the explicit ask.
+- **Two-font audit**: grepped every `font-family`/`font:` declaration in `style.css` (three
+  existed pre-audit: the `html,body` UI default, the shared display rule, and `button {
+  font-family: inherit }`) and confirmed nothing else overrides away from the two variables.
+  Broadened the `button` inherit rule to `button, input, select, textarea` - form controls don't
+  reliably default to an ancestor's `font-family` the way plain text elements do, and the point
+  of an audit like this is to close exactly that kind of silent platform-font leak rather than
+  assume it isn't happening. (iOS Safari's native `<select>` picker wheel is a platform control
+  outside the webview's rendering and cannot be restyled by any web CSS - the closed/collapsed
+  select itself is covered by this fix, the native popover's font is a platform limitation, not
+  something left unaudited.)
+- **Verified** via a temporary debug hook (removed before commit, dev-server port rotated to
+  bypass a stale-cache re-serve of the old font link): turn card, Play header name, tile
+  numerals, and every primary button confirmed rendering Vollkorn at computed weight 900; every
+  secondary/label/setting/input element confirmed still Figtree; `player-name-input` and
+  `placement-mode`'s computed `font-family` explicitly checked (previously unverified, per the
+  audit's own reasoning) and confirmed Figtree, not a platform default; a full automated game
+  completed cleanly in both themes with zero console errors. **Noted, not fixed - flagging for
+  visibility**: Vollkorn's serif "1" glyph (a lining figure with a top flag and serif base) reads
+  visually close to a capital "I" at the small clamped sizes tile numerals use, most noticeably
+  on tile `1` specifically - worth a real-device look before assuming it's fine for the target
+  age group, since misreading a tile number is a correctness-adjacent legibility issue in a
+  number-matching game, not just a cosmetic one.

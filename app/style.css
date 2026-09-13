@@ -26,9 +26,14 @@
   --accent-danger: #e08a8a;
   color-scheme: dark;
 
-  /* M13/D-53: brand type + shape tokens (theme-independent - same in both
-     dark and light, unlike the palette above). */
-  --font-display: 'Bagel Fat One', system-ui, sans-serif;
+  /* M13/D-53 (font swapped to Vollkorn per iteration feedback): brand type
+     + shape tokens (theme-independent - same in both dark and light,
+     unlike the palette above). Every piece of text in the app uses one of
+     these two families - there is no third font anywhere. --font-display
+     defaults to Black (900); a handful of rules opt into a lighter/bolder
+     weight of the same two families where the default reads wrong (see
+     each rule's own comment), never a different font. */
+  --font-display: 'Vollkorn', Georgia, serif;
   --font-ui: 'Figtree', system-ui, sans-serif;
   --radius-tile: 10px;
   --radius-btn: 14px;
@@ -68,13 +73,20 @@ html, body {
 }
 
 /* M13/D-53: numerals, hero numbers, titles, and primary buttons use the
-   display face; everything else (labels, names, settings) stays on the UI
-   face set on html/body above. */
+   display face at Black (900) - Vollkorn's regular weight reads as a
+   normal-weight serif, not a heavy display face, so the weight must be set
+   explicitly everywhere this family is used; nothing here should rely on a
+   browser's default h1/button boldness. Everything else (labels, names,
+   settings) stays on the UI face set on html/body above. */
 h1, .tile, button.primary {
   font-family: var(--font-display);
+  font-weight: 900;
 }
 
-button {
+/* Form controls don't reliably inherit body's font-family across engines
+   (fonts.googleapis.com fallback aside, the point of this audit is that
+   nothing in the app should silently fall back to a platform UI font). */
+button, input, select, textarea {
   font-family: inherit;
 }
 
@@ -310,8 +322,9 @@ button.secondary:active { background: var(--bg-subtle); }
   height: auto;
 }
 #turncard-name {
+  font-family: var(--font-display);
   font-size: 2.4rem;
-  font-weight: 800;
+  font-weight: 900;
   color: #ffffff;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
   margin-bottom: 0.75rem;
@@ -456,7 +469,7 @@ button.secondary:active { background: var(--bg-subtle); }
   border-width: 3px;
   border-radius: var(--radius-tile);
   font-size: clamp(0.75rem, calc(70cqh / var(--rack-rows, 3)), 1.6rem);
-  font-weight: 700;
+  /* font-weight: 900 - from the shared h1/.tile/button.primary rule above */
   display: flex;
   align-items: center;
   justify-content: center;
