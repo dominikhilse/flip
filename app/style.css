@@ -89,6 +89,17 @@ h1, .tile, button.primary {
 button, input, select, textarea {
   font-family: inherit;
 }
+/* Issue #4: without this, iOS Safari renders <button> with native chrome
+   layered on top of the authored box model - most visible on a disabled
+   button, which is exactly why "Confirm"/"Stay stalled" (spend most of
+   their time disabled) kept rendering a slightly different height than
+   "Roll"/"Use boost" (rarely disabled) even after their padding/font-size
+   were already made identical (see .action-row below) - a real, scoped fix
+   for a real device-specific bug, not a guess. */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
 
 button.primary {
   display: block;
@@ -514,7 +525,12 @@ button.secondary:active { background: var(--bg-subtle); }
 #play-dice-area {
   text-align: center;
   margin-bottom: 0.5rem;
-  min-height: 3.5rem;
+  /* Issue #4: measured against the real rendered dice+total content
+     (~68.7px / 4.3rem at the base root size), not just guessed - the old
+     3.5rem floor undershot real content, so the choice-prompt swap (which
+     doesn't need nearly that much on its own) was still visibly settling
+     into a taller box the moment a roll happened. */
+  min-height: 4.3rem;
   flex: 0 0 auto;
 }
 .die {
@@ -595,14 +611,16 @@ button.secondary:active { background: var(--bg-subtle); }
   flex: 0 0 auto;
 }
 
+/* Issue #4: draws inside #play-dice-area now (see renderPlayDice), sharing
+   its one reserved box instead of adding a second one above it that
+   vanished the moment a roll happened - existence in the DOM is what
+   toggles it now (like the dice/total swap it replaces), not a class. */
 #play-dice-choice {
-  display: none;
+  display: flex;
   justify-content: center;
+  align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  flex: 0 0 auto;
 }
-#play-dice-choice.visible { display: flex; }
 #play-dice-choice button {
   padding: 0.5em 1em;
   border-radius: 6px;

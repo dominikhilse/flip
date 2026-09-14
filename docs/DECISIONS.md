@@ -745,3 +745,39 @@ duplicated here.
   confirmed relocated to the same bottom area; turn card's settings/counter swap confirmed
   (left/right, counter struck-through, label-free); a full automated game completed cleanly in
   both themes with zero console errors.
+
+### 2026-09-14 — GitHub issue #4: last UI clean-up / repositioning
+- **Dice-choice prompt still caused a grid jump** even after issue #3's message-area work,
+  because it was a separate sibling above `#play-dice-area` reserving its own extra space -
+  gone the instant a roll happened, letting the rack grow into the freed gap. Fixed by drawing
+  the prompt *inside* `#play-dice-area` (in the dice's own stead, per the report), sharing one
+  reserved box instead of stacking two. Measured, not guessed: the real dice+total content
+  renders at ~68.8px, taller than the old `min-height: 3.5rem` (56px) floor - bumped to
+  `4.3rem` so both states settle at the *same* measured height, confirmed via
+  `getBoundingClientRect()` before/after a forced roll (0px diff, was ~11.5px).
+- **"Next player" now occupies the same DOM position as Roll+Confirm** (moved before
+  `#play-message-area` instead of after it), so the button row's position is constant across
+  all three of its states (Roll+Confirm / Use boost+Stay stalled / Next player alone) and the
+  message area consistently reads as "below the buttons," not "above Next player."
+- **Root-caused the persisting button-height mismatch**, not re-applied the same fix harder:
+  issue #3's sizing fix (matching padding/font-size) held on desktop but the reporter found it
+  still off on the real device - the actual cause is iOS Safari layering native button chrome
+  on top of the authored box model, most visible on buttons that spend most of their time
+  `disabled` (Confirm, Stay stalled) versus their counterparts that don't (Roll, Use boost).
+  Fixed with `-webkit-appearance: none; appearance: none;` on `button` - the standard, known
+  remedy for this exact class of cross-engine sizing bug, not something guessable from desktop
+  Chrome alone (where the two already measured identical).
+- **1-for-2 double-dice edge case, revised per report:** previously, rolling a double (both
+  dice showing the same face) and matching it highlighted *both* dice as "used," reasoning that
+  either physical die could be the one in play. The reporter flagged this as backwards - the
+  point of the cue is signalling "one die is being ignored," and marking both as used says the
+  opposite. Changed `oneForTwoDieClass` so a double still marks exactly one die unused (index 0
+  arbitrarily wins "used," consistently) rather than dropping the distinction.
+- **Verified** via a temporary debug hook (removed before commit; dev-server port rotated
+  between CSS-affecting changes to avoid a stale-cache re-serve): dice-area height measured
+  identical before and after a forced roll with the choice prompt showing; "Next player"
+  confirmed sitting in the action-row's position with the stall message below it; `appearance:
+  none` confirmed applied (`getComputedStyle`); the exact double-roll 1-for-2 scenario
+  (`{4,3}` rack, `[4,4]` roll) confirmed marking exactly one die `die-used` and the other
+  `die-unused`, screenshot-checked; a full automated game completed cleanly with zero console
+  errors.

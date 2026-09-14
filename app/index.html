@@ -184,7 +184,6 @@
 
     <div id="play-rack"></div>
 
-    <div id="play-dice-choice"></div>
     <div id="play-dice-area"></div>
 
     <div id="play-boost-offer" hidden>
@@ -198,6 +197,11 @@
       <button id="play-roll" class="primary">Roll</button>
       <button id="play-confirm" class="primary">Confirm</button>
     </div>
+    <!-- Issue #4: Next player occupies the same position/space as Roll+
+         Confirm (or Use boost+Stay stalled) rather than appearing after
+         the message area below - it's the action row's third possible
+         state, not a separate element bolted on after everything else. -->
+    <button id="play-pass" class="primary" hidden>Next player</button>
 
     <!-- Issue #3: a reserved safe area below the buttons for every message-
          style text (the plain stall notice, the whole-rack-block notices,
@@ -209,8 +213,6 @@
       <div id="play-message"></div>
       <div id="play-boost-offer-text"></div>
     </div>
-
-    <button id="play-pass" class="primary" hidden>Next player</button>
   </section>
 
   <section id="screen-end" class="screen" hidden>

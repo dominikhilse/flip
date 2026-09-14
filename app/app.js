@@ -77,7 +77,6 @@
   var playMessageEl = document.getElementById('play-message');
   var playSelectionSumEl = document.getElementById('play-selection-sum');
   var playRackEl = document.getElementById('play-rack');
-  var playDiceChoiceEl = document.getElementById('play-dice-choice');
   var playDiceAreaEl = document.getElementById('play-dice-area');
   var playBoostOfferEl = document.getElementById('play-boost-offer');
   var playBoostOfferTextEl = document.getElementById('play-boost-offer-text');
@@ -1255,16 +1254,46 @@
   // are the "used" die (there's no meaningful other one to dim - they're
   // visually identical anyway). Before any match, neither is marked -
   // "after selecting the number" per the request, not before.
+  //
+  // Issue #4 revision: on a double (both dice show the same face), still
+  // mark exactly one die unused rather than marking both as used. Knowing
+  // *that* a die is being ignored matters more than which physical one -
+  // highlighting both as "used" reads as "both dice count," which is
+  // exactly backwards for a boost whose whole point is that one doesn't.
+  // Index 0 is arbitrarily, but consistently, the "used" one when equal.
   function oneForTwoDieClass(dice, index, selectedSum) {
-    if (dice[0] === dice[1]) return selectedSum === dice[0] ? 'die-used' : '';
-    if (selectedSum === dice[index]) return 'die-used';
-    if (selectedSum === dice[1 - index]) return 'die-unused';
-    return '';
+    var matches = selectedSum === dice[0] || selectedSum === dice[1];
+    if (!matches) return '';
+    if (dice[0] === dice[1]) return index === 0 ? 'die-used' : 'die-unused';
+    return selectedSum === dice[index] ? 'die-used' : 'die-unused';
+  }
+
+  // Issue #4: the 1/2-dice choice prompt (see the comment above
+  // renderPlayDiceChoice, further down) used to be a separate element
+  // above #play-dice-area, reserving its own extra space on top of the
+  // dice area's - shrinking away the moment a roll happened and letting
+  // the rack jump into the gap. It draws inside #play-dice-area now,
+  // in the dice's own stead, sharing the one reserved box instead of
+  // adding a second one.
+  function diceChoicePromptShown(p) {
+    return RULES.singleDieUnlocked(p.rack) && !lastTileIsOne(p) &&
+      game.devDiceTestEnabled && game.devDiceChoice === 'ask' && !game.currentRoll;
   }
 
   function renderPlayDice() {
+    var p = currentPlayer();
+    if (diceChoicePromptShown(p)) {
+      playDiceAreaEl.innerHTML =
+        '<div id="play-dice-choice">' +
+          '<button type="button" id="choice-one" class="' + (p.diceCount === 1 ? 'active' : '') + '">1 die</button>' +
+          '<button type="button" id="choice-two" class="' + (p.diceCount === 2 ? 'active' : '') + '">2 dice</button>' +
+        '</div>';
+      document.getElementById('choice-one').addEventListener('click', function () { onChooseDice(1); });
+      document.getElementById('choice-two').addEventListener('click', function () { onChooseDice(2); });
+      return;
+    }
     var rolled = !!game.currentRoll;
-    var diceCount = rolled ? game.currentRoll.dice.length : effectiveDiceCount(currentPlayer());
+    var diceCount = rolled ? game.currentRoll.dice.length : effectiveDiceCount(p);
     var oneForTwo = rolled && diceCount === 2 && game.currentRoll.boostSpentType === 'oneForTwo';
     var sum = oneForTwo ? selectedSum() : null;
     var html = '';
@@ -1421,23 +1450,9 @@
   // changeable with a single tap right up to Roll. Hidden at the last-
   // tile-is-1 safety case (nothing to choose - see effectiveDiceCount) and
   // whenever devDiceChoice is hard-forced to '1' or '2' (nothing to choose
-  // there either).
-  function renderPlayDiceChoice() {
-    var p = currentPlayer();
-    var show = RULES.singleDieUnlocked(p.rack) && !lastTileIsOne(p) &&
-      game.devDiceTestEnabled && game.devDiceChoice === 'ask' && !game.currentRoll;
-    if (!show) {
-      playDiceChoiceEl.classList.remove('visible');
-      playDiceChoiceEl.innerHTML = '';
-      return;
-    }
-    playDiceChoiceEl.classList.add('visible');
-    playDiceChoiceEl.innerHTML =
-      '<button type="button" id="choice-one" class="' + (p.diceCount === 1 ? 'active' : '') + '">1 die</button>' +
-      '<button type="button" id="choice-two" class="' + (p.diceCount === 2 ? 'active' : '') + '">2 dice</button>';
-    document.getElementById('choice-one').addEventListener('click', function () { onChooseDice(1); });
-    document.getElementById('choice-two').addEventListener('click', function () { onChooseDice(2); });
-  }
+  // there either). Issue #4: now rendered inside #play-dice-area itself -
+  // see diceChoicePromptShown/renderPlayDice above - not a separate element
+  // here any more.
 
   function renderPlayButtons() {
     var boostOfferPending = !!(game.currentRoll && game.currentRoll.boostOfferPending);
@@ -1468,7 +1483,6 @@
     renderPlayDice();
     renderPlayMessage();
     renderPlaySelectionSum();
-    renderPlayDiceChoice();
     renderPlayBoostOffer();
     renderPlayButtons();
     applyTheme();
