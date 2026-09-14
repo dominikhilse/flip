@@ -602,11 +602,14 @@ button.secondary:active { background: var(--bg-subtle); }
 #play-message.stalled { color: var(--accent-danger); }
 #play-message.notice { color: var(--text-muted); }
 
+/* Issue #5: sits directly above the dice now (was above the rack) -
+   min-height measured for its longest real content (the 1-for-2 boost
+   variant wrapping to two lines on a phone-width screen), not guessed. */
 #play-selection-sum {
   text-align: center;
   font-size: 0.9rem;
   color: var(--text-soft);
-  margin-bottom: 0.25rem;
+  margin: 0.35rem 0;
   min-height: 1.2em;
   flex: 0 0 auto;
 }
@@ -653,8 +656,16 @@ button.secondary:active { background: var(--bg-subtle); }
   padding: 1em;
   font-size: 1.1rem;
 }
-#play-pass {
-  flex: 0 0 auto;
+/* Issue #5: this row now swaps between three button sets (boost-offer,
+   roll/confirm, next-player) in place, so its own height must be fixed -
+   otherwise the state swap itself becomes a new source of the same
+   grid-jump bug this whole fix is for. min-height measured against the
+   tallest real button (primary/Vollkorn, ~67px) via getBoundingClientRect,
+   not guessed; align-items:stretch (the row's flex default) makes every
+   button match it exactly, which also fixes a pre-existing few-px height
+   mismatch between primary and secondary buttons in the same row. */
+#screen-play .action-row {
+  min-height: 4.3rem;
 }
 
 /* Time challenge HUD (M9). Always "running" here - the timer only shows on
@@ -668,11 +679,16 @@ button.secondary:active { background: var(--bg-subtle); }
   flex: 0 0 auto;
 }
 
+/* Issue #5: reserves its line always (visibility, not hidden) - boost mode
+   is a live, next-lap-only setting, so toggling it mid-match must not
+   shift the rack below it. min-height measured, not guessed (see
+   DECISIONS.md). */
 #play-boost-count {
   text-align: center;
   font-size: 0.85rem;
   color: var(--text-soft);
   margin-bottom: 0.5rem;
+  min-height: 1.2em;
   flex: 0 0 auto;
 }
 
@@ -692,12 +708,8 @@ button.secondary:active { background: var(--bg-subtle); }
   min-width: 0;
 }
 
-#play-boost-offer {
-  margin-bottom: 0.5rem;
-  flex: 0 0 auto;
-}
-/* Text lives in #play-message-area now (issue #3); this is just the
-   spend-or-stay button row's position. */
+/* Text lives in #play-message-area now (issue #3); the spend/decline
+   buttons live in the shared #screen-play .action-row (issue #5). */
 #play-boost-offer-text {
   font-size: 0.95rem;
   color: var(--accent-danger);

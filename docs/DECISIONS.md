@@ -781,3 +781,43 @@ duplicated here.
   (`{4,3}` rack, `[4,4]` roll) confirmed marking exactly one die `die-used` and the other
   `die-unused`, screenshot-checked; a full automated game completed cleanly with zero console
   errors.
+
+### 2026-09-14 — GitHub issue #5: Selected: X/X repositioned, Play screen made uniformly fixed-height
+- **`#play-selection-sum` was still pushing the grid down**, same class of bug as issues #1/#4:
+  it sat *above* the rack with `min-height: 1.2em` but its text (`hidden` attribute swapped
+  off, not just emptied) still shifted the rack below it by a hair whenever a roll started.
+  Per the report, moved it to a new position entirely - directly above `#play-dice-area`,
+  between the rack and the dice - and switched it (and `#play-boost-count`, its row-mate for
+  the same reason) from `hidden`-attribute toggling to `visibility` toggling with an always-on
+  `min-height`, matching the pattern already proven for the dice/total area in issue #1 and the
+  message area in issue #3. The stray `hidden` attribute left on both elements' HTML markup
+  (a leftover from the old attribute-toggle approach, now dead since the JS no longer clears
+  it) was removed - it was fully collapsing them regardless of the new `visibility` logic.
+- **Boost-offer's two buttons (`Use boost` / `Stay stalled`) merged into the same shared
+  `.action-row` as Roll/Confirm/Next player** rather than living in their own `#play-boost-offer`
+  wrapper - per the report's instruction that everything but the grid stay fixed-height, having
+  a whole extra wrapper div appear/disappear above the row was itself a source of vertical
+  movement. `renderPlayButtons()` is now the single place deciding which of the five buttons
+  in the row show (exactly one pair, or the lone Next-player, is ever visible - confirmed via
+  `renderPlayButtons`'s existing mutual-exclusivity logic, unchanged).
+- **New bug introduced by that merge, caught before commit:** with three states now sharing
+  one row, the row's own height differed by ~5px between "Use boost/Stay stalled" (a
+  primary+secondary pair) and "Roll/Confirm" or "Next player" (primary-only), because
+  `button.primary` uses the Vollkorn display face and `button.secondary` doesn't - different
+  font metrics, not something the existing padding/font-size unification (issue #3) touches.
+  Fixed with an explicit `min-height: 4.3rem` on `#screen-play .action-row` (measured against
+  the tallest real button), which combined with the row's default `align-items: stretch` also
+  fixes a pre-existing few-px primary/secondary height mismatch as a side effect.
+- **Confirmed by design, not a bug:** `#play-rack` remains the only height-responsive element
+  (`flex: 1` in the `#screen-play` column), so a few px of difference in a sibling below it
+  (e.g. the action-row states above) is absorbed by the rack's own flexed height rather than
+  shifting anything's position - verified the rack's `top` position is invariant (measured
+  `getBoundingClientRect()`) across every state combination tested, including toggling boost
+  mode on/off mid-debug-session and switching between 9- and 12-tile racks.
+- **Verified** via a temporary debug hook (removed before commit; dev-server port rotated to
+  avoid a stale-cache re-serve, then reverted to 8123): rack `top` measured identical across
+  pre-roll, rolled, boost-offer-pending, stalled, and boost-mode-off states; the 1-for-2 boost
+  variant's longer wrapped text (`"...summing to X or Y"`) confirmed still fitting the existing
+  `min-height` on a 375px-wide viewport; a full automated multi-player game (brute-force
+  `RULES.isValidSelection`-driven solver) completed cleanly with zero console errors; both
+  themes and both rack sizes screenshot-checked.

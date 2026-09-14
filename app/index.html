@@ -166,7 +166,7 @@
          centered timer block. -->
     <div class="play-toprow">
       <button type="button" id="settings-from-play" class="settings-inline">Settings</button>
-      <div id="play-boost-announcement" hidden></div>
+      <div id="play-boost-announcement"></div>
     </div>
     <div class="play-header">
       <div id="play-identity">
@@ -178,30 +178,29 @@
       <div id="play-timer" hidden></div>
     </div>
 
-    <div id="play-boost-count" hidden></div>
-
-    <div id="play-selection-sum"></div>
+    <div id="play-boost-count"></div>
 
     <div id="play-rack"></div>
 
+    <!-- Issue #5: Selected: X/X sits directly above the dice, and (like
+         every other non-grid element) always reserves its line height via
+         CSS min-height + visibility toggling rather than being added/
+         removed from layout - see renderPlaySelectionSum. -->
+    <div id="play-selection-sum"></div>
+
     <div id="play-dice-area"></div>
 
-    <div id="play-boost-offer" hidden>
-      <div class="action-row">
-        <button id="play-boost-spend" class="primary">Use boost</button>
-        <button id="play-boost-decline" class="secondary">Stay stalled</button>
-      </div>
-    </div>
-
+    <!-- Issue #5: boost-offer buttons merged into the single shared
+         .action-row below (renderPlayButtons manages all five buttons'
+         hidden state) instead of a separate wrapper div, so the row's own
+         reserved height never changes based on which state is showing. -->
     <div class="action-row">
+      <button id="play-boost-spend" class="primary">Use boost</button>
+      <button id="play-boost-decline" class="secondary">Stay stalled</button>
       <button id="play-roll" class="primary">Roll</button>
       <button id="play-confirm" class="primary">Confirm</button>
+      <button id="play-pass" class="primary">Next player</button>
     </div>
-    <!-- Issue #4: Next player occupies the same position/space as Roll+
-         Confirm (or Use boost+Stay stalled) rather than appearing after
-         the message area below - it's the action row's third possible
-         state, not a separate element bolted on after everything else. -->
-    <button id="play-pass" class="primary" hidden>Next player</button>
 
     <!-- Issue #3: a reserved safe area below the buttons for every message-
          style text (the plain stall notice, the whole-rack-block notices,

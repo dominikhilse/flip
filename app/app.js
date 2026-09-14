@@ -78,7 +78,6 @@
   var playSelectionSumEl = document.getElementById('play-selection-sum');
   var playRackEl = document.getElementById('play-rack');
   var playDiceAreaEl = document.getElementById('play-dice-area');
-  var playBoostOfferEl = document.getElementById('play-boost-offer');
   var playBoostOfferTextEl = document.getElementById('play-boost-offer-text');
   var playBoostSpendBtn = document.getElementById('play-boost-spend');
   var playBoostDeclineBtn = document.getElementById('play-boost-decline');
@@ -1373,13 +1372,18 @@
     return dice[0] === dice[1] ? '' + dice[0] : dice[0] + ' or ' + dice[1];
   }
 
+  // Issue #5: visibility, not the `hidden` attribute - this row must keep
+  // reserving its space regardless of boost mode, or toggling it mid-game
+  // (a live-at-end-of-lap setting) shifts the rack. Same pattern as the
+  // dice-total fix (issue #1) and everything below it.
   function renderPlayBoostCount() {
     var p = currentPlayer();
     if (!boostModeActive()) {
-      playBoostCountEl.hidden = true;
+      playBoostCountEl.style.visibility = 'hidden';
+      playBoostCountEl.textContent = '';
       return;
     }
-    playBoostCountEl.hidden = false;
+    playBoostCountEl.style.visibility = '';
     // The last remaining tile is always exact-only (never boostable, even
     // holding a boost) - say so plainly instead of showing a count that
     // implies a boost could help here.
@@ -1393,23 +1397,22 @@
   function renderPlayBoostAnnouncement() {
     var p = currentPlayer();
     if (!p.pendingBoostAnnouncement || !p.pendingBoostAnnouncement.length) {
-      playBoostAnnouncementEl.hidden = true;
+      playBoostAnnouncementEl.style.visibility = 'hidden';
+      playBoostAnnouncementEl.textContent = '';
       return;
     }
-    playBoostAnnouncementEl.hidden = false;
+    playBoostAnnouncementEl.style.visibility = '';
     var labels = p.pendingBoostAnnouncement.map(function (type) { return BOOST_TYPE_LABELS[type]; });
     playBoostAnnouncementEl.textContent = 'Boost earned: ' + labels.join(' + ') + '!';
     p.pendingBoostAnnouncement = false;
   }
 
+  // Issue #5: the spend/decline buttons now live permanently in the shared
+  // #screen-play .action-row (see renderPlayButtons) instead of a separate
+  // hidden wrapper - only the explanatory text is this function's job now.
   function renderPlayBoostOffer() {
     var show = !!(game.currentRoll && game.currentRoll.boostOfferPending);
-    playBoostOfferEl.hidden = !show;
     if (!show) {
-      // Issue #3: the text moved out of #play-boost-offer (now hidden with
-      // the button row above) into the always-visible #play-message-area,
-      // so it must be cleared explicitly here - it's no longer hidden for
-      // free by an ancestor's `hidden` attribute.
       playBoostOfferTextEl.textContent = '';
       return;
     }
@@ -1428,9 +1431,11 @@
 
   function renderPlaySelectionSum() {
     if (!game.currentRoll || game.currentRoll.stalled) {
+      playSelectionSumEl.style.visibility = 'hidden';
       playSelectionSumEl.textContent = '';
       return;
     }
+    playSelectionSumEl.style.visibility = '';
     if (game.currentRoll.boostSpentType === 'oneForTwo') {
       // "any tiles summing to" - not "needs N", which reads as needing the
       // single tile numbered N (often exactly the closed tile that caused
@@ -1454,10 +1459,16 @@
   // see diceChoicePromptShown/renderPlayDice above - not a separate element
   // here any more.
 
+  // Issue #5: exactly one of {boost-offer, roll+confirm, next-player} is
+  // ever shown, and all five buttons now share one .action-row - this
+  // function is the single place that decides which subset is visible, so
+  // the row's own reserved height (fixed via CSS) never has to change.
   function renderPlayButtons() {
     var boostOfferPending = !!(game.currentRoll && game.currentRoll.boostOfferPending);
     var stalled = !!(game.currentRoll && game.currentRoll.stalled) && !boostOfferPending;
 
+    playBoostSpendBtn.hidden = !boostOfferPending;
+    playBoostDeclineBtn.hidden = !boostOfferPending;
     playRollBtn.hidden = stalled || boostOfferPending;
     playPassBtn.hidden = !stalled;
     playConfirmBtn.hidden = stalled || boostOfferPending;
