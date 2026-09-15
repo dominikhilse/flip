@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/organic-ad4e9535-b5a6-4ddc-b94d-ce26fc9a3813/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600;700;800&family=Overpass:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: var(--color-bg); }
+  a { color: var(--color-accent-700); } a:hover { color: var(--color-accent); }
+  code { font-family:ui-monospace,'SF Mono',Menlo,monospace; }
+</style>
+</helmet>
+<div style="max-width:1120px; margin:0 auto; padding:clamp(20px,4vw,52px) clamp(16px,4vw,40px) 140px; font-family:'Overpass',system-ui,sans-serif; font-weight:400; color:var(--color-text);">
+
+  <header>
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Flip the Number · Developer handoff v2 · Brand + skins + tokens</div>
+    <h1 style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:clamp(34px,6.5vw,62px); line-height:1.02; margin:12px 0 10px; letter-spacing:-0.01em; font-feature-settings:'lnum' 1;">The elegant pass.</h1>
+    <p style="font-size:clamp(16px,1.8vw,18px); color:var(--color-neutral-700); max-width:66ch;">Supersedes v1's type + palette, and rolls up every decision since. <strong>Crimson&nbsp;Pro</strong> sets the titles <em>and</em> the tile numerals; <strong>Overpass Regular</strong> carries UI + body. A <strong>skins layer</strong> (Brand · Colorful · Monochrome, 12 colours each) rides on light/dark. And the <strong>active player's colour drives the chrome</strong> — name, timer, settings, boost counters, toast, the promoted button and the message. Grounded on the live build at <code>flip@main</code>.</p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
+      <span class="tag tag-accent">Crimson Pro titles + tiles</span>
+      <span class="tag tag-accent-2">Overpass Regular UI</span>
+      <span class="tag tag-neutral">3 skins × 12 colours</span>
+      <span class="tag tag-outline">Player colour = chrome</span>
+    </div>
+  </header>
+
+  <!-- ══ TYPE ══ -->
+  <section style="margin-top:clamp(46px,6vw,80px);">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Part 1 · Type</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(25px,4.2vw,36px); margin:6px 0 4px;">One voice for numbers, one for work</h2>
+    <p style="font-size:16px; color:var(--color-neutral-700); max-width:64ch;">Crimson Pro carries the identity — titles, wordmark, player name, hero numbers, and <strong>the tile numerals</strong>, set in its title weight with <strong>lining + tabular figures</strong> forced so every digit is the same width and sits on the baseline (its default old-style figures would drop below it). Overpass does everything functional at <strong>Regular (400)</strong> — a step thinner than before — with 700 kept only for button labels.</p>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-top:22px;">
+      <div style="background:var(--color-surface); border-radius:var(--radius-lg); padding:24px;">
+        <div class="card-kicker">--font-display · Crimson Pro</div>
+        <div style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:44px; line-height:1; margin:10px 0 10px; font-feature-settings:'lnum' 1;">Flip the Number</div>
+        <div style="display:flex; gap:8px; margin:8px 0 10px;">
+          <span style="width:50px; height:50px; border-radius:11px; background:#C4503C; border:3px solid #8A3122; color:#FBF5E9; display:inline-flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">4</span>
+          <span style="width:50px; height:50px; border-radius:11px; background:#5E8A48; border:3px solid #385428; color:#FBF5E9; display:inline-flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">8</span>
+          <span style="width:50px; height:50px; border-radius:11px; background:#47688F; border:3px solid #2A4159; color:#FBF5E9; display:inline-flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">7</span>
+        </div>
+        <p style="font-size:12.5px; color:var(--color-neutral-700); margin:0;">Titles, wordmark, player name, hero numbers, the timer &amp; <strong>tile numerals</strong> (weight 800, <code>lnum</code>+<code>tnum</code>, centred H/V with <code>line-height:1</code>).</p>
+      </div>
+      <div style="background:var(--color-surface); border-radius:var(--radius-lg); padding:24px;">
+        <div class="card-kicker">--font-ui · Overpass</div>
+        <div style="font-family:'Overpass'; font-weight:400; font-size:30px; line-height:1.05; margin:10px 0 4px;">Overpass Regular</div>
+        <p style="font-family:'Overpass'; font-weight:400; font-size:15px; margin:8px 0 4px;">The quick brown Spudling flips tile seven.</p>
+        <p style="font-size:12.5px; color:var(--color-neutral-700); margin:6px 0 0;">All UI &amp; body at <strong>400</strong>, labels 600, <strong>button labels 700</strong>. No Black anywhere.</p>
+      </div>
+    </div>
+    <p style="margin-top:14px; font-size:12.5px; color:var(--color-neutral-600); border-left:3px solid var(--color-accent-300); padding-left:14px; max-width:70ch;">Change from earlier drafts: the tile numerals were briefly Overpass 800 — they're now Crimson Pro (title style) for a more elegant digit, and UI copy dropped to Regular. Eyeball the digits on the darker fills; if they read light, bump the optical weight before the sans is reconsidered.</p>
+  </section>
+
+  <!-- ══ SKINS ══ -->
+  <section style="margin-top:clamp(46px,6vw,80px);">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Part 2 · Skins (tiles only)</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(25px,4.2vw,36px); margin:6px 0 4px;">Three palettes, twelve colours</h2>
+    <p style="font-size:16px; color:var(--color-neutral-700); max-width:66ch;">A <strong>skin</strong> is purely a tile palette — a new axis, <strong>independent of light/dark</strong> and of player identity. Each carries the full <strong>12 tile colours</strong> (rack sizes go to 12) in the <code>{fill,edge,ink}</code> shape the build already uses. Skins no longer set an accent: chrome colour comes from the player (Part 3).</p>
+
+    <h3 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; margin-top:32px; font-size:20px;">Brand <span style="font-size:13px; font-weight:400; color:var(--color-accent-700);">— default</span></h3>
+    <p style="font-size:13.5px; color:var(--color-neutral-700); max-width:64ch;">Warm, earthy, handmade. Distinctness is traded a little for cohesion (that's what Colorful is <em>for</em>); one cool slate anchor at 7 keeps the mid-set readable.</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(104px,1fr)); gap:10px; margin-top:16px;">
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#C4503C; border:3px solid #8A3122; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">1</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Tomato</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">C4503C · 8A3122</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#D07A33; border:3px solid #96501A; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">2</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Pumpkin</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">D07A33 · 96501A</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#E0A62E; border:3px solid #9E7318; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">3</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Amber</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">E0A62E · 9E7318</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#8F9A3C; border:3px solid #5A6222; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">4</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Olive</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">8F9A3C · 5A6222</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#5E8A48; border:3px solid #385428; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">5</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Fern</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">5E8A48 · 385428</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#3C8277; border:3px solid #22504A; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">6</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Pine</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">3C8277 · 22504A</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#47688F; border:3px solid #2A4159; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">7</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Slate <span style="color:var(--color-accent-700); font-weight:600;">· anchor</span></div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">47688F · 2A4159</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#7E5586; border:3px solid #4E3352; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">8</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Plum</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">7E5586 · 4E3352</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#A94E5C; border:3px solid #722F39; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">9</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Berry</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">A94E5C · 722F39</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#A65A38; border:3px solid #6E3820; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">10</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Brick</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">A65A38 · 6E3820</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#C7A87A; border:3px solid #8C7346; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">11</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Sand</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">C7A87A · 8C7346</div></div>
+      <div style="border-radius:12px; padding:10px; background:var(--color-surface);"><div style="height:44px; border-radius:9px; background:#6F5240; border:3px solid #453125; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">12</div><div style="font:600 12px 'Overpass'; margin-top:7px;">Cocoa</div><div style="font:400 10px ui-monospace,Menlo,monospace; color:var(--color-neutral-600);">6F5240 · 453125</div></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-top:24px;">
+      <div class="card elev-sm"><div class="card-kicker">Colorful · 12</div><div class="card-title" style="font-size:18px;">The CVD-safe set, kept</div><p class="card-body">The current palette — 8 colour-blind-safe + 4 graceful (9–12). Unchanged. The accessible choice, offered as a first-class skin.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Monochrome · 12</div><div class="card-title" style="font-size:18px;">The player's hue, stepped</div><p class="card-body">All open tiles are the active player's colour; each number takes one <strong>tonal step</strong> on a 12-stop lightness ramp so 1–12 stay told apart. Numeral + step do the work. Derived at render, no static hexes.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Selection highlight</div><div class="card-title" style="font-size:18px;">Opposite of the theme</div><p class="card-body">The picked-tile outline is <code>var(--fg)</code> — white on dark, near-black on light — for maximum contrast in any skin. Not the player colour, not the skin.</p></div>
+    </div>
+
+    <div style="margin-top:22px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; background:var(--color-accent-2-100); border-radius:var(--radius-lg); padding:18px 22px;">
+      <div style="font-family:'Crimson Pro',serif; font-weight:700; color:var(--color-accent-2-800); font-size:15px;">Independent axes:</div>
+      <span class="tag tag-neutral">Skin: Brand / Colorful / Mono</span>
+      <span style="color:var(--color-accent-2-700); font-weight:700;">×</span>
+      <span class="tag tag-neutral">Theme: Light / Dark (+ overpay XOR)</span>
+      <span style="color:var(--color-accent-2-700); font-weight:700;">×</span>
+      <span class="tag tag-neutral">Player colour → chrome</span>
+      <div style="font-size:12.5px; color:var(--color-accent-2-900); flex:1; min-width:200px;">Skin + theme live in the App tab and persist in <code>storage.js</code>; player colour is per active turn.</div>
+    </div>
+  </section>
+
+  <!-- ══ PLAYER COLOUR DRIVES CHROME ══ -->
+  <section style="margin-top:clamp(46px,6vw,80px);">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Part 3 · The player colours the UI</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(25px,4.2vw,36px); margin:6px 0 4px;">Whose turn it is, at a glance</h2>
+    <p style="font-size:16px; color:var(--color-neutral-700); max-width:66ch;">The active player's identity colour (the CVD-safe swatch they pick at setup) tints the chrome: <strong>name, timer, settings cog, boost counters, the boost toast, the promoted button, and the message</strong>. Player colours are theme-independent constants — a player is "the teal one" in either theme; only the surrounding neutrals flip.</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:20px;">
+      <div class="card elev-sm"><div class="card-kicker">On dark</div><div class="card-title" style="font-size:17px;">The fill, straight</div><p class="card-body">Text and icons use the player's fill directly (e.g. teal <code>#26A69A</code>); the promoted button is a solid fill with a cream ink.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">On light</div><div class="card-title" style="font-size:17px;">The edge, for text</div><p class="card-body">Some fills fail 4.5:1 on the pale ground, so text/icons drop to the hue's <strong>dark partner (edge)</strong>; fills still back the buttons/toast with cream ink.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">One promoted at a time</div><div class="card-title" style="font-size:17px;">Never two lit buttons</div><p class="card-body">Exactly one primary carries the player colour; any sibling primary drops to a muted neutral (<code>Roll</code> dims once <code>Confirm</code> is the move).</p></div>
+    </div>
+    <p style="margin-top:16px; font-size:12.5px; color:var(--color-neutral-600); border-left:3px solid var(--color-accent-300); padding-left:14px; max-width:70ch;">Tile <em>state</em> is unchanged: open = full-chroma + raised + solid numeral; closed = desaturated <code>#5C625F</code> + pressed inset + dim hollow numeral — three redundant non-hue cues, so state survives greyscale in every skin, mono included. The avatar (<code>app/avatars/NN.png</code>, head/bust crop in a player-colour ring) replaces the potato on the Play + turn-card screens.</p>
+  </section>
+
+  <!-- ══ RESERVED REAL ESTATE ══ -->
+  <section style="margin-top:clamp(46px,6vw,80px);">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Part 4 · The anti-jump rule</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(25px,4.2vw,36px); margin:6px 0 4px;">Every zone reserves its space</h2>
+    <p style="font-size:16px; color:var(--color-neutral-700); max-width:66ch;">The live build already fixes most zone heights. The redesign holds the line and merges the old settings strip into one row: <strong>Settings cog · two permanent boost chips · a name-only toast</strong>, all under the identity row. The toast is right-aligned and, after a beat, <strong>shrinks into its counter and increments it</strong>; boost copy stays in the bottom safe area. The rack is the one flexible zone.</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:20px;">
+      <div style="background:var(--color-surface); border-radius:12px; padding:12px 14px; font:600 12.5px 'Overpass';">1 · Identity <span style="color:var(--color-neutral-500); font-weight:400;">avatar+name / timer · topmost</span></div>
+      <div style="background:var(--color-surface); border-radius:12px; padding:12px 14px; font:600 12.5px 'Overpass';">2 · Chrome + boost <span style="color:var(--color-neutral-500); font-weight:400;">cog · 2 chips · toast</span></div>
+      <div style="background:var(--color-accent-2-100); border-radius:12px; padding:12px 14px; font:600 12.5px 'Overpass'; color:var(--color-accent-2-900);">3 · Rack <span style="font-weight:400;">flexes · absorbs slack</span></div>
+      <div style="background:var(--color-surface); border-radius:12px; padding:12px 14px; font:600 12.5px 'Overpass';">4 · Selection sum <span style="color:var(--color-neutral-500); font-weight:400;">1 line · fixed</span></div>
+      <div style="background:var(--color-surface); border-radius:12px; padding:12px 14px; font:600 12.5px 'Overpass';">5 · Dice · buttons · safe area <span style="color:var(--color-neutral-500); font-weight:400;">all fixed</span></div>
+    </div>
+    <p style="margin-top:14px; font-size:13px; color:var(--color-neutral-700);">Full hi-fi treatment of every zone + the boost-offer state: see <strong>PlayScreen_Redesign.dc.html</strong>.</p>
+  </section>
+
+  <!-- ══ TOKENS ══ -->
+  <section style="margin-top:clamp(46px,6vw,80px);">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Part 5 · Drop-in tokens</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(25px,4.2vw,36px); margin:6px 0 4px;">Code-ready diffs</h2>
+
+    <h3 style="font-family:'Crimson Pro',serif; font-weight:700; margin-top:26px; font-size:18px;">A · <code>app/index.html</code> &lt;head&gt; — swap the font link</h3>
+    <div style="background:#201e1d; color:#e9e2d4; border-radius:var(--radius-lg); padding:20px 22px; margin-top:12px; overflow-x:auto; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; line-height:1.62;"><pre style="margin:0; white-space:pre;"><span style="color:#8f8577;">&lt;!-- was Vollkorn+Overpass. Now Crimson Pro (titles + numerals) + Overpass. --&gt;</span>
+<span style="color:#f0b46b;">&lt;link</span> href=<span style="color:#a9c47f;">"https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600;700;800&amp;family=Overpass:wght@400;600;700&amp;display=swap"</span> rel=<span style="color:#a9c47f;">"stylesheet"</span><span style="color:#f0b46b;">&gt;</span></pre></div>
+
+    <h3 style="font-family:'Crimson Pro',serif; font-weight:700; margin-top:26px; font-size:18px;">B · <code>app/style.css</code> — fonts, numerals, player accent</h3>
+    <div style="background:#201e1d; color:#e9e2d4; border-radius:var(--radius-lg); padding:20px 22px; margin-top:12px; overflow-x:auto; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; line-height:1.6;"><pre style="margin:0; white-space:pre;">:root {
+  <span style="color:#f0b46b;">--font-display</span>: <span style="color:#a9c47f;">'Crimson Pro'</span>, Georgia, serif;    <span style="color:#8f8577;">/* titles + tiles */</span>
+  <span style="color:#f0b46b;">--font-ui</span>:      <span style="color:#a9c47f;">'Overpass'</span>, system-ui, sans-serif;
+  <span style="color:#8f8577;">/* --player-accent / -ink / -text are set on &lt;body&gt; per active turn (JS) */</span>
+}
+html, body     { font-family: <span style="color:#f0b46b;">var</span>(--font-ui); font-weight: 400; } <span style="color:#8f8577;">/* Regular */</span>
+h1             { font-family: <span style="color:#f0b46b;">var</span>(--font-display); font-weight: 800; font-feature-settings: <span style="color:#a9c47f;">'lnum'</span> 1, <span style="color:#a9c47f;">'tnum'</span> 1; }
+.tile          { font-family: <span style="color:#f0b46b;">var</span>(--font-display); font-weight: 800;
+                 font-feature-settings: <span style="color:#a9c47f;">'lnum'</span> 1, <span style="color:#a9c47f;">'tnum'</span> 1;
+                 line-height: 1; display:flex; align-items:center; justify-content:center; } <span style="color:#8f8577;">/* centred */</span>
+.tile.selected { outline: 4px solid <span style="color:#f0b46b;">var</span>(--fg); }   <span style="color:#8f8577;">/* opposite of theme */</span>
+button.primary { font-weight: 700;                    <span style="color:#8f8577;">/* bold label, not Black */</span>
+                 background: <span style="color:#f0b46b;">var</span>(--player-accent);
+                 border-color: <span style="color:#f0b46b;">var</span>(--player-accent);
+                 color: <span style="color:#f0b46b;">var</span>(--player-accent-ink); }
+button.primary.is-muted {                             <span style="color:#8f8577;">/* the non-promoted sibling */</span>
+                 background: <span style="color:#f0b46b;">var</span>(--bg-subtle);
+                 border-color: <span style="color:#f0b46b;">var</span>(--bg-subtle);
+                 color: <span style="color:#f0b46b;">var</span>(--text-dim); }
+<span style="color:#8f8577;">/* name / timer / settings cog / boost counters / toast / message: */</span>
+.play-accent-text { color: <span style="color:#f0b46b;">var</span>(--player-accent-text); }</pre></div>
+    <p style="margin-top:10px; font-size:12px; color:var(--color-neutral-600); max-width:70ch;">Disabled primaries keep the existing <code>--btn-primary-disabled-bg</code>. The settings icon SVG swaps from the brightness/sun glyph to a cogwheel. The <code>cqh</code> tile sizing and the M10 <code>.die.rolling</code> wobble are untouched.</p>
+
+    <h3 style="font-family:'Crimson Pro',serif; font-weight:700; margin-top:26px; font-size:18px;">C · <code>app/theme.js</code> — skins hold tiles only</h3>
+    <div style="background:#201e1d; color:#e9e2d4; border-radius:var(--radius-lg); padding:20px 22px; margin-top:12px; overflow-x:auto; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; line-height:1.6;"><pre style="margin:0; white-space:pre;"><span style="color:#f0b46b;">window</span>.THEME = {
+  activeSkin: <span style="color:#a9c47f;">'brand'</span>,           <span style="color:#8f8577;">// persisted in storage.js, like theme</span>
+  skins: {
+    brand: { tiles: {                <span style="color:#8f8577;">// default — warm/earthy 12</span>
+       1:{fill:<span style="color:#a9c47f;">'#C4503C'</span>,edge:<span style="color:#a9c47f;">'#8A3122'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>},  2:{fill:<span style="color:#a9c47f;">'#D07A33'</span>,edge:<span style="color:#a9c47f;">'#96501A'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>},
+       3:{fill:<span style="color:#a9c47f;">'#E0A62E'</span>,edge:<span style="color:#a9c47f;">'#9E7318'</span>,ink:<span style="color:#a9c47f;">'#3A2A06'</span>},  4:{fill:<span style="color:#a9c47f;">'#8F9A3C'</span>,edge:<span style="color:#a9c47f;">'#5A6222'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>},
+       5:{fill:<span style="color:#a9c47f;">'#5E8A48'</span>,edge:<span style="color:#a9c47f;">'#385428'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>},  6:{fill:<span style="color:#a9c47f;">'#3C8277'</span>,edge:<span style="color:#a9c47f;">'#22504A'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>},
+       7:{fill:<span style="color:#a9c47f;">'#47688F'</span>,edge:<span style="color:#a9c47f;">'#2A4159'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>},  8:{fill:<span style="color:#a9c47f;">'#7E5586'</span>,edge:<span style="color:#a9c47f;">'#4E3352'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>},
+       9:{fill:<span style="color:#a9c47f;">'#A94E5C'</span>,edge:<span style="color:#a9c47f;">'#722F39'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>}, 10:{fill:<span style="color:#a9c47f;">'#A65A38'</span>,edge:<span style="color:#a9c47f;">'#6E3820'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>},
+      11:{fill:<span style="color:#a9c47f;">'#C7A87A'</span>,edge:<span style="color:#a9c47f;">'#8C7346'</span>,ink:<span style="color:#a9c47f;">'#33280F'</span>}, 12:{fill:<span style="color:#a9c47f;">'#6F5240'</span>,edge:<span style="color:#a9c47f;">'#453125'</span>,ink:<span style="color:#a9c47f;">'#FBF5E9'</span>} } },
+    colorful: { tiles: { <span style="color:#8f8577;">/* today's CVD-safe 1..12, verbatim */</span> } },
+    mono:     { derive: <span style="color:#a9c47f;">'player-tonal'</span> }   <span style="color:#8f8577;">// 12-stop L-ramp on the player hue</span>
+  },
+  closedTile: { fill:<span style="color:#a9c47f;">'#5C625F'</span>, edge:<span style="color:#a9c47f;">'#3F4442'</span>, ink:<span style="color:#a9c47f;">'#9AA19D'</span> },
+  playerColors: [ <span style="color:#8f8577;">/* CVD-safe — identity AND the chrome accent */</span> ],
+  playerNameTextColor: <span style="color:#a9c47f;">'#FBF5E9'</span>
+};</pre></div>
+
+    <h3 style="font-family:'Crimson Pro',serif; font-weight:700; margin-top:26px; font-size:18px;">D · <code>app/app.js</code> — accent from player, palette from skin</h3>
+    <div style="background:#201e1d; color:#e9e2d4; border-radius:var(--radius-lg); padding:20px 22px; margin-top:12px; overflow-x:auto; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; line-height:1.6;"><pre style="margin:0; white-space:pre;"><span style="color:#8f8577;">// beginTurn / applyTheme: the active player's colour drives the chrome.</span>
+<span style="color:#f0b46b;">const</span> p = players[current];                         <span style="color:#8f8577;">// {fill, edge, ink}</span>
+body.style.setProperty(<span style="color:#a9c47f;">'--player-accent'</span>,     p.fill);
+body.style.setProperty(<span style="color:#a9c47f;">'--player-accent-ink'</span>, p.ink);
+<span style="color:#8f8577;">// text needs contrast on the current ground: fill on dark, edge on light.</span>
+body.style.setProperty(<span style="color:#a9c47f;">'--player-accent-text'</span>,
+  isLightTheme() ? p.edge : p.fill);
+
+<span style="color:#8f8577;">// renderPlayRack: palette from the active skin; selection outline stays var(--fg).</span>
+<span style="color:#f0b46b;">const</span> s = THEME.skins[THEME.activeSkin];
+<span style="color:#f0b46b;">const</span> tiles = s.derive === <span style="color:#a9c47f;">'player-tonal'</span> ? monoRamp(p.fill, rackSize) : s.tiles;
+
+<span style="color:#8f8577;">// renderPlayButtons: exactly one promoted; the rest get .is-muted.</span>
+<span style="color:#8f8577;">// renderPlayBoostCount: two permanent chips, icon in var(--player-accent-text),</span>
+<span style="color:#8f8577;">//   dimmed at 0. Cog + counters + toast + message all read the accent.</span></pre></div>
+  </section>
+
+  <!-- ══ HANDOFF CHECKLIST ══ -->
+  <section style="margin-top:clamp(46px,6vw,80px);">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Hand to the code session</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(25px,4.2vw,36px); margin:6px 0 4px;">What changes, what doesn't</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-top:18px;">
+      <div style="background:var(--color-accent-2-100); border-radius:var(--radius-lg); padding:18px 20px;">
+        <h4 style="color:var(--color-accent-2-800); margin-bottom:8px;">Changes</h4>
+        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--color-accent-2-900); line-height:1.7;">
+          <li>Font link: Vollkorn → <strong>Crimson Pro</strong></li>
+          <li>Titles <strong>and tiles</strong> → Crimson Pro 800 (lnum+tnum, centred)</li>
+          <li>UI/body → Overpass <strong>Regular 400</strong>; labels 700</li>
+          <li><code>theme.js</code> → <strong>skins layer</strong>, tiles only, 12 colours</li>
+          <li><strong>Player colour drives chrome</strong> via <code>--player-accent*</code></li>
+          <li>Selection outline → <code>var(--fg)</code> (theme-opposite)</li>
+          <li>One promoted button; the other gets <code>.is-muted</code></li>
+          <li>Settings glyph → <strong>cogwheel</strong>; avatar replaces the potato</li>
+          <li>Boost inventory → two permanent icon+counter chips</li>
+        </ul>
+      </div>
+      <div style="background:var(--color-surface); border-radius:var(--radius-lg); padding:18px 20px;">
+        <h4 style="margin-bottom:8px;">Stays exactly as-is</h4>
+        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--color-neutral-700); line-height:1.7;">
+          <li>Dark-root / <code>.theme-light</code> + overpay XOR</li>
+          <li>Player-identity colours (CVD-safe set)</li>
+          <li>Open/closed 3-cue tile-state model</li>
+          <li>Reserved-height Play zones</li>
+          <li>Rules engine, motion thresholds, boost award model</li>
+          <li>M10 dice wobble + <code>cqh</code> tile sizing · <strong>no Undo</strong></li>
+        </ul>
+      </div>
+      <div style="background:var(--color-accent-100); border-radius:var(--radius-lg); padding:18px 20px;">
+        <h4 style="color:var(--color-accent-800); margin-bottom:8px;">Open / needs a call</h4>
+        <ul style="margin:0; padding-left:18px; font-size:13px; color:var(--color-accent-900); line-height:1.7;">
+          <li>Crimson Pro digit weight on darker fills — bump optical weight if light</li>
+          <li>Mono ramp: exact 12 L-steps + min ΔL between adjacent numbers</li>
+          <li>Light-theme player text: confirm every edge clears 4.5:1</li>
+          <li>20th avatar missing (repo has 01–19; <code>config.js avatarCount:19</code>)</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:26px; font-size:12.5px; color:var(--color-neutral-600); text-align:center;">Flip the Number · dev handoff v2 · type + skins + player-colour chrome + tokens · grounded on flip@main, no rules-engine changes. Supersedes DevHandoff_BrandSpec.dc.html Parts 1 &amp; 3.</p>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>

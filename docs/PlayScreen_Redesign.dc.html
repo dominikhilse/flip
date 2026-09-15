@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/organic-ad4e9535-b5a6-4ddc-b94d-ce26fc9a3813/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600;700;800&family=Overpass:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: var(--color-bg); }
+  a { color: var(--color-accent-700); } a:hover { color: var(--color-accent); }
+</style>
+</helmet>
+<div style="max-width:1240px; margin:0 auto; padding:clamp(20px,4vw,52px) clamp(16px,4vw,40px) 120px; font-family:'Overpass',system-ui,sans-serif; color:var(--color-text);">
+
+  <header>
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Flip the Number · Play screen · Hi-fi redesign</div>
+    <h1 style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:clamp(34px,6vw,60px); line-height:1.02; letter-spacing:-0.01em; margin:12px 0 10px; font-feature-settings:'lnum' 1,'tnum' 1;">The turn, held still.</h1>
+    <p style="font-size:clamp(15px,1.7vw,17px); color:var(--color-neutral-700); max-width:66ch;">Same vertical column the build already ships — <strong>every zone keeps a fixed reserved height</strong> so nothing reflows when a message, a boost, or a roll appears. This pass: <strong>the active player's colour drives the chrome</strong> (name, timer, settings, boost counters, toast, the promoted button and the message), a real <strong>avatar</strong> replaces the potato, all message copy follows the terse <em>"Tap&nbsp;Roll to begin"</em> voice, and the skins carry the full <strong>12 colours</strong>.</p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
+      <span class="tag tag-accent">Player colour = UI accent</span>
+      <span class="tag tag-accent-2">Crimson Pro numerals</span>
+      <span class="tag tag-neutral">12-colour skins</span>
+      <span class="tag tag-outline">Boost = icon + counter</span>
+    </div>
+  </header>
+
+  <div style="display:flex; flex-wrap:wrap; gap:34px; margin-top:44px; align-items:flex-start;">
+
+    <!-- ══ FRAME A · normal roll, annotated (Mia · Teal) ══ -->
+    <div style="display:flex; gap:16px; align-items:stretch;">
+      <div>
+        <div style="width:322px; background:#111; color:#eee; border:11px solid #0b0b0b; border-radius:38px; overflow:hidden; box-shadow:var(--shadow-lg);">
+          <div style="display:flex; justify-content:space-between; padding:11px 22px 4px; font:400 11px 'Overpass'; opacity:.65;"><span>9:41</span><span>▮▮▮ ▮</span></div>
+          <div style="padding:6px 15px 20px;">
+
+            <!-- zone 1 · identity (avatar + name / timer) -->
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; min-height:42px;">
+              <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+                <span style="width:38px; height:38px; border-radius:50%; overflow:hidden; background:#26A69A; border:2px solid #26A69A; flex:none; display:block; position:relative;"><img src="app/avatars/05.png" alt="" style="position:absolute; top:0; left:50%; width:150%; transform:translateX(-50%); display:block;"></span>
+                <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:26px; line-height:1; color:#2FBEB0;">Mia</span>
+              </div>
+              <span style="font:400 12px 'Overpass'; color:#666;">&nbsp;</span>
+            </div>
+
+            <!-- zone 2 · chrome + boost row: settings icon · counters · toast (toast shrinks into a counter after a beat, +1) -->
+            <div style="display:flex; align-items:center; gap:8px; margin-top:8px; min-height:34px;">
+              <span style="width:32px; height:32px; border-radius:8px; background:#1a2624; border:1px solid #2c4a46; color:#2FBEB0; flex:none; display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </span>
+              <div style="flex:1; display:flex; justify-content:center; gap:8px;">
+                <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 7px; border-radius:999px; background:#1a2624; border:1px solid #2c4a46; color:#2FBEB0;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="9" height="11" rx="2.5" fill="currentColor" stroke="none"/><rect x="13.5" y="7" width="7.5" height="11" rx="2.5"/></svg>
+                  <span style="font:700 12px 'Overpass'; color:#eee;">2</span>
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 7px; border-radius:999px; background:#1a2624; border:1px solid #2c4a46; color:#2FBEB0;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 13 12 7 18 13"/><polyline points="6 18 12 12 18 18"/></svg>
+                  <span style="font:700 12px 'Overpass'; color:#eee;">1</span>
+                </span>
+              </div>
+              <span style="flex:none; font:700 10.5px 'Overpass'; color:#06201C; background:#2FBEB0; border-radius:999px; padding:5px 11px;">1-for-2</span>
+            </div>
+
+            <!-- zone 3 · rack (colorful skin) -->
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:12px;">
+              <div style="height:56px; border-radius:10px; background:#5C625F; border:3px solid #3F4442; color:#9AA19D; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">1</div>
+              <div style="height:56px; border-radius:10px; background:#E5842A; border:3px solid #A45610; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">2</div>
+              <div style="height:56px; border-radius:10px; background:#E4BE2F; border:3px solid #9C7F16; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1; outline:4px solid #eee; outline-offset:-4px;">3</div>
+              <div style="height:56px; border-radius:10px; background:#7E9E38; border:3px solid #4C641F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">4</div>
+              <div style="height:56px; border-radius:10px; background:#26A69A; border:3px solid #146B62; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1; outline:4px solid #eee; outline-offset:-4px;">5</div>
+              <div style="height:56px; border-radius:10px; background:#5C625F; border:3px solid #3F4442; color:#9AA19D; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">6</div>
+              <div style="height:56px; border-radius:10px; background:#6A5AC8; border:3px solid #3E3583; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">7</div>
+              <div style="height:56px; border-radius:10px; background:#B45699; border:3px solid #77335F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">8</div>
+              <div style="height:56px; border-radius:10px; background:#A65E38; border:3px solid #6E3A1F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">9</div>
+            </div>
+
+            <!-- zone 4 · selection sum -->
+            <div style="text-align:center; font:400 13px 'Overpass'; color:#ccc; margin-top:11px; min-height:1.2em;">Selected 8 / 8</div>
+
+            <!-- zone 5a · dice area -->
+            <div style="text-align:center; min-height:68px; margin-top:2px;">
+              <span style="display:inline-flex; gap:8px; align-items:center;">
+                <span style="width:40px; height:40px; border-radius:7px; background:#fff; display:inline-flex; align-items:center; justify-content:center;">
+                  <svg width="30" height="30" viewBox="0 0 30 30"><g fill="#111"><circle cx="8" cy="8" r="2.6"/><circle cx="22" cy="8" r="2.6"/><circle cx="15" cy="15" r="2.6"/><circle cx="8" cy="22" r="2.6"/><circle cx="22" cy="22" r="2.6"/></g></svg>
+                </span>
+                <span style="width:40px; height:40px; border-radius:7px; background:#fff; display:inline-flex; align-items:center; justify-content:center;">
+                  <svg width="30" height="30" viewBox="0 0 30 30"><g fill="#111"><circle cx="8" cy="8" r="2.6"/><circle cx="15" cy="15" r="2.6"/><circle cx="22" cy="22" r="2.6"/></g></svg>
+                </span>
+              </span>
+              <div style="font:400 12px 'Overpass'; color:#aaa; margin-top:6px;">Total 8</div>
+            </div>
+
+            <!-- zone 5b · action row (promoted buttons in player colour) -->
+            <div style="display:flex; gap:8px; min-height:58px; align-items:stretch;">
+              <div style="flex:1; display:flex; align-items:center; justify-content:center; border-radius:14px; background:#232323; color:#5a5a5a; font:700 17px 'Overpass'; border:3px solid #232323;">Roll</div>
+              <div style="flex:1; display:flex; align-items:center; justify-content:center; border-radius:14px; background:#26A69A; color:#FBF5E9; font:700 17px 'Overpass'; border:3px solid #26A69A;">Confirm</div>
+            </div>
+
+            <!-- zone 5c · message safe area (player colour) -->
+            <div style="text-align:center; min-height:2.8em; margin-top:9px; font:400 13px 'Overpass'; color:#2FBEB0; display:flex; align-items:center; justify-content:center;">Tap tiles that add to 8</div>
+
+          </div>
+        </div>
+        <div style="text-align:center; font:600 12px 'Overpass'; color:var(--color-neutral-700); margin-top:12px;">A · Normal turn <span style="color:var(--color-neutral-400);">— Mia is Teal, Colorful skin, dark</span></div>
+      </div>
+
+      <!-- annotation rail -->
+      <div style="width:172px; align-self:stretch; display:flex; flex-direction:column; justify-content:space-between; padding:4px 0; font:600 10.5px 'Overpass'; color:var(--color-neutral-600);">
+        <div style="border-left:2px solid var(--color-accent-300); padding-left:9px;"><span style="color:var(--color-accent-700);">1 · Identity</span><br>Avatar + name / timer. <span style="color:var(--color-neutral-500);">name in the player's colour · reserved 42px</span></div>
+        <div style="border-left:2px solid var(--color-accent-300); padding-left:9px;"><span style="color:var(--color-accent-700);">2 · Chrome + boost</span><br>Settings icon · counters · toast (names only, right). <span style="color:var(--color-neutral-500);">all in the player's colour; toast shrinks into its counter after a beat, +1</span></div>
+        <div style="border-left:2px solid var(--color-accent-2-400); padding-left:9px;"><span style="color:var(--color-accent-2-800);">3 · Rack</span><br>The only flexible zone — absorbs slack. 9 or 12. <span style="color:var(--color-neutral-500);">tiles follow the skin; selected outline = opposite of theme (max contrast)</span></div>
+        <div style="border-left:2px solid var(--color-accent-300); padding-left:9px;"><span style="color:var(--color-accent-700);">4 · Selection sum</span><br><span style="color:var(--color-neutral-500);">reserved 1 line</span></div>
+        <div style="border-left:2px solid var(--color-accent-300); padding-left:9px;"><span style="color:var(--color-accent-700);">5 · Dice · buttons · safe area</span><br>All three fixed-height. Promoted button + message in player colour; messages land <em>here</em>.</div>
+      </div>
+    </div>
+
+    <!-- ══ FRAME B · boost offer state (Mia · Teal) ══ -->
+    <div>
+      <div style="width:322px; background:#111; color:#eee; border:11px solid #0b0b0b; border-radius:38px; overflow:hidden; box-shadow:var(--shadow-lg);">
+        <div style="display:flex; justify-content:space-between; padding:11px 22px 4px; font:400 11px 'Overpass'; opacity:.65;"><span>9:41</span><span>▮▮▮ ▮</span></div>
+        <div style="padding:6px 15px 20px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; min-height:42px;">
+            <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+              <span style="width:38px; height:38px; border-radius:50%; overflow:hidden; background:#26A69A; border:2px solid #26A69A; flex:none; display:block; position:relative;"><img src="app/avatars/05.png" alt="" style="position:absolute; top:0; left:50%; width:150%; transform:translateX(-50%); display:block;"></span>
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:26px; line-height:1; color:#2FBEB0;">Mia</span>
+            </div>
+            <span style="font:400 12px 'Overpass'; color:#666;">&nbsp;</span>
+          </div>
+          <!-- chrome + boost row; 1-for-2 chip emphasised as the offered boost, no toast mid-offer -->
+          <div style="display:flex; align-items:center; gap:8px; margin-top:8px; min-height:34px;">
+            <span style="width:32px; height:32px; border-radius:8px; background:#1a2624; border:1px solid #2c4a46; color:#2FBEB0; flex:none; display:inline-flex; align-items:center; justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </span>
+            <div style="flex:1; display:flex; justify-content:center; gap:8px;">
+              <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 7px; border-radius:999px; background:#123330; border:1.5px solid #2FBEB0; color:#2FBEB0;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="9" height="11" rx="2.5" fill="currentColor" stroke="none"/><rect x="13.5" y="7" width="7.5" height="11" rx="2.5"/></svg>
+                <span style="font:700 12px 'Overpass'; color:#2FBEB0;">2</span>
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 7px; border-radius:999px; background:#191919; border:1px solid #333; color:#5a5a5a;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 13 12 7 18 13"/><polyline points="6 18 12 12 18 18"/></svg>
+                <span style="font:700 12px 'Overpass'; color:#5a5a5a;">0</span>
+              </span>
+            </div>
+            <span style="flex:none; width:32px;">&nbsp;</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:12px;">
+            <div style="height:56px; border-radius:10px; background:#5C625F; border:3px solid #3F4442; color:#9AA19D; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">1</div>
+            <div style="height:56px; border-radius:10px; background:#5C625F; border:3px solid #3F4442; color:#9AA19D; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">2</div>
+            <div style="height:56px; border-radius:10px; background:#E4BE2F; border:3px solid #9C7F16; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">3</div>
+            <div style="height:56px; border-radius:10px; background:#5C625F; border:3px solid #3F4442; color:#9AA19D; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">4</div>
+            <div style="height:56px; border-radius:10px; background:#26A69A; border:3px solid #146B62; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">5</div>
+            <div style="height:56px; border-radius:10px; background:#5C625F; border:3px solid #3F4442; color:#9AA19D; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">6</div>
+            <div style="height:56px; border-radius:10px; background:#6A5AC8; border:3px solid #3E3583; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">7</div>
+            <div style="height:56px; border-radius:10px; background:#5C625F; border:3px solid #3F4442; color:#9AA19D; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">8</div>
+            <div style="height:56px; border-radius:10px; background:#A65E38; border:3px solid #6E3A1F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">9</div>
+          </div>
+          <div style="text-align:center; font:400 13px 'Overpass'; color:#777; margin-top:11px; min-height:1.2em;">Selected 0 / 5</div>
+          <div style="text-align:center; min-height:68px; margin-top:2px;">
+            <span style="display:inline-flex; gap:8px; align-items:center;">
+              <span style="width:40px; height:40px; border-radius:7px; background:#fff; outline:3px solid #eee; outline-offset:2px; display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="30" height="30" viewBox="0 0 30 30"><g fill="#111"><circle cx="8" cy="8" r="2.6"/><circle cx="22" cy="8" r="2.6"/><circle cx="8" cy="15" r="2.6"/><circle cx="22" cy="15" r="2.6"/><circle cx="8" cy="22" r="2.6"/><circle cx="22" cy="22" r="2.6"/></g></svg>
+              </span>
+              <span style="width:40px; height:40px; border-radius:7px; background:#fff; opacity:.35; display:inline-flex; align-items:center; justify-content:center;">
+                <svg width="30" height="30" viewBox="0 0 30 30"><g fill="#111"><circle cx="8" cy="8" r="2.6"/><circle cx="15" cy="15" r="2.6"/><circle cx="22" cy="22" r="2.6"/></g></svg>
+              </span>
+            </span>
+            <div style="font:400 12px 'Overpass'; color:#aaa; margin-top:6px;">Rolled 6 · 3</div>
+          </div>
+          <div style="display:flex; gap:8px; min-height:58px; align-items:stretch;">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; border-radius:14px; background:#26A69A; color:#FBF5E9; font:700 17px 'Overpass'; border:3px solid #26A69A;">Use boost</div>
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; border-radius:14px; background:transparent; color:#ccc; font:600 15px 'Overpass'; border:1.5px solid #444;">Stay stalled</div>
+          </div>
+          <div style="text-align:center; min-height:2.8em; margin-top:9px; font:400 13px 'Overpass'; color:#2FBEB0; display:flex; align-items:center; justify-content:center; padding:0 6px;">Tap Use boost to play just the 6</div>
+        </div>
+      </div>
+      <div style="text-align:center; font:600 12px 'Overpass'; color:var(--color-neutral-700); margin-top:12px;">B · Boost offer <span style="color:var(--color-neutral-400);">— prompt in the safe area, by the choice</span></div>
+    </div>
+
+    <!-- ══ FRAME C · light theme + overpay inversion (Theo · Moss) ══ -->
+    <div>
+      <div style="width:322px; background:#f7f7f5; color:#111; border:11px solid #d8d5cd; border-radius:38px; overflow:hidden; box-shadow:var(--shadow-lg);">
+        <div style="display:flex; justify-content:space-between; padding:11px 22px 4px; font:400 11px 'Overpass'; color:#111; opacity:.55;"><span>9:41</span><span>▮▮▮ ▮</span></div>
+        <div style="padding:6px 15px 20px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; min-height:42px;">
+            <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+              <span style="width:38px; height:38px; border-radius:50%; overflow:hidden; background:#7E9E38; border:2px solid #7E9E38; flex:none; display:block; position:relative;"><img src="app/avatars/12.png" alt="" style="position:absolute; top:0; left:50%; width:150%; transform:translateX(-50%); display:block;"></span>
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:26px; line-height:1; color:#4C641F;">Theo</span>
+            </div>
+            <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:20px; color:#4C641F; font-feature-settings:'tnum' 1;">0:42</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:8px; min-height:34px;">
+            <span style="width:32px; height:32px; border-radius:8px; background:#eef1e6; border:1px solid #cdd6bb; color:#4C641F; flex:none; display:inline-flex; align-items:center; justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </span>
+            <div style="flex:1; display:flex; justify-content:center; gap:8px;">
+              <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 7px; border-radius:999px; background:#eef1e6; border:1px solid #cdd6bb; color:#4C641F;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="9" height="11" rx="2.5" fill="currentColor" stroke="none"/><rect x="13.5" y="7" width="7.5" height="11" rx="2.5"/></svg>
+                <span style="font:700 12px 'Overpass'; color:#111;">0</span>
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px 4px 7px; border-radius:999px; background:#eef1e6; border:1px solid #cdd6bb; color:#4C641F;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 13 12 7 18 13"/><polyline points="6 18 12 12 18 18"/></svg>
+                <span style="font:700 12px 'Overpass'; color:#111;">1</span>
+              </span>
+            </div>
+            <span style="flex:none; font:700 10.5px 'Overpass'; color:#FBF5E9; background:#7E9E38; border-radius:999px; padding:5px 11px;">Overpay</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:12px;">
+            <div style="height:56px; border-radius:10px; background:#D34D4D; border:3px solid #99302F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">1</div>
+            <div style="height:56px; border-radius:10px; background:#E5842A; border:3px solid #A45610; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">2</div>
+            <div style="height:56px; border-radius:10px; background:#E4BE2F; border:3px solid #9C7F16; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">3</div>
+            <div style="height:56px; border-radius:10px; background:#7E9E38; border:3px solid #4C641F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">4</div>
+            <div style="height:56px; border-radius:10px; background:#26A69A; border:3px solid #146B62; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">5</div>
+            <div style="height:56px; border-radius:10px; background:#3D7BC0; border:3px solid #21507E; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">6</div>
+            <div style="height:56px; border-radius:10px; background:#6A5AC8; border:3px solid #3E3583; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">7</div>
+            <div style="height:56px; border-radius:10px; background:#B45699; border:3px solid #77335F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">8</div>
+            <div style="height:56px; border-radius:10px; background:#A65E38; border:3px solid #6E3A1F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 30px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">9</div>
+          </div>
+          <div style="text-align:center; font:400 13px 'Overpass'; color:#666; margin-top:11px; min-height:1.2em;">Selected 0 / 0</div>
+          <div style="text-align:center; min-height:68px; margin-top:2px;"></div>
+          <div style="display:flex; gap:8px; min-height:58px; align-items:stretch;">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; border-radius:14px; background:#7E9E38; color:#FBF5E9; font:700 17px 'Overpass'; border:3px solid #7E9E38;">Roll</div>
+          </div>
+          <div style="text-align:center; min-height:2.8em; margin-top:9px; font:400 13px 'Overpass'; color:#4C641F; display:flex; align-items:center; justify-content:center;">Tap Roll to begin</div>
+        </div>
+      </div>
+      <div style="text-align:center; font:600 12px 'Overpass'; color:var(--color-neutral-700); margin-top:12px;">C · Light theme <span style="color:var(--color-neutral-400);">— Theo is Moss; overpay XOR-flips chrome, hues hold</span></div>
+    </div>
+
+  </div>
+
+  <!-- ══ SKIN STRIP (12 colours) ══ -->
+  <section style="margin-top:60px;">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Skins</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(24px,4vw,34px); margin:6px 0 4px;">Two palettes, twelve colours each</h2>
+    <p style="font-size:15px; color:var(--color-neutral-700); max-width:64ch;">A skin is a <strong>tile palette</strong>, independent of light/dark and of player identity. Each carries the full <strong>12 tile colours</strong> (rack sizes go to 12). Same rack, same numerals — only the fills change.</p>
+    <div style="display:flex; flex-wrap:wrap; gap:22px; margin-top:24px;">
+
+      <!-- Colorful 12 -->
+      <div style="background:#141414; border-radius:20px; padding:16px;">
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; width:186px;">
+          <div style="height:42px; border-radius:9px; background:#D34D4D; border:3px solid #99302F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">1</div>
+          <div style="height:42px; border-radius:9px; background:#E5842A; border:3px solid #A45610; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">2</div>
+          <div style="height:42px; border-radius:9px; background:#E4BE2F; border:3px solid #9C7F16; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">3</div>
+          <div style="height:42px; border-radius:9px; background:#7E9E38; border:3px solid #4C641F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">4</div>
+          <div style="height:42px; border-radius:9px; background:#26A69A; border:3px solid #146B62; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">5</div>
+          <div style="height:42px; border-radius:9px; background:#3D7BC0; border:3px solid #21507E; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">6</div>
+          <div style="height:42px; border-radius:9px; background:#6A5AC8; border:3px solid #3E3583; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">7</div>
+          <div style="height:42px; border-radius:9px; background:#B45699; border:3px solid #77335F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">8</div>
+          <div style="height:42px; border-radius:9px; background:#A65E38; border:3px solid #6E3A1F; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">9</div>
+          <div style="height:42px; border-radius:9px; background:#6CB7E2; border:3px solid #2E6E96; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">10</div>
+          <div style="height:42px; border-radius:9px; background:#E08AA1; border:3px solid #A24C63; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">11</div>
+          <div style="height:42px; border-radius:9px; background:#8CA07D; border:3px solid #56674A; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">12</div>
+        </div>
+        <div style="color:#eee; font:700 13px 'Overpass'; margin-top:12px;">Colorful <span style="color:#E4BE2F; font-weight:600;">· default</span></div>
+        <div style="color:#9a9a9a; font:400 11px 'Overpass'; margin-top:2px;">CVD-safe 8 + graceful 9–12. The default, accessible set.</div>
+      </div>
+
+      <!-- Mono 12 (Teal player) -->
+      <div style="background:#141414; border-radius:20px; padding:16px;">
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; width:186px;">
+          <div style="height:42px; border-radius:9px; background:#A9E4DC; border:3px solid #79C9BF; color:#0E2A26; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">1</div>
+          <div style="height:42px; border-radius:9px; background:#96DCD3; border:3px solid #66BEB3; color:#0E2A26; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">2</div>
+          <div style="height:42px; border-radius:9px; background:#82D3C9; border:3px solid #53B2A7; color:#0E2A26; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">3</div>
+          <div style="height:42px; border-radius:9px; background:#6ECABF; border:3px solid #40A69A; color:#0E2A26; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">4</div>
+          <div style="height:42px; border-radius:9px; background:#59C0B4; border:3px solid #2E9A8D; color:#0E2A26; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">5</div>
+          <div style="height:42px; border-radius:9px; background:#45B6A9; border:3px solid #227F74; color:#FBF5E9; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">6</div>
+          <div style="height:42px; border-radius:9px; background:#33A99C; border:3px solid #1C7268; color:#FBF5E9; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">7</div>
+          <div style="height:42px; border-radius:9px; background:#26A69A; border:3px solid #146B62; color:#FBF5E9; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">8</div>
+          <div style="height:42px; border-radius:9px; background:#208D82; border:3px solid #105A52; color:#FBF5E9; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">9</div>
+          <div style="height:42px; border-radius:9px; background:#1B786F; border:3px solid #0E524B; color:#FBF5E9; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">10</div>
+          <div style="height:42px; border-radius:9px; background:#16645C; border:3px solid #0B443E; color:#FBF5E9; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">11</div>
+          <div style="height:42px; border-radius:9px; background:#114F49; border:3px solid #083631; color:#FBF5E9; display:flex; align-items:center; justify-content:center; font:800 22px 'Crimson Pro',Georgia,serif; line-height:1; font-feature-settings:'lnum' 1,'tnum' 1;">12</div>
+        </div>
+        <div style="color:#eee; font:700 13px 'Overpass'; margin-top:12px;">Monochrome</div>
+        <div style="color:#9a9a9a; font:400 11px 'Overpass'; margin-top:2px;">The player's hue, one tonal step per number. Shown: Teal.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ BOOST ICON SYSTEM ══ -->
+  <section style="margin-top:56px;">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Boost inventory</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(24px,4vw,34px); margin:6px 0 4px;">Two icons, a counter, no prose</h2>
+    <p style="font-size:15px; color:var(--color-neutral-700); max-width:66ch;">Two fixed chip slots (one per boost type), always present, dimmed to <code>0</code> when empty — and now tinted in the <strong>active player's colour</strong> like the rest of the chrome. A boost's <em>name</em> shows only as a right-aligned toast that, after a beat, shrinks into its counter and increments it; its <em>explanation</em> appears only in the bottom safe area at the spend-or-stay moment. Max 3 held total (<code>boostMaxHeld</code>).</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:22px;">
+      <div class="card elev-sm">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="width:46px; height:46px; border-radius:12px; background:#201e1d; display:inline-flex; align-items:center; justify-content:center; color:var(--color-accent); flex:none;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="9" height="11" rx="2.5" fill="currentColor" stroke="none"/><rect x="13.5" y="7" width="7.5" height="11" rx="2.5"/></svg>
+          </span>
+          <div>
+            <div style="font:700 16px 'Overpass';">1-for-2</div>
+            <div style="font:400 12.5px 'Overpass'; color:var(--color-neutral-700);">Solid die + hollow die = keep one, ignore the other. Used when a two-die roll stalls.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card elev-sm">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="width:46px; height:46px; border-radius:12px; background:#201e1d; display:inline-flex; align-items:center; justify-content:center; color:var(--color-accent); flex:none;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 13 12 7 18 13"/><polyline points="6 18 12 12 18 18"/></svg>
+          </span>
+          <div>
+            <div style="font:700 16px 'Overpass';">Overpay</div>
+            <div style="font:400 12.5px 'Overpass'; color:var(--color-neutral-700);">Double up-chevron = pay past the roll. Spending it XOR-flips the theme as its live signal.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:16px; font-size:12.5px; color:var(--color-neutral-600); border-left:3px solid var(--color-accent-300); padding-left:14px; max-width:70ch;">Icon-first everywhere the state is ambient (inventory, toast, dice-used marker). Words appear only where a decision is made — the safe-area prompt and Settings labels — and all of it wears the active player's colour so whose turn it is reads at a glance.</p>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>
