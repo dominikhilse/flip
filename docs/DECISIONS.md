@@ -821,3 +821,99 @@ duplicated here.
   `min-height` on a 375px-wide viewport; a full automated multi-player game (brute-force
   `RULES.isValidSelection`-driven solver) completed cleanly with zero console errors; both
   themes and both rack sizes screenshot-checked.
+
+### 2026-09-15 — M14 brand pass: type, skins, player-accent chrome (docs/DevHandoff_BrandSpec_v2.dc.html + docs/PlayScreen_Redesign.dc.html)
+Applied both handoff docs. Where they conflicted or left something unresolved, confirmed with
+the user rather than guessing (see their answers below); everything else is a straightforward
+application of the docs' explicit tokens/mockups.
+
+- **Skins: 2, not 3.** BrandSpec v2 describes three skins (Brand - new default - Colorful,
+  Monochrome, with Brand's 12 swatches spelled out); PlayScreen_Redesign's own skin-strip
+  section shows only Colorful (labelled default) and Monochrome, and all three of its mockup
+  frames use Colorful. Asked the user - confirmed 2 skins, Colorful stays default. `theme.js`'s
+  `tileColors` moved to `skins.colorful.tiles` (verbatim, unchanged); no `skins.brand` was
+  built. `activeSkin` is *not* stored in `theme.js` as BrandSpec's own token diff shows - it's
+  `settings.skin` (storage.js), matching how `settings.theme` already works without a
+  duplicate field in `theme.js`; `skin` is cosmetic-only in `queueSettingChange`, exactly like
+  `theme`.
+- **The "Overpay" pill in PlayScreen_Redesign's Frame C is the existing boost-earned toast**
+  (showing "Overpay" as the awarded type's name), not a new `overpayFlipActive()` indicator as
+  first read - the user corrected this directly. Per their answer: settings (icon-only cog,
+  was a text button) + two permanent boost chips + the toast all now live in **one row**
+  below identity (`.play-chrome-row`, replacing the old `.play-toprow` above identity and the
+  separate `#play-boost-count` text row). Toast text is the boost type name only (no "Boost
+  earned:" prefix); it may overlap the chips if it doesn't fit - not engineered around, per
+  the user ("if it does so be it"). After a hold period the toast shrinks (width/opacity) and
+  "merges" into its chip, which is when the chip's own count visibly jumps - implemented by
+  holding the chip at its pre-award count for the hold+collapse duration (`boostToastState` in
+  app.js, transient/UI-only, never persisted), then bumping it once the collapse finishes.
+  `deliverPendingBoost` now records the awarded *amounts* per type (not just which types), so
+  the held-back count is exact even for a rare same-type double-award, not a hardcoded -1.
+- **Judgement calls the docs don't resolve** (flagged as open in BrandSpec's own "Open / needs
+  a call" list, or simply unspecified) - made a reasonable choice and documented it here rather
+  than blocking on it, per this project's own convention:
+  - **Boost-toast timing**: 1200ms held + 280ms collapse (`BOOST_TOAST_DISPLAY_MS` /
+    `BOOST_TOAST_COLLAPSE_MS` in app.js). Not specified anywhere; picked to read clearly
+    without feeling sluggish, same "starting value, tune by feel" treatment as
+    `config.js`'s `diceAnimationDurationMs`.
+  - **Mono skin's 12-stop ramp**: BrandSpec explicitly flags "exact 12 L-steps + min delta-L"
+    as unresolved. Implemented `monoRampTiles()` in app.js: HSL lightness ramp from L 82 down
+    to L 20 across the 12 tiles (hue/saturation held from the player's own colour), edge one
+    step darker (-14 L, floored at 8), ink flips from a hue-tinted dark shade to the shared
+    cream (`#FBF5E9`) at L > 48. Reverse-engineered from PlayScreen_Redesign's own Teal mono
+    swatch as a plausible target, not measured - revisit after a real readability pass.
+  - **Crimson Pro tile-digit weight on dark fills**: BrandSpec flags this as needing an eyeball
+    check before shipping. Checked across all 12 colorful-skin fills at 375px width - legible
+    on every one, including the darkest (Denim `#3D7BC0`, Indigo `#6A5AC8`). No optical-weight
+    bump applied.
+  - **The old "No boosts for the last number" prose** (shown when only one open tile remains,
+    so a boost can't help) is dropped - the new chip UI is icon+count only, no room for prose,
+    and neither doc addresses this case. The underlying rule (last tile is always exact-only)
+    is unchanged; only this hint text is gone.
+  - Timer / `#play-message` (default state) / `#play-boost-offer-text` moved from a fixed
+    `--accent-danger` red to the player accent (`.play-accent-text`) - explicit in
+    PlayScreen_Redesign's Frame B/C mockups (the stalled/boost-offer prompt and the countdown
+    both render in the player's colour there, not red). `#play-message.stalled`/`.notice`'s
+    own colours are untouched - neither doc mentions changing those, and they predate this
+    pass (issue #3).
+  - Player identity colour (`THEME.playerColors`) stayed a flat hex array rather than becoming
+    `{fill,edge,ink}` triples as BrandSpec's token diff shows - triples would change
+    `storage.js`'s persisted roster shape (`p.color` is a plain string today) and break
+    loading an existing roster. Instead `playerEdge()` (app.js) looks up the edge partner from
+    `skins.colorful.tiles` by matching fill, since player fills are already, by construction,
+    the same 12 hexes as that skin's tile fills, in order.
+  - `#screen-play button.primary`'s player-accent override, and `.is-muted`, are scoped to the
+    Play screen only (`#screen-play` prefix) - BrandSpec's own token diff shows an unscoped
+    `button.primary` rule, but applying it globally would tint Setup/End's buttons with
+    whatever `--player-accent` was last set (or nothing, pre-game). `.is-muted` is applied by
+    JS (`renderPlayButtons`) always alongside `:disabled`, per the token diff's instruction,
+    even though for the Roll/Confirm pair the two states are always identical in practice.
+- **Found and fixed a real bug while verifying the mono skin**: `rgbToHsl()` returned
+  saturation as a 0-1 fraction, but `hslToRgb()` divides its `s` input by 100 (expecting
+  0-100) - every mono tile rendered desaturated grey regardless of the player's hue until this
+  was caught by screenshot during verification. Fixed by scaling `s` to 0-100 in `rgbToHsl`.
+- **Flagging, not fixing: player colour #3 ("Honey", `#E4BE2F` fill / `#9C7F16` edge) fails
+  the light-theme 4.5:1 contrast target BrandSpec's own "Open" list calls out** - measured
+  3.59:1 against the light background (`#f7f7f5`), the only one of the 12 that fails (all
+  others clear 4.5:1). Not changed - this is a shared identity colour (same hex used for both
+  player #3 and colorful-skin tile #3), and picking a new edge is a colour decision for the
+  design track, not a code judgement call. Flagged for the orchestrator/design session.
+  - **20th avatar**: confirmed with the user - left at 19 (config.js `avatarCount` untouched),
+  no placeholder generated (CLAUDE.md bars mascot/character art; no source asset exists).
+  - **Not built**: Frame B's mockup shows the *offered* boost type's chip with an emphasised
+  border/background (distinct from the plain dimmed-at-0 treatment) while boost-offer is
+  pending. Neither doc describes this in prose, only that one frame's inline styling - skipped
+  to avoid over-fitting a single mockup detail; the two documented chip states (accent /
+  dimmed-at-0) are built.
+- **Verified**: temporary debug hook (removed before commit; dev-server port rotated during
+  CSS/JS-affecting edits, reverted to 8123); Crimson Pro/Overpass loaded and applied at the
+  right weights (`document.fonts.status`, computed `font-feature-settings`) with lnum/tnum
+  confirmed; promoted/muted button swap confirmed across pre-roll, rolled-unselected, and
+  valid-selection states; boost-toast hold -> collapse -> chip-bump sequence confirmed with
+  precise millisecond-gated checks (not just screenshots, which are subject to tool round-trip
+  jitter); mono skin colour-matches the active player after the `rgbToHsl` fix; light theme and
+  the overpay XOR-flip both confirmed switching `--player-accent-text` between fill and edge
+  correctly; Setup's new skin toggle confirmed live-updating a mid-game rack; a full automated
+  multi-player game completed with zero console errors; the entire flow (roster -> setup ->
+  turn card -> roll -> confirm) re-verified through real UI clicks (not just the debug hook)
+  after stripping it, zero console errors.

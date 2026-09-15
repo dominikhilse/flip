@@ -30,7 +30,11 @@
     // build - there is no build step to branch on, so this is the
     // development default; flip it when the product actually ships.
     tapToProceed: true,
-    theme: 'dark' // 'dark' | 'light'
+    theme: 'dark', // 'dark' | 'light'
+    // Tile-palette skin (M14 brand pass) - purely cosmetic, independent of
+    // theme and of player identity colour, same cosmetic/no-game-state
+    // treatment as theme (see queueSettingChange).
+    skin: 'colorful' // 'colorful' | 'mono'
   };
 
   function loadRoster() {
@@ -67,7 +71,8 @@
           ? parsed.timeChallengeSeconds : DEFAULT_SETTINGS.timeChallengeSeconds,
         motionEnabled: parsed.motionEnabled !== false,
         tapToProceed: parsed.tapToProceed !== false,
-        theme: parsed.theme === 'light' ? 'light' : DEFAULT_SETTINGS.theme
+        theme: parsed.theme === 'light' ? 'light' : DEFAULT_SETTINGS.theme,
+        skin: parsed.skin === 'mono' ? 'mono' : DEFAULT_SETTINGS.skin
       };
     } catch (e) {
       return Object.assign({}, DEFAULT_SETTINGS);
