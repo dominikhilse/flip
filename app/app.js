@@ -23,6 +23,8 @@
   // M12: tab bar + per-tab panels. Elements inside the panels (roster list,
   // rack size, etc.) keep their pre-M12 ids unchanged - this is a container
   // reorganisation, not a rebuild of the controls themselves.
+  var setupTitleEl = document.getElementById('setup-title');
+  var setupSubtitleEl = document.getElementById('setup-subtitle');
   var setupMidgameBannerEl = document.getElementById('setup-midgame-banner');
   var setupTabbarEl = document.getElementById('setup-tabbar');
   var setupTabPanels = {
@@ -33,6 +35,7 @@
   };
   var activeSetupTab = 'players';
 
+  var rosterCountLabelEl = document.getElementById('roster-count-label');
   var rosterListEl = document.getElementById('roster-list');
   var addPlayerForm = document.getElementById('add-player-form');
   var playerNameInput = document.getElementById('player-name-input');
@@ -45,8 +48,11 @@
   var devDiceTestEnabledEl = document.getElementById('dev-dice-test-enabled');
   var devDiceChoiceRowEl = document.getElementById('dev-dice-choice-row');
   var devDiceChoiceToggleEl = document.getElementById('dev-dice-choice-toggle');
-  var devTimeChallengeInputEl = document.getElementById('dev-time-challenge-input');
-  var devTimeChallengeSetBtn = document.getElementById('dev-time-challenge-set');
+  var devTimeChallengeToggleEl = document.getElementById('dev-time-challenge-toggle');
+  var devTimeChallengeStepperRowEl = document.getElementById('dev-time-challenge-stepper-row');
+  var devTimeChallengeValueEl = document.getElementById('dev-time-challenge-value');
+  var devTimeChallengeMinusBtn = document.getElementById('dev-time-challenge-minus');
+  var devTimeChallengePlusBtn = document.getElementById('dev-time-challenge-plus');
   var devTimeChallengeStatusEl = document.getElementById('dev-time-challenge-status');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
@@ -58,6 +64,7 @@
   var endGameBtn = document.getElementById('end-game');
 
   var confirmDialogEl = document.getElementById('confirm-dialog');
+  var confirmDialogTitleEl = document.getElementById('confirm-dialog-title');
   var confirmDialogTextEl = document.getElementById('confirm-dialog-text');
   var confirmDialogOkBtn = document.getElementById('confirm-dialog-ok');
   var confirmDialogCancelBtn = document.getElementById('confirm-dialog-cancel');
@@ -68,6 +75,8 @@
   var turncardTimerEl = document.getElementById('turncard-timer');
   var turncardAvatarBtn = document.getElementById('turncard-avatar-btn');
   var turncardAvatarImgEl = document.getElementById('turncard-avatar-img');
+  var turncardSeatLabelEl = document.getElementById('turncard-seat-label');
+  var turncardHintEl = document.getElementById('turncard-hint');
 
   var playPlayerNameEl = document.getElementById('play-player-name');
   var playAvatarBtn = document.getElementById('play-avatar-btn');
@@ -92,8 +101,11 @@
   var settingsFromPlayBtn = document.getElementById('settings-from-play');
 
   var finishListEl = document.getElementById('finish-list');
+  var resultsWinnerNameEl = document.getElementById('results-winner-name');
   var endNewGameBtn = document.getElementById('end-new-game');
   var endRematchBtn = document.getElementById('end-rematch');
+  var timeoutPlayerAvatarEl = document.getElementById('timeout-player-avatar');
+  var timeoutPlayerPhraseEl = document.getElementById('timeout-player-phrase');
   var timeoutNewGameBtn = document.getElementById('timeout-new-game');
   var timeoutRematchBtn = document.getElementById('timeout-rematch');
 
@@ -116,8 +128,10 @@
   // dialog's own `close` event (fires however it closed - Cancel, OK, or a
   // desktop Escape key) rather than off Cancel/OK directly, so an
   // Escape-dismiss can't leak listeners or skip cleanup.
-  function confirmAction(message, onConfirm) {
+  function confirmAction(title, message, okLabel, onConfirm) {
+    confirmDialogTitleEl.textContent = title;
     confirmDialogTextEl.textContent = message;
+    confirmDialogOkBtn.textContent = okLabel;
     var confirmed = false;
     function onOk() { confirmed = true; confirmDialogEl.close(); }
     function onCancel() { confirmDialogEl.close(); }
@@ -157,11 +171,15 @@
   // overpay "visual highlight" the design track hasn't nailed down yet: the
   // effective theme is the user's preference XORed with overpayFlipActive,
   // so the whole page inverts for as long as overpay-relaxed rules are live.
-  function applyTheme() {
+  // playerOverride: which player's colour drives --player-accent* this
+  // pass - defaults to currentPlayer() (Play/turn card), but the Results
+  // screen (M15) needs the winner's colour regardless of game.turnIndex,
+  // so it passes the winner explicitly (see renderEnd).
+  function applyTheme(playerOverride) {
     var wantsLight = settings.theme === 'light';
     var showLight = wantsLight !== overpayFlipActive();
     document.body.classList.toggle('theme-light', showLight);
-    applyPlayerAccent(showLight);
+    applyPlayerAccent(showLight, playerOverride);
   }
 
   // M14 brand pass: the active player's identity colour drives the Play-
@@ -174,15 +192,15 @@
   // player yet (Setup/Launch, or before the first turn) - leave the
   // variables unset; every consumer falls back to a neutral default (see
   // style.css's var(--player-accent, ...) fallbacks).
-  function applyPlayerAccent(showLight) {
+  function applyPlayerAccent(showLight, playerOverride) {
     var body = document.body;
-    if (!game || !game.players || !game.players.length) {
+    var p = playerOverride || (game && game.players && game.players.length ? currentPlayer() : null);
+    if (!p) {
       body.style.removeProperty('--player-accent');
       body.style.removeProperty('--player-accent-ink');
       body.style.removeProperty('--player-accent-text');
       return;
     }
-    var p = currentPlayer();
     body.style.setProperty('--player-accent', p.color);
     body.style.setProperty('--player-accent-ink', THEME.playerNameTextColor);
     body.style.setProperty('--player-accent-text', showLight ? playerEdge(p.color) : p.color);
@@ -197,9 +215,23 @@
   var DRAG_HANDLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
     '<line x1="4" y1="9" x2="20" y2="9"></line>' +
     '<line x1="4" y1="15" x2="20" y2="15"></line></svg>';
+  var REMOVE_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+    '<line x1="6" y1="6" x2="18" y2="18"></line>' +
+    '<line x1="18" y1="6" x2="6" y2="18"></line></svg>';
+
+  // M15 brand pass: a roster entry has no avatar yet (assignAvatars only
+  // runs at game start, see startNewGame) - shows a colour+monogram circle
+  // (first letter of the name) instead until then, per
+  // GameScreens_Redesign's own note on this exact gap.
+  function renderIdentityCircle(container, color, name) {
+    container.innerHTML = '';
+    container.style.background = color;
+    container.textContent = (name || '?').charAt(0).toUpperCase();
+  }
 
   function renderRosterList() {
     var blocked = game !== null;
+    rosterCountLabelEl.textContent = 'Roster (' + roster.length + ')';
     rosterListEl.innerHTML = '';
     roster.forEach(function (p) {
       var li = document.createElement('li');
@@ -212,16 +244,18 @@
 
       var swatch = document.createElement('span');
       swatch.className = 'swatch';
-      swatch.style.background = p.color;
+      renderIdentityCircle(swatch, p.color, p.name);
 
       var name = document.createElement('span');
       name.className = 'name';
       name.textContent = p.name;
+      name.style.color = p.color;
 
       var removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'remove-player';
-      removeBtn.textContent = 'Remove';
+      removeBtn.innerHTML = REMOVE_ICON_SVG;
+      removeBtn.setAttribute('aria-label', 'Remove ' + p.name);
       removeBtn.disabled = blocked;
       removeBtn.addEventListener('click', function () {
         roster = roster.filter(function (rp) { return rp.id !== p.id; });
@@ -319,15 +353,22 @@
     rosterDrag = null;
   }
 
+  // M15 brand pass: a colour already worn by another roster player is
+  // visually dimmed (GameScreens_Redesign's "taken hues are dimmed" note) -
+  // a hint only, not an enforced uniqueness rule the app doesn't otherwise
+  // have; still fully selectable, see DECISIONS.md.
   function renderColorSwatches() {
     colorSwatchesEl.innerHTML = '';
     if (selectedColor === null) {
       selectedColor = THEME.playerColors[roster.length % THEME.playerColors.length];
     }
+    var takenColors = roster.map(function (p) { return p.color; });
     THEME.playerColors.forEach(function (color) {
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'color-swatch' + (color === selectedColor ? ' selected' : '');
+      btn.className = 'color-swatch' +
+        (color === selectedColor ? ' selected' : '') +
+        (takenColors.indexOf(color) !== -1 && color !== selectedColor ? ' taken' : '');
       btn.style.background = color;
       btn.addEventListener('click', function () {
         selectedColor = color;
@@ -376,7 +417,7 @@
     });
     // M14: skin is cosmetic like theme (a tile palette only) - same
     // immediate-apply, no-chip treatment.
-    var skinBtns = skinToggleGroupEl.querySelectorAll('.toggle-btn');
+    var skinBtns = skinToggleGroupEl.querySelectorAll('.skin-card');
     skinBtns.forEach(function (btn) {
       btn.classList.toggle('active', settings.skin === btn.getAttribute('data-skin'));
     });
@@ -393,10 +434,17 @@
 
     // Time challenge (M9) - blocked-until-next-game, same class as rack
     // size: retrofitting a countdown onto a game already in progress isn't
-    // worth the edge cases for a dev instrument.
-    devTimeChallengeInputEl.value = settings.timeChallengeSeconds;
-    devTimeChallengeInputEl.disabled = midGame;
-    devTimeChallengeSetBtn.disabled = midGame;
+    // worth the edge cases for a dev instrument. M15: switch + stepper
+    // (was a number input + "Set" button) over the same
+    // settings.timeChallengeSeconds - the stepper row only shows once the
+    // switch is on, and remembers the last non-zero value across an
+    // off/on toggle via lastTimeChallengeSeconds (see the toggle handler).
+    devTimeChallengeToggleEl.checked = settings.timeChallengeSeconds > 0;
+    devTimeChallengeToggleEl.disabled = midGame;
+    devTimeChallengeStepperRowEl.hidden = settings.timeChallengeSeconds === 0;
+    devTimeChallengeValueEl.textContent = formatSecondsLabel(settings.timeChallengeSeconds || lastTimeChallengeSeconds);
+    devTimeChallengeMinusBtn.disabled = midGame;
+    devTimeChallengePlusBtn.disabled = midGame;
     devTimeChallengeStatusEl.textContent =
       (settings.timeChallengeSeconds > 0 ? 'Currently ' + formatSecondsLabel(settings.timeChallengeSeconds) : 'Currently off') +
       (midGame ? ' - applies next game' : '');
@@ -442,6 +490,9 @@
   });
 
   function renderSetup() {
+    var midGame = game !== null;
+    setupTitleEl.textContent = midGame ? 'Settings' : 'New Game';
+    setupSubtitleEl.textContent = midGame ? 'Match in progress' : 'Pass-and-play · 2–8 players';
     renderRosterList();
     renderColorSwatches();
     renderRosterEditability();
@@ -507,21 +558,36 @@
 
   // Time challenge (M9): blocked-until-next-game, so this writes straight
   // to settings like rackSize does - never through queueSettingChange/game.
-  devTimeChallengeSetBtn.addEventListener('click', function () {
+  // M15: a switch + stepper replaces the old number input + "Set" button.
+  // lastTimeChallengeSeconds remembers the last non-zero duration across an
+  // off/on toggle (not persisted - a fresh page load has no "last" value
+  // beyond whatever settings.timeChallengeSeconds already was) - 60s is the
+  // starting default the first time it's ever switched on, a judgement
+  // call like config.js's other tunable-by-feel starting values.
+  var lastTimeChallengeSeconds = settings.timeChallengeSeconds || 60;
+
+  devTimeChallengeToggleEl.addEventListener('change', function () {
     if (game !== null) return; // blocked-until-next-game
-    var raw = parseInt(devTimeChallengeInputEl.value, 10);
-    if (!Number.isFinite(raw) || raw < 0) raw = 0;
-    var rounded = raw === 0 ? 0 : Math.max(15, Math.round(raw / 15) * 15);
-    settings.timeChallengeSeconds = rounded;
+    settings.timeChallengeSeconds = devTimeChallengeToggleEl.checked ? lastTimeChallengeSeconds : 0;
     STORAGE.saveSettings(settings);
     renderSettingsControls();
   });
+
+  function stepTimeChallenge(deltaSeconds) {
+    if (game !== null) return; // blocked-until-next-game
+    lastTimeChallengeSeconds = Math.max(15, lastTimeChallengeSeconds + deltaSeconds);
+    settings.timeChallengeSeconds = lastTimeChallengeSeconds;
+    STORAGE.saveSettings(settings);
+    renderSettingsControls();
+  }
+  devTimeChallengeMinusBtn.addEventListener('click', function () { stepTimeChallenge(-15); });
+  devTimeChallengePlusBtn.addEventListener('click', function () { stepTimeChallenge(15); });
 
   // Guarded (M11, D-51): a match is always live whenever this button is
   // visible (see renderPrimaryAction), so it always needs the confirm.
   endGameBtn.addEventListener('click', function () {
     if (!game) return;
-    confirmAction('End this match? Progress will be lost. This can\'t be undone.', function () {
+    confirmAction('End this match?', 'Progress will be lost. This can\'t be undone.', 'End match', function () {
       game = null;
       renderSetup();
       showScreen('setup');
@@ -532,7 +598,7 @@
   // whenever this button is visible.
   restartMatchBtn.addEventListener('click', function () {
     if (!game) return;
-    confirmAction('Restart this match? Racks and boosts reset for everyone. This can\'t be undone.', restartMatch);
+    confirmAction('Restart this match?', 'Racks and boosts reset for everyone. This can\'t be undone.', 'Restart match', restartMatch);
   });
 
   // Motion and tap-to-proceed can never both be off at once (§3.9) - forcing
@@ -577,7 +643,7 @@
   });
 
   skinToggleGroupEl.addEventListener('click', function (e) {
-    var btn = e.target.closest('.toggle-btn');
+    var btn = e.target.closest('.skin-card');
     if (!btn) return;
     queueSettingChange('skin', btn.getAttribute('data-skin'));
     renderSettingsControls();
@@ -782,11 +848,25 @@
     return game.players[game.turnIndex];
   }
 
+  // M15 brand pass: the turn card used to fill the whole screen with the
+  // player's flat colour; the design session deliberately changed that to
+  // the same dark/light surface as every other screen, with the player's
+  // colour carried only by the avatar ring/glow and name (see
+  // DECISIONS.md, and applyTheme's --player-accent* wiring). applyTheme()
+  // is called here (not just left to renderPlay) so the accent vars are
+  // already correct for the new player before the turn card itself paints.
   function showTurnCardFor(p) {
-    turncardScreenEl.style.background = p.color;
     turncardNameEl.textContent = p.name;
     turncardAvatarImgEl.src = 'avatars/' + p.avatar;
     turncardAvatarImgEl.alt = p.name + '’s avatar';
+    turncardSeatLabelEl.textContent = 'Player ' + (game.turnIndex + 1) + ' of ' + game.players.length +
+      (p.finished ? '' : ' · your turn');
+    // Real, existing tap-to-proceed path (D-29) - shown only when tapping
+    // would actually advance the turn right now (effectiveTap(), defined
+    // below), not a static hint that could lie about whether tapping does
+    // anything.
+    turncardHintEl.hidden = !effectiveTap();
+    applyTheme();
     showScreen('turncard');
   }
 
@@ -1723,13 +1803,44 @@
 
   // ---- End screen ----
 
+  // M15 brand pass: ranked rows (rank + avatar + name), the winner's name
+  // repeated in the banner above. No per-player score column - the rules
+  // engine has no scoring model, only finish order (see index.html's
+  // comment on #screen-end and DECISIONS.md) - showing an invented number
+  // would be worse than not showing one.
   function renderEnd() {
+    var winner = game.players.find(function (pl) { return pl.id === game.finishedOrder[0]; });
+    resultsWinnerNameEl.textContent = winner.name + ' wins!';
+    applyTheme(winner);
+    // Same fill-on-dark/edge-on-light contrast rule as --player-accent-text
+    // (which only tracks the winner) - every row's name needs it, not just
+    // the winner's, so it's computed per row here instead.
+    var showLight = document.body.classList.contains('theme-light');
     finishListEl.innerHTML = '';
     game.finishedOrder.forEach(function (id, index) {
       var p = game.players.find(function (pl) { return pl.id === id; });
       var li = document.createElement('li');
-      li.textContent = p.name;
-      li.style.color = p.color;
+      if (index === 0) li.classList.add('first');
+
+      var rank = document.createElement('span');
+      rank.className = 'results-rank';
+      rank.textContent = index + 1;
+      li.appendChild(rank);
+
+      var avatar = document.createElement('span');
+      avatar.className = 'results-avatar';
+      var img = document.createElement('img');
+      img.src = 'avatars/' + p.avatar;
+      img.alt = '';
+      avatar.appendChild(img);
+      li.appendChild(avatar);
+
+      var name = document.createElement('span');
+      name.className = 'results-name';
+      name.textContent = p.name;
+      name.style.color = showLight ? playerEdge(p.color) : p.color;
+      li.appendChild(name);
+
       finishListEl.appendChild(li);
     });
   }
@@ -1737,7 +1848,6 @@
   function endGame() {
     renderEnd();
     showScreen('end');
-    applyTheme();
   }
 
   // After a completed game, a different player should start the next one
@@ -1793,7 +1903,7 @@
     playTimerEl.hidden = !active;
     if (!active) return;
     // Issue #3: just the counter, no "Time challenge"/"(paused)" label -
-    // the turn card's strikethrough (.corner-timer, CSS) is what signals
+    // the turn card's strikethrough (.turncard-timer, CSS) is what signals
     // "paused" now, not text.
     var label = formatChallengeTime(game.timeChallenge.remainingMs);
     turncardTimerEl.textContent = label;
@@ -1804,8 +1914,15 @@
   // winner, and a placeholder table would undercut the very tension being
   // tested. Do not add one here.
   function timeoutGame() {
+    // M15: name whoever's turn was active when the clock ran out, in their
+    // colour - turnIndex hasn't moved (the countdown only ticks while a
+    // turn is live), so currentPlayer() here is exactly that player.
+    var p = currentPlayer();
+    timeoutPlayerAvatarEl.src = 'avatars/' + p.avatar;
+    timeoutPlayerAvatarEl.alt = '';
+    timeoutPlayerPhraseEl.textContent = p.name + ' ran out of time';
+    applyTheme(p);
     showScreen('timeout');
-    applyTheme();
   }
 
   var CHALLENGE_TICK_MS = 250;

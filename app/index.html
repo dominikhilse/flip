@@ -17,9 +17,22 @@
 </head>
 <body>
 
+  <!-- M15 brand pass (GameScreens_Redesign Frame 1): brandmark + title +
+       tagline, sand "Tap to start". The mockup also shows a "Continue -
+       X's turn (lap N)" resume line, but there's no code path that
+       re-shows Launch once a game has started (and CLAUDE.md bars
+       persisting an in-progress game across a reload) - left out as not
+       applicable, see DECISIONS.md. -->
   <section id="screen-launch" class="screen full-bleed">
-    <div class="turncard-center">
-      <div id="launch-hint">Tap to start</div>
+    <div class="launch-center">
+      <div class="launch-brandmark">
+        <span class="launch-tile" style="background:#26A69A; border-color:#146B62; transform:rotate(-6deg);">7</span>
+        <span class="launch-tile" style="background:#E5842A; border-color:#A45610; transform:rotate(4deg) translateY(-4px);">3</span>
+        <span class="launch-tile" style="background:#6A5AC8; border-color:#3E3583; transform:rotate(-3deg);">1</span>
+      </div>
+      <h1 class="launch-title">Flip the<br>Number</h1>
+      <div class="launch-tagline">Pass-and-play · 2–8 players</div>
+      <button type="button" id="launch-hint" class="primary">Tap to start</button>
     </div>
   </section>
 
@@ -29,36 +42,49 @@
        controls into 2a/3a/3b/3c's structure; no setting, default, or
        mid-game-mutability tier changes anywhere in this section. -->
   <section id="screen-setup" class="screen" hidden>
+    <!-- M15 brand pass: a real page title (there wasn't one before) -
+         "New Game" pre-match, "Settings" once a match is live, per
+         GameScreens_Redesign's Frames 4-7 - see renderSetup in app.js. -->
+    <div id="setup-title" class="setup-title"></div>
+    <div id="setup-subtitle" class="setup-subtitle"></div>
     <div id="setup-midgame-banner" class="menu-banner" hidden>Match in progress — rule changes apply at the next lap</div>
 
+    <!-- M15 brand pass: icons swapped to match GameScreens_Redesign's tab
+         set (two-person/ruler/phone/wrench). -->
     <div id="setup-tabbar" class="tab-bar">
       <button type="button" class="tab-btn" data-tab="players">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         Players
       </button>
       <button type="button" class="tab-btn" data-tab="rules">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="14" y2="17"></line></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
         Rules
       </button>
       <button type="button" class="tab-btn" data-tab="app">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"></line><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"></circle><line x1="4" y1="12" x2="20" y2="12"></line><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"></circle><line x1="4" y1="18" x2="20" y2="18"></line><circle cx="7" cy="18" r="2" fill="currentColor" stroke="none"></circle></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2.5"></rect><line x1="9" y1="18" x2="15" y2="18"></line></svg>
         App
       </button>
       <button type="button" class="tab-btn" data-tab="dev">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="8,6 3,12 8,18"></polyline><polyline points="16,6 21,12 16,18"></polyline></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-2.8-2.8 2.1-2.1z"></path></svg>
         Dev
       </button>
     </div>
 
     <!-- 3a Players -->
     <div id="setup-tab-players" class="setup-tab" hidden>
+      <div class="setup-section-label" id="roster-count-label">Roster</div>
       <ul id="roster-list"></ul>
 
-      <form id="add-player-form">
-        <input id="player-name-input" type="text" placeholder="Player name" maxlength="20" autocomplete="off">
-        <div id="color-swatches"></div>
-        <button type="submit" class="secondary">Add player</button>
+      <div class="setup-section-label">Add player</div>
+      <form id="add-player-form" class="add-player-row">
+        <input id="player-name-input" type="text" placeholder="Name…" maxlength="20" autocomplete="off">
+        <button type="submit" class="add-player-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add
+        </button>
       </form>
+      <div class="setup-section-label swatch-label">Colour · taken hues are dimmed</div>
+      <div id="color-swatches"></div>
       <div class="setting-note blocked-note" id="roster-note" hidden>Applies next game - end this game to add or remove players</div>
     </div>
 
@@ -90,19 +116,30 @@
       </div>
 
       <div class="setting-row">
-        <label class="checkbox-row"><input type="checkbox" id="boost-checkbox"> Boost mode (A only) <span class="chip">next lap</span></label>
+        <span>Boost mode (A only) <span class="chip">next lap</span></span>
+        <label class="switch"><input type="checkbox" id="boost-checkbox"><span class="switch-track"></span></label>
       </div>
     </div>
 
     <!-- 3b App -->
     <div id="setup-tab-app" class="setup-tab" hidden>
       <div class="setting-row">
-        <label class="checkbox-row"><input type="checkbox" id="motion-toggle"> Motion</label>
+        <span>Motion</span>
+        <label class="switch"><input type="checkbox" id="motion-toggle"><span class="switch-track"></span></label>
       </div>
       <div class="setting-row">
-        <label class="checkbox-row"><input type="checkbox" id="tap-toggle"> Tap to proceed</label>
+        <span>Tap to proceed</span>
+        <label class="switch"><input type="checkbox" id="tap-toggle"><span class="switch-track"></span></label>
       </div>
       <div class="menu-banner">One of Motion / Tap must stay on — turning both off isn't allowed</div>
+
+      <!-- M15: benched, per the user's decision - the row is real UI
+           (matches the mockup) but wired to nothing; there is no audio
+           system anywhere in this build yet. See DECISIONS.md. -->
+      <div class="setting-row">
+        <span>Tap sounds <span class="dev-badge">Benched</span></span>
+        <label class="switch"><input type="checkbox" id="tap-sounds-toggle" disabled><span class="switch-track"></span></label>
+      </div>
 
       <div class="setting-row">
         <span>Theme</span>
@@ -116,19 +153,44 @@
            theme and of player identity colour - see DECISIONS.md. -->
       <div class="setting-row">
         <span>Tile skin</span>
-        <div class="toggle-group" id="skin-toggle-group">
-          <button type="button" class="toggle-btn" data-skin="colorful">Colorful</button>
-          <button type="button" class="toggle-btn" data-skin="mono">Mono</button>
-        </div>
+        <span class="setting-note-inline">2 skins</span>
       </div>
+      <div class="skin-picker" id="skin-toggle-group">
+        <button type="button" class="skin-card" data-skin="colorful">
+          <span class="skin-card-swatches">
+            <span style="background:#D34D4D"></span><span style="background:#E5842A"></span><span style="background:#E4BE2F"></span><span style="background:#7E9E38"></span>
+            <span style="background:#26A69A"></span><span style="background:#3D7BC0"></span><span style="background:#6A5AC8"></span><span style="background:#B45699"></span>
+          </span>
+          <span class="skin-card-label">
+            <span class="skin-card-check">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </span>
+            Colorful
+          </span>
+        </button>
+        <button type="button" class="skin-card" data-skin="mono">
+          <span class="skin-card-swatches">
+            <span style="background:#dcdcdc"></span><span style="background:#b9b9b9"></span><span style="background:#969696"></span><span style="background:#767676"></span>
+            <span style="background:#5c5c5c"></span><span style="background:#484848"></span><span style="background:#383838"></span><span style="background:#2a2a2a"></span>
+          </span>
+          <span class="skin-card-label">
+            <span class="skin-card-check">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </span>
+            Mono
+          </span>
+        </button>
+      </div>
+      <div class="setting-note">Mono derives a 12-step ramp on each player's hue — whose turn it is reads at a glance.</div>
     </div>
 
     <!-- 3c Dev -->
     <div id="setup-tab-dev" class="setup-tab" hidden>
-      <div class="menu-banner dev-banner">Developer tools — not part of normal play</div>
+      <div class="menu-banner dev-banner"><span class="dev-badge">Dev build only</span> Developer tools — not part of normal play</div>
 
       <div class="setting-row">
-        <label class="checkbox-row"><input type="checkbox" id="dev-dice-test-enabled"> Test dice #</label>
+        <span>Test dice #</span>
+        <label class="switch"><input type="checkbox" id="dev-dice-test-enabled"><span class="switch-track"></span></label>
       </div>
       <div class="setting-row" id="dev-dice-choice-row" hidden>
         <span>Dice choice</span>
@@ -140,11 +202,20 @@
       </div>
       <div class="setting-note">Off = always one die, no prompt (production default). On: "?" shows the normal per-turn 1/2 choice (§3.3) for exercising both paths by hand; 1 or 2 hard-forces that count, no prompt. Switch back to 1 (or untick) at any time - the last-tile-is-1 safety rule always wins regardless.</div>
 
+      <!-- M15: restyled as a switch + stepper (was a number input + "Set"
+           button) - same underlying settings.timeChallengeSeconds, still a
+           single whole-match countdown (see DECISIONS.md re: the mockup's
+           differently-worded "per-turn" framing, not built). -->
       <div class="setting-row">
         <span>Time challenge <span class="chip">next game</span></span>
-        <div class="dev-time-row">
-          <input type="number" id="dev-time-challenge-input" min="0" step="15" value="0">
-          <button type="button" id="dev-time-challenge-set" class="secondary">Set</button>
+        <label class="switch"><input type="checkbox" id="dev-time-challenge-toggle"><span class="switch-track"></span></label>
+      </div>
+      <div class="setting-row" id="dev-time-challenge-stepper-row" hidden>
+        <span>Countdown length</span>
+        <div class="stepper">
+          <button type="button" id="dev-time-challenge-minus" class="stepper-btn">−</button>
+          <span id="dev-time-challenge-value" class="stepper-value">60</span>
+          <button type="button" id="dev-time-challenge-plus" class="stepper-btn">+</button>
         </div>
       </div>
       <div class="setting-note" id="dev-time-challenge-status">Currently off</div>
@@ -158,17 +229,38 @@
     </div>
   </section>
 
-  <section id="screen-turncard" class="screen full-bleed" hidden>
-    <button id="settings-from-turncard" class="corner-btn">Settings</button>
-    <div id="turncard-timer" class="corner-timer" hidden></div>
+  <!-- M15 brand pass (GameScreens_Redesign Frame 2): a deliberate change
+       from the old full-bleed player-colour card to the same dark/light
+       surface as every other screen - the player's colour now lives only
+       in the avatar ring/glow and name (see DECISIONS.md). Settings moved
+       from a top-left text corner button to an icon, sharing a row with
+       the timer chip (was a separately absolutely-positioned corner) so
+       the two can never collide. -->
+  <section id="screen-turncard" class="screen turncard-screen" hidden>
+    <div class="turncard-toprow">
+      <div id="turncard-timer" class="turncard-timer" hidden></div>
+      <button type="button" id="settings-from-turncard" class="settings-icon-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
     <div class="turncard-center">
       <button type="button" id="turncard-avatar-btn" class="turncard-avatar-btn" title="Tap to change your avatar">
         <img id="turncard-avatar-img" alt="">
       </button>
-      <div id="turncard-name"></div>
-      <div id="turncard-instruction">Place the phone flat on the table</div>
-      <div id="turncard-hint">Tap anywhere but the avatar to continue</div>
+      <div id="turncard-seat-label" class="turncard-seat-label"></div>
+      <div id="turncard-name" class="play-accent-text"></div>
+      <div class="turncard-flat-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2.4" transform="rotate(-6 12 12)"></rect><circle cx="12" cy="12" r="1"></circle></svg>
+        <div id="turncard-instruction">Lay the phone flat to start your turn</div>
+      </div>
     </div>
+    <!-- Real, existing tap-to-proceed path (settings.tapToProceed, D-29) -
+         not a "dev-only" affordance; shown/hidden per that live setting
+         rather than a build flag, since it's a genuine accessibility
+         option a real user can toggle in Settings > App. Its de-emphasised
+         pill styling matches the mockup's intent (motion is the primary
+         path) without mislabelling a real feature as developer-only. -->
+    <div id="turncard-hint" class="turncard-tap-hint">Tap anywhere but the avatar to continue</div>
   </section>
 
   <section id="screen-play" class="screen" hidden>
@@ -241,31 +333,73 @@
     </div>
   </section>
 
-  <section id="screen-end" class="screen" hidden>
-    <h1>Game over</h1>
-    <ol id="finish-list"></ol>
-    <button id="end-rematch" class="secondary">Rematch</button>
-    <button id="end-new-game" class="primary">New game</button>
+  <!-- M15 brand pass (GameScreens_Redesign Frame 9): trophy banner + ranked
+       rows. Per-player numeric scores are explicitly "Benched" in the doc -
+       the rules engine has no scoring model at all (only finish order), so
+       the score column is left out entirely rather than inventing one;
+       the note below says so plainly instead of silently omitting it. -->
+  <section id="screen-end" class="screen screen-banner" hidden>
+    <div class="banner-center">
+      <div class="results-kicker">Final scores</div>
+      <div class="results-winner">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 7l4.5 3L12 4l4.5 6L21 7l-1.8 11H4.8z"></path></svg>
+        <span id="results-winner-name" class="play-accent-text"></span>
+      </div>
+      <ol id="finish-list" class="results-list"></ol>
+      <div class="benched-note"><span class="dev-badge">Benched</span>Per-player scores aren't computed in the current build — this list shows finish order only.</div>
+    </div>
+    <div class="banner-actions">
+      <button id="end-rematch" class="primary">Play again</button>
+      <button id="end-new-game" class="secondary">New game</button>
+    </div>
   </section>
 
   <!-- Time challenge timeout (M9): deliberately no ranking table - nobody
-       shut their box, so there is no winner. Do not add one here. -->
-  <section id="screen-timeout" class="screen" hidden>
-    <h1>Time's up!</h1>
-    <p id="timeout-message">Better luck finishing next time!</p>
-    <button id="timeout-rematch" class="secondary">Rematch</button>
-    <button id="timeout-new-game" class="primary">New game</button>
+       shut their box, so there is no winner. Do not add one here.
+       M15 brand pass (GameScreens_Redesign Frame 3): visual redesign only
+       - the mockup's own copy/Dev-tab label describe a per-turn shot clock
+       ("the turn passes... Pass to next player"), but the actual mechanic
+       is (and stays) a single whole-match countdown that ends the match
+       entirely; see DECISIONS.md for the per-turn idea flagged back to the
+       design track as a possible future game mode. Copy and buttons here
+       reflect the real, unchanged behaviour. -->
+  <section id="screen-timeout" class="screen screen-banner" hidden>
+    <div class="banner-center">
+      <div class="timeout-ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
+      </div>
+      <h1>Time's up!</h1>
+      <div id="timeout-player-chip" class="identity-chip play-accent-text">
+        <span class="identity-chip-avatar">
+          <img id="timeout-player-avatar" alt="">
+        </span>
+        <span id="timeout-player-phrase"></span>
+      </div>
+      <p id="timeout-message">Nobody finished in time — the match ends without a winner.</p>
+    </div>
+    <div class="banner-actions">
+      <button id="timeout-new-game" class="primary">New game</button>
+      <button id="timeout-rematch" class="secondary">Rematch</button>
+    </div>
   </section>
 
   <!-- M11 (D-51): a single generic confirm dialog, reused for every
        destructive mid-game exit (End match, Restart) rather than a bespoke
        dialog per action. Native <dialog> - no library, no custom modal
-       stack to build. -->
+       stack to build. M15 brand pass (GameScreens_Redesign Frame 8): a
+       warning icon + Crimson Pro title/Overpass description split (was one
+       plain paragraph), a ghost "safe default" Cancel, and a red
+       (destructive-only, see the colour-role callout) OK whose label is
+       now set per call instead of a static "Confirm" - see confirmAction. -->
   <dialog id="confirm-dialog">
+    <div class="confirm-dialog-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    </div>
+    <p id="confirm-dialog-title"></p>
     <p id="confirm-dialog-text"></p>
     <div class="action-row">
-      <button id="confirm-dialog-cancel" class="secondary">Cancel</button>
-      <button id="confirm-dialog-ok" class="primary">Confirm</button>
+      <button id="confirm-dialog-cancel" class="secondary">Keep playing</button>
+      <button id="confirm-dialog-ok" class="primary danger"></button>
     </div>
   </dialog>
 

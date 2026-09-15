@@ -917,3 +917,91 @@ application of the docs' explicit tokens/mockups.
   multi-player game completed with zero console errors; the entire flow (roster -> setup ->
   turn card -> roll -> confirm) re-verified through real UI clicks (not just the debug hook)
   after stripping it, zero console errors.
+
+### 2026-09-16 — M15 brand pass: launch/handoff/timeout/setup/dialog/results (docs/GameScreens_Redesign.dc.html)
+Applied the whole rest of the flow per the redesign doc, which itself superseded an earlier
+draft after a design-session pass. As with M14, confirmed the structural/rules-affecting
+questions with the user rather than guessing; the rest is a straightforward application of the
+doc's tokens/mockups.
+
+- **The turn card's background architecture deliberately changed.** It used to fill the whole
+  screen with the player's flat colour, independent of the site theme (a locked-sounding
+  decision recorded in style.css's own comment). The redesign moves it onto the same dark/light
+  themed surface as every other screen, with the player's colour now carried only by the avatar
+  ring/glow and the name (`--player-accent*`, same mechanism as Play). Confirmed directly with
+  the user before touching it ("the full colour player screen got changed, indeed"). The avatar
+  itself also switched from the old full-uncropped-character art to the same circular head/bust
+  crop as Play's `.avatar-btn`, just bigger, per the mockup.
+- **Colour-role scope: new screens only, not retroactive to Play.** GameScreens_Redesign
+  introduces a stricter "sand = system chrome, player hue = identity only, red = destructive
+  only" rule, explicitly framed as fixing an "old mock reused a player colour... as a generic UI
+  highlight" mistake - which is exactly what Play's settings cog/boost chips/promoted button do
+  (per DevHandoff_BrandSpec_v2 Part 3 and PlayScreen_Redesign's own mockup). Asked the user
+  directly: confirmed Play is unaffected and keeps its player-tinted chrome as shipped in the
+  M14 pass; the new sand rule governs only the screens this doc covers (launch, turn card,
+  timeout, setup/settings, confirm dialog, results). New tokens: `--accent-sand`/`-ink`/`-border`
+  (system chrome), `--accent-amber-*` (a third, purely informational role for the "next
+  lap/next game" and "dev" badges - not reused for sand's "active control" meaning), and
+  `--accent-danger-fill` (a stronger red for a destructive button *fill* - `--accent-danger`
+  itself is tuned as pale text-on-dark, e.g. the stalled message, and reads too low-contrast as
+  a button background with light text on it).
+- **Time challenge: visual redesign only, whole-match semantics unchanged.** The doc's Dev-tab
+  label ("Per-turn countdown -> Timeout screen") and Timeout copy ("the turn passes... Pass to
+  next player") describe a per-turn shot clock; the actual, current mechanic is a single
+  countdown for the whole match that ends it entirely (`game.timeChallenge`, ticks continuously,
+  `timeoutGame()` never resumes play). Confirmed with the user: restyle only, keep real
+  semantics - Timeout's copy was rewritten to a match-over framing ("Nobody finished in time -
+  the match ends without a winner"), both original buttons (Rematch/New game) kept instead of
+  the mockup's single "Pass to next player". Per the user's request, the per-turn shot-clock
+  idea itself isn't lost - it's flagged right here as a plausible **future alternative game
+  mode** for the design/orchestrator track to pick up later, not something this pass builds.
+  DECISIONS.md is the established channel for exactly this (see this file's own header) - no
+  better mechanism exists in this project for a Code-session finding to reach the design track.
+  The Dev tab's time-challenge control was still restyled (switch + stepper replacing a number
+  input + "Set" button) since that's a pure UI change over the same
+  `settings.timeChallengeSeconds` - `lastTimeChallengeSeconds` (a plain in-memory var, not
+  persisted) remembers the last duration across an off/on toggle; 60s is the starting default
+  the first time it's ever switched on (a judgement call, not measured, same tier as
+  `config.js`'s other tunable-by-feel starting values).
+- **Results screen has no per-player score column** - the doc itself marks this "Benched": the
+  design is final but the rules engine has no scoring model at all (only finish order,
+  `game.finishedOrder`/`p.place`), so a number would have to be invented. The mockup's own
+  "Benched" note is real, user-facing UI (drawn inside the phone frame, not a design-only
+  annotation) - built exactly that way rather than treated as an internal-only remark.
+- **20th avatar / avatar-count claim**: the doc corrected itself here (now says "all 19 live in
+  `app/avatars/`", matching the repo) - no further action, consistent with the earlier decision
+  to leave `config.js`'s `avatarCount` alone. The colour+monogram fallback it calls for
+  (`renderIdentityCircle` in app.js) is still real and needed, just for a different reason than
+  the doc states: a roster entry has no `avatar` field at all until `assignAvatars()` runs at
+  game start, not because source files are missing.
+- **Dev tab: kept the existing dice-choice test instrument (1/2/ask), restyled but not
+  replaced.** The mockup shows a different, more elaborate set of dev tools ("Roll d6" /
+  "Force a value" isolated animation triggers, a "Jump to Results" shortcut) that don't exist
+  today and aren't specified precisely enough to build without guessing at exact behaviour
+  (what "force a value" forces, whether "jump to results" fabricates a fake finish order,
+  etc.). Not built - flagged here rather than invented; the real, existing dice-choice control
+  got the same switch/segmented-toggle restyle as everything else instead.
+- **Other judgement calls, made and documented rather than blocked on:**
+  - Confirm dialog's OK button now shows the actual action ("End match" / "Restart match")
+    instead of a static "Confirm" - `confirmAction()` gained a `title`/`okLabel` split from one
+    plain message string, matching the mockup's title/description layout.
+  - Setup gained a real page title ("New Game" pre-match / "Settings" mid-match, with a
+    subtitle) - there wasn't one before at all (`renderSetup` in app.js).
+  - Roster colour swatches dim an already-taken colour (`.color-swatch.taken`) as a visual hint
+    only, per the doc's own "taken hues are dimmed" wording - not an enforced uniqueness rule;
+    the app has never had one, and the doc doesn't ask for one either.
+  - The skin picker (Setup > App) upgraded from a plain 2-button segmented toggle to the
+    mockup's mini-preview cards (swatch grid + checkmark) - `skinToggleGroupEl`'s JS now
+    targets `.skin-card` instead of `.toggle-btn`.
+  - Roster list's "Remove" text button became an icon-only X (`REMOVE_ICON_SVG`), and the tab
+    bar's four icons were swapped to match the mockup's set (two-person/ruler/phone/wrench).
+- **Verified**: temporary debug hook (removed before commit; dev-server port rotated during
+  CSS/JS-affecting edits, reverted to 8123); full flow screenshotted in both themes - launch,
+  roster add/remove with monogram fallback and taken-colour dimming, all four Setup tabs
+  (including the skin-card picker and the time-challenge switch+stepper live-adjusting through
+  a real countdown), the turn card's new accent-ring/glow layout, a live time-challenge
+  countdown allowed to actually expire into the redesigned Timeout screen, the confirm dialog
+  (icon/title/description/dynamic red label) in both themes, and the Results screen (trophy
+  banner, ranked rows, Benched note) in both themes; zero console errors throughout; the full
+  roster -> setup -> turn card -> roll flow re-verified through real UI clicks after stripping
+  the debug hook.

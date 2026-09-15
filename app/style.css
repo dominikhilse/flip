@@ -3,11 +3,15 @@
 [hidden] { display: none !important; }
 
 /* Theme tokens (M6+ amendment). Dark is the default/root palette; .theme-
-   light overrides it. The turn card and launch screen deliberately do NOT
-   use these - they're always a strong fixed-contrast surface (a player's
-   own colour, or a fixed dark launch background) independent of the site
-   theme. body.theme-light is toggled by app.js's applyTheme(), which also
-   XORs in the overpay "visual highlight" - see applyTheme() for why. */
+   light overrides it. The launch screen deliberately does NOT use these -
+   it's always a fixed dark background independent of the site theme. The
+   turn card (M15 brand pass) now DOES use these, matching every other
+   screen - it used to be a fixed full-bleed player-colour card; the design
+   session deliberately changed that (see DECISIONS.md) to the same dark/
+   light surface as the rest of the app, with the player's colour carried
+   only by the avatar ring/glow and name (see .turncard-accent-text).
+   body.theme-light is toggled by app.js's applyTheme(), which also XORs in
+   the overpay "visual highlight" - see applyTheme() for why. */
 :root {
   --bg: #111111;
   --fg: #eeeeee;
@@ -24,7 +28,30 @@
   --btn-primary-disabled-bg: #555555;
   --btn-primary-active-bg: #cccccc;
   --accent-danger: #e08a8a;
+  /* A separate, stronger red for a destructive button FILL - --accent-danger
+     itself is tuned as pale text-on-dark (e.g. the stalled message), too
+     low-contrast as a button background with light text on top of it. */
+  --accent-danger-fill: #B4443A;
   color-scheme: dark;
+
+  /* M15 brand pass (GameScreens_Redesign): "sand" is the app's own system-
+     chrome colour - primary buttons, selected segments/tabs, on-toggles -
+     everywhere a control is generic rather than about a specific player.
+     Deliberately not one of the twelve player hues (theme.js playerColors)
+     and never red (reserved for destructive actions, --accent-danger) -
+     see the doc's colour-role callout. Player identity colour continues to
+     be carried entirely by --player-accent* (app.js), set only on the
+     screens where a specific player is the subject (turn card, Play,
+     results) - sand and player-accent are never the same element. */
+  --accent-sand: #C2A878;
+  --accent-sand-ink: #241C10;
+  --accent-sand-border: #97794a;
+  /* The small amber "next lap/next game" and "dev" badges are a third,
+     purely informational role - distinct from sand's "this is the active
+     control" meaning, so it isn't reused for those. */
+  --accent-amber-text: #D9A15E;
+  --accent-amber-bg: #2a2420;
+  --accent-amber-border: #4a3d2c;
 
   /* M14 brand pass (font swapped to Crimson Pro): brand type + shape
      tokens (theme-independent - same in both dark and light, unlike the
@@ -55,6 +82,17 @@ body.theme-light {
   --btn-primary-disabled-bg: #cccccc;
   --btn-primary-active-bg: #333333;
   --accent-danger: #b91c1c;
+  --accent-danger-fill: #b91c1c;
+  --accent-amber-text: #8a5a1e;
+  --accent-amber-bg: #f7ecd8;
+  --accent-amber-border: #d9bd8e;
+  /* Light-theme sand: the mockup only shows dark frames - darkened/desaturated
+     a touch for 4.5:1+ text-on-sand contrast on a pale ground, same hue.
+     Not measured against every use, but checked for the button/segment
+     cases below (ink stays --accent-sand-ink, a near-black, in both themes). */
+  --accent-sand: #9c7a48;
+  --accent-sand-ink: #fbf5e9;
+  --accent-sand-border: #7a5d33;
   color-scheme: light;
 }
 
@@ -104,15 +142,22 @@ button {
   appearance: none;
 }
 
+/* M15 brand pass: primary buttons are sand (system chrome) everywhere
+   except the Play screen, which overrides to the player's own colour below
+   - see the sand-vs-player-hue callout on --accent-sand. Deliberately
+   points at the new --accent-sand* tokens rather than redefining
+   --btn-primary-bg/-fg themselves, since .die (the dice face) also reuses
+   those for its own unrelated white/black theme-flip look and must not
+   turn sand-coloured too. */
 button.primary {
   display: block;
   width: 100%;
   padding: 1em;
   font-size: 1.1rem;
   font-weight: 700; /* Overpass bold label, not the display face - see h1/.tile above */
-  color: var(--btn-primary-fg);
-  background: var(--btn-primary-bg);
-  border: 3px solid var(--btn-primary-bg);
+  color: var(--accent-sand-ink);
+  background: var(--accent-sand);
+  border: 3px solid var(--accent-sand);
   border-radius: var(--radius-btn);
 }
 button.primary:disabled {
@@ -121,6 +166,17 @@ button.primary:disabled {
   color: var(--text-dim);
 }
 button.primary:not(:disabled):active { background: var(--btn-primary-active-bg); }
+
+/* Destructive-only red, reserved for the confirm dialog's OK action (End
+   match / Restart match) - the one place a primary button is NOT sand,
+   because it's the one place red's "irreversible" meaning is exactly what's
+   wanted. Never reused as a generic highlight - see the colour-role
+   callout in GameScreens_Redesign.dc.html. */
+button.primary.danger {
+  background: var(--accent-danger-fill);
+  border-color: var(--accent-danger-fill);
+  color: #FBF0EE;
+}
 
 /* M14 brand pass: on the Play screen only, the promoted primary button
    carries the active player's colour instead of the fixed neutral above -
@@ -160,6 +216,12 @@ button.secondary:active { background: var(--bg-subtle); }
 .screen button.secondary + button {
   margin-top: 0.5rem;
 }
+/* .banner-actions already gaps its buttons via flex `gap` (M15) - undo the
+   generic sibling-margin rule above so the two don't stack. */
+.banner-actions button.primary + button,
+.banner-actions button.secondary + button {
+  margin-top: 0;
+}
 
 /* Setup screen */
 
@@ -171,9 +233,9 @@ button.secondary:active { background: var(--bg-subtle); }
 #roster-list li {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.5em 0.2em;
-  border-bottom: 1px solid var(--border-faint);
+  gap: 0.7rem;
+  padding: 0.6em 0.2em;
+  border-bottom: 1px dashed var(--border-faint);
   background: var(--bg);
   position: relative;
 }
@@ -202,41 +264,97 @@ button.secondary:active { background: var(--bg-subtle); }
   stroke-width: 2;
   stroke-linecap: round;
 }
+/* M15: colour+monogram circle (avatars aren't assigned until game start -
+   see renderIdentityCircle in app.js) instead of a plain flat colour dot. */
 #roster-list .swatch {
-  width: 1.2em;
-  height: 1.2em;
+  width: 1.9em;
+  height: 1.9em;
   border-radius: 50%;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.9em;
+  color: #FBF5E9;
 }
 #roster-list .name {
   flex: 1;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
 }
 #roster-list .remove-player {
+  flex: none;
+  width: 1.6em;
+  height: 1.6em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-soft);
-  border-radius: 4px;
-  padding: 0.3em 0.6em;
-  font-size: 0.8rem;
+  border: none;
+  color: var(--accent-danger-fill);
+  padding: 0;
 }
+#roster-list .remove-player svg {
+  width: 60%;
+  height: 60%;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+#roster-list .remove-player:disabled { color: var(--text-dim); }
 
-#add-player-form {
-  margin-bottom: 1rem;
+.setup-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 1rem 0 0.5rem;
+}
+.add-player-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 #player-name-input {
-  width: 100%;
-  padding: 0.7em;
-  font-size: 1rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  flex: 1;
+  min-width: 0;
+  padding: 0.65em 1em;
+  font-size: 0.95rem;
+  border-radius: 999px;
+  border: 1.5px dashed var(--border);
+  background: transparent;
   color: var(--fg);
-  margin-bottom: 0.5rem;
 }
+.add-player-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.6em 1em;
+  border-radius: 999px;
+  border: 3px solid var(--accent-sand);
+  background: var(--accent-sand);
+  color: var(--accent-sand-ink);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.add-player-btn svg {
+  width: 0.85em;
+  height: 0.85em;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  fill: none;
+}
+.swatch-label { margin-top: 0.75rem; }
 #color-swatches {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 .color-swatch {
@@ -248,6 +366,9 @@ button.secondary:active { background: var(--bg-subtle); }
 }
 .color-swatch.selected {
   border-color: var(--fg);
+}
+.color-swatch.taken {
+  opacity: 0.34;
 }
 
 .setting-row {
@@ -264,15 +385,69 @@ button.secondary:active { background: var(--bg-subtle); }
 .toggle-btn {
   padding: 0.4em 0.9em;
   border-radius: 6px;
-  border: 2px solid var(--fg);
+  border: 2px solid var(--border);
   background: transparent;
-  color: var(--fg);
+  color: var(--text-soft);
   font-size: 0.9rem;
 }
+/* M15 brand pass: a selected segment is sand (system chrome), not --fg -
+   see the sand-vs-player-hue callout on --accent-sand above. */
 .toggle-btn.active {
-  background: var(--fg);
-  color: var(--bg);
+  background: var(--accent-sand);
+  border-color: var(--accent-sand);
+  color: var(--accent-sand-ink);
+  font-weight: 700;
 }
+
+/* M15: a reusable on/off pill switch (Motion, Tap-to-proceed, Boost mode,
+   Tap sounds, Time challenge enable) - replaces the plain checkbox look
+   with the same sand-when-on language as the segmented toggles above. The
+   underlying control is still a real <input type="checkbox">, just visually
+   hidden and reskinned via its sibling <span> - keeps native keyboard/
+   a11y behaviour (label click, space-to-toggle) for free. */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  flex: none;
+}
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+.switch-track {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.switch-track::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.switch input:checked + .switch-track {
+  background: var(--accent-sand);
+  border-color: var(--accent-sand);
+}
+.switch input:checked + .switch-track::before {
+  transform: translateX(18px);
+  background: var(--accent-sand-ink);
+}
+.switch input:disabled + .switch-track { opacity: 0.45; }
 #placement-mode {
   padding: 0.4em 0.6em;
   border-radius: 6px;
@@ -285,32 +460,103 @@ button.secondary:active { background: var(--bg-subtle); }
   color: var(--text-dim);
   margin: -0.4rem 0 0.6rem;
 }
-.dev-time-row {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
+.setting-note-inline {
+  font-size: 0.75rem;
+  color: var(--text-dim);
 }
-.dev-time-row input[type="number"] {
-  width: 4.5rem;
-  padding: 0.4em 0.5em;
-  border-radius: 6px;
+
+/* M15: the skin picker is two mini-preview cards (swatch grid + checkmark)
+   rather than a plain segmented toggle - reuses the sand-select language
+   (active card border/check = sand) consistent with every other control. */
+.skin-picker {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+.skin-card {
+  flex: 1;
+  text-align: left;
+  padding: 0.6rem;
+  border-radius: 14px;
+  border: 2px solid var(--border);
   background: var(--bg-elevated);
-  color: var(--fg);
-  border: 1px solid var(--border);
 }
-.dev-time-row button {
-  width: auto;
-  padding: 0.4em 0.8em;
+.skin-card.active {
+  border-color: var(--accent-sand);
 }
-.checkbox-row {
+.skin-card-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+}
+.skin-card-swatches span {
+  height: 0.85rem;
+  border-radius: 4px;
+}
+.skin-card-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text-soft);
 }
-.checkbox-row input[type="checkbox"] {
-  width: 1.1rem;
-  height: 1.1rem;
+.skin-card.active .skin-card-label { color: var(--fg); }
+.skin-card-check {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.skin-card-check svg {
+  width: 0.6rem;
+  height: 0.6rem;
+  stroke: var(--accent-sand-ink);
+  stroke-width: 4;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  visibility: hidden;
+}
+.skin-card.active .skin-card-check {
+  background: var(--accent-sand);
+  border-color: var(--accent-sand);
+}
+.skin-card.active .skin-card-check svg { visibility: visible; }
+/* M15: a −/value/+ stepper (Dev tab's time-challenge duration) - the same
+   segmented-pill shape as .toggle-group, sand for the value in the middle. */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.stepper-btn {
+  width: auto;
+  padding: 0.4em 0.7em;
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.stepper-btn:disabled { color: var(--text-dim); }
+.stepper-value {
+  padding: 0.4em 0.7em;
+  background: var(--accent-sand);
+  color: var(--accent-sand-ink);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+  min-width: 2.4em;
+  text-align: center;
+  display: inline-block;
 }
 .setting-row.disabled {
   opacity: 0.45;
@@ -319,8 +565,8 @@ button.secondary:active { background: var(--bg-subtle); }
   opacity: 0.45;
 }
 
-/* Turn card */
-
+/* Launch screen only now - the turn card opted out (see .turncard-screen
+   below) once it moved off a fixed full-bleed player-colour card. */
 .full-bleed {
   position: fixed;
   inset: 0;
@@ -330,87 +576,154 @@ button.secondary:active { background: var(--bg-subtle); }
   justify-content: center;
   padding: 0;
 }
-.turncard-center {
-  text-align: center;
-  padding: 2rem;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 12px;
+
+/* Turn card (M15 brand pass) - a themed dark/light column, matching
+   #screen-play's own structure, rather than the old fixed full-bleed
+   player-colour card (see the :root token block comment and
+   showTurnCardFor in app.js). */
+.turncard-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: 1rem 1.25rem calc(1rem + 48px);
 }
-/* Full, uncropped, big (issue #2) - unlike the Play-header .avatar-btn's
-   head/bust crop, this shows the whole character. Plain button reset so it
-   reads as art, not a button; tap-to-cycle is wired separately from the
-   turn card's own tap-anywhere-to-continue handler (see turncardScreenEl's
-   click listener in app.js), which explicitly excludes this button. */
+.turncard-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  min-height: 34px;
+}
+/* Paused-timer HUD (M9) - neutral chrome, not the player's colour (see the
+   sand-vs-player-hue colour-role split); struck-through reads as "paused"
+   on its own, no label text needed (issue #3). */
+.turncard-timer {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: var(--text-soft);
+  text-decoration: line-through;
+}
+.turncard-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+/* Bigger version of Play's .avatar-btn - same head/bust crop technique,
+   just larger, with the player's colour as a ring + soft glow (M15 -
+   supersedes the old full-uncropped-character treatment from issue #2). */
 .turncard-avatar-btn {
   display: block;
-  width: 40vw;
-  max-width: 170px;
-  margin: 0 auto 0.75rem;
+  position: relative;
+  width: 7.2rem;
+  height: 7.2rem;
   padding: 0;
-  border: none;
-  background: transparent;
+  border: 3px solid var(--player-accent, var(--bg-subtle));
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  overflow: hidden;
+  box-shadow: 0 0 0 12px color-mix(in srgb, var(--player-accent, transparent) 14%, transparent);
 }
 .turncard-avatar-btn img {
   display: block;
-  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 150%;
   height: auto;
+  transform: translateX(-50%);
+}
+.turncard-seat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-top: 1.4rem;
 }
 #turncard-name {
   font-family: var(--font-display);
-  font-size: 2.4rem;
-  font-weight: 900;
-  color: #ffffff;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  margin-bottom: 0.75rem;
+  font-size: 2.6rem;
+  font-weight: 800;
+  margin-top: 0.3rem;
 }
+.turncard-flat-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.4rem;
+  color: var(--text-soft);
+}
+.turncard-flat-hint svg { width: 1.6rem; height: 1.6rem; }
 #turncard-instruction {
-  font-size: 1.1rem;
-  color: #ffffff;
-  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  max-width: 20ch;
 }
-#turncard-hint {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
-}
-/* Issue #3: settings upper-left, counter upper-right - matching Play's new
-   header layout (settings/toast row, then name/counter row), rather than
-   the turn card's old right/left arrangement. */
-.corner-btn {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.5em 0.9em;
-  font-size: 0.85rem;
-  color: #ffffff;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 6px;
+/* Real, existing tap-to-proceed path (see showTurnCardFor) - de-emphasised
+   on purpose (motion is the primary path), not styled as a normal button. */
+.turncard-tap-hint {
+  flex: 0 0 auto;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  padding: 0.55em 1em;
+  margin: 0 auto;
 }
 
-/* Time challenge HUD (M9). Fixed dark/light styling like the rest of the
-   turn card - not theme-tokened. Visibly "paused" (struck, dimmer) here,
-   since the turn card is exactly when the challenge is paused - just the
-   counter, per issue #3, no "Time challenge"/"(paused)" label text. */
-.corner-timer {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  padding: 0.5em 0.9em;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 6px;
-  text-decoration: line-through;
-}
-
-/* Fixed regardless of theme - see the comment on the :root token block. */
+/* Fixed regardless of theme - see the comment on the :root token block.
+   M15 brand pass (GameScreens_Redesign Frame 1): brandmark + title +
+   tagline, sand "Tap to start" (button.primary already resolves to sand
+   here, same as every other screen but Play). */
 #screen-launch {
   background: #111111;
+  color: #eeeeee;
 }
-#launch-hint {
-  font-size: 1.2rem;
+.launch-center {
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+.launch-brandmark {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.launch-tile {
+  width: 3rem;
+  height: 3.5rem;
+  border-radius: 11px;
+  border: 3px solid;
   color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.8rem;
+  line-height: 1;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+}
+.launch-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.5rem;
+  line-height: 1;
+  color: #f2ede3;
+  margin: 0;
+}
+.launch-tagline {
+  font-size: 0.85rem;
+  color: #8a8a8a;
+  margin: 0.75rem 0 2rem;
 }
 
 /* Play screen */
@@ -751,7 +1064,7 @@ button.secondary:active { background: var(--bg-subtle); }
 
 /* Time challenge HUD (M9). Always "running" here - the timer only shows on
    this screen while it's actively counting down (paused state lives on the
-   turn card instead, .corner-timer). M14: colour moved from a fixed
+   turn card instead, .turncard-timer). M14: colour moved from a fixed
    accent-danger red to the player accent (.play-accent-text, in the HTML) -
    matches PlayScreen_Redesign's Frame C, which shows the timer in the
    player's colour, not red. */
@@ -771,36 +1084,217 @@ button.secondary:active { background: var(--bg-subtle); }
   font-size: 0.95rem;
 }
 
-/* End screen */
-
-#finish-list {
-  padding-left: 1.4rem;
-  margin-bottom: 1.5rem;
-  font-size: 1.1rem;
+/* End (Results) + Timeout screens - a shared column skeleton (M15 brand
+   pass): centered content that grows to fill the space, actions pinned to
+   the bottom, matching Play/turncard's own flex-column approach rather
+   than plain top-aligned block flow. */
+.screen-banner {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding-bottom: calc(1rem + 48px);
 }
-#finish-list li {
+.banner-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.4rem;
+}
+.banner-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* A small inline avatar+text pill - used on the Timeout screen to name
+   whoever's turn was active when the clock ran out, in their colour. */
+.identity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3em 0.9em 0.3em 0.3em;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin: 1rem 0;
+}
+.identity-chip-avatar {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  flex: none;
+  background: var(--bg-elevated);
+}
+.identity-chip-avatar img {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 150%;
+  transform: translateX(-50%);
+}
+.timeout-ring {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  border: 4px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-sand);
   margin-bottom: 0.5rem;
 }
+.timeout-ring svg { width: 1.8rem; height: 1.8rem; }
+#timeout-message {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  max-width: 26ch;
+  margin: 0;
+}
+
+/* Results list */
+.results-kicker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.results-winner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.3rem 0 1.4rem;
+}
+.results-winner svg { width: 1.6rem; height: 1.6rem; }
+.results-winner span {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.8rem;
+}
+.results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.results-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7em 0.8em;
+  border-radius: 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+}
+.results-list li.first {
+  background: color-mix(in srgb, var(--player-accent, var(--fg)) 12%, var(--bg-subtle));
+  border-color: color-mix(in srgb, var(--player-accent, var(--fg)) 35%, var(--border-subtle));
+}
+.results-rank {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1rem;
+  width: 1.2rem;
+  text-align: center;
+  color: var(--text-dim);
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+}
+.results-list li.first .results-rank { color: var(--player-accent-text, var(--fg)); }
+.results-avatar {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  flex: none;
+  background: var(--bg-elevated);
+}
+.results-avatar img {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 150%;
+  transform: translateX(-50%);
+}
+.results-name {
+  flex: 1;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-align: left;
+}
+.benched-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  background: var(--bg-subtle);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 0.6em 0.8em;
+  max-width: 22rem;
+}
+.benched-note .dev-badge { flex: none; margin-top: 0.1em; }
 
 /* Confirm dialog (M11, D-51) - one generic native <dialog>, reused for
    every destructive mid-game exit rather than a bespoke dialog per action.
    ::backdrop is themed too, so a light-theme confirm doesn't sit on a
-   jarring default-grey scrim. */
+   jarring default-grey scrim. M15 brand pass: warning icon + Crimson Pro
+   title/Overpass description, red OK reserved for this one destructive
+   action (button.primary.danger, style.css top) - see confirmAction(). */
 #confirm-dialog {
   max-width: 320px;
   width: calc(100% - 2rem);
-  padding: 1.25rem;
+  padding: 1.4rem 1.25rem 1.25rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 18px;
   background: var(--bg-elevated);
   color: var(--fg);
 }
 #confirm-dialog::backdrop {
   background: rgba(0, 0, 0, 0.5);
 }
+.confirm-dialog-icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent-danger-fill) 16%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent-danger-fill) 45%, var(--bg-elevated));
+  color: var(--accent-danger-fill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+}
+.confirm-dialog-icon svg { width: 1.3rem; height: 1.3rem; }
+#confirm-dialog-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.4rem;
+  margin: 0 0 0.4rem;
+}
 #confirm-dialog-text {
-  margin: 0 0 1rem;
-  font-size: 1rem;
+  margin: 0 0 1.2rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
 }
 #confirm-dialog .action-row button.secondary { flex: 1; }
 
@@ -837,13 +1331,24 @@ button.secondary:active { background: var(--bg-subtle); }
   stroke-linejoin: round;
 }
 .tab-btn.active {
-  color: var(--fg);
-  border-color: var(--fg);
-  font-weight: 600;
+  color: var(--accent-sand);
+  border-color: var(--accent-sand);
+  font-weight: 700;
 }
 
 .setup-tab {
   margin-bottom: 1rem;
+}
+.setup-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+.setup-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0.2rem 0 0.75rem;
 }
 
 /* A static "next game"/"next lap" tag next to a control's label (D-30's
@@ -853,12 +1358,12 @@ button.secondary:active { background: var(--bg-subtle); }
 .chip {
   display: inline-block;
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: var(--text-dim);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-subtle);
+  letter-spacing: 0.03em;
+  color: var(--accent-amber-text);
+  background: var(--accent-amber-bg);
+  border: 1px solid var(--accent-amber-border);
   border-radius: 999px;
   padding: 0.15em 0.55em;
   margin-left: 0.4em;
@@ -869,20 +1374,40 @@ button.secondary:active { background: var(--bg-subtle); }
   font-size: 0.8rem;
   color: var(--text-soft);
   background: var(--bg-subtle);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
   padding: 0.6em 0.8em;
   margin-bottom: 1rem;
 }
 /* The mid-game banner in particular is a live status, not ambient copy -
-   an accent border makes it read as "this is telling you something right
-   now" rather than blending in with the App tab's static invariant note. */
+   the amber tone (same informational role as .chip) makes it read as
+   "this is telling you something right now" without borrowing sand
+   (system-chrome/active-control) or red (destructive-only). */
 #setup-midgame-banner {
-  border-color: var(--fg);
+  color: var(--accent-amber-text);
+  background: var(--accent-amber-bg);
+  border: 1px dashed var(--accent-amber-border);
 }
+/* M15: dev tooling isn't destructive, so it no longer borrows
+   --accent-danger (red is reserved for destructive actions) - same amber
+   informational tone as .chip/#setup-midgame-banner instead. */
 .dev-banner {
-  color: var(--accent-danger);
-  border-color: var(--accent-danger);
+  color: var(--accent-amber-text);
+  background: var(--accent-amber-bg);
+  border: 1px dashed var(--accent-amber-border);
+}
+.dev-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--accent-amber-text);
+  background: var(--accent-amber-bg);
+  border: 1px solid var(--accent-amber-border);
+  border-radius: 999px;
+  padding: 0.2em 0.6em;
+  vertical-align: middle;
 }
 
 #setup-footer {
