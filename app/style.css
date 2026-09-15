@@ -26,14 +26,14 @@
   --accent-danger: #e08a8a;
   color-scheme: dark;
 
-  /* M13/D-53 (font swapped to Vollkorn per iteration feedback): brand type
-     + shape tokens (theme-independent - same in both dark and light,
-     unlike the palette above). Every piece of text in the app uses one of
-     these two families - there is no third font anywhere. --font-display
-     defaults to Black (900); a handful of rules opt into a lighter/bolder
-     weight of the same two families where the default reads wrong (see
-     each rule's own comment), never a different font. */
-  --font-display: 'Vollkorn', Georgia, serif;
+  /* M14 brand pass (font swapped to Crimson Pro): brand type + shape
+     tokens (theme-independent - same in both dark and light, unlike the
+     palette above). Every piece of text in the app uses one of these two
+     families - there is no third font anywhere. --font-display is used at
+     800 (titles, tile numerals); --font-ui carries all UI/body at 400,
+     with 700 reserved for button labels - see the h1/.tile/button.primary
+     rules below. */
+  --font-display: 'Crimson Pro', Georgia, serif;
   --font-ui: 'Overpass', system-ui, sans-serif;
   --radius-tile: 10px;
   --radius-btn: 14px;
@@ -64,6 +64,7 @@ html, body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-ui);
+  font-weight: 400;
 }
 
 .screen {
@@ -72,15 +73,17 @@ html, body {
   margin: 0 auto;
 }
 
-/* M13/D-53: numerals, hero numbers, titles, and primary buttons use the
-   display face at Black (900) - Vollkorn's regular weight reads as a
-   normal-weight serif, not a heavy display face, so the weight must be set
-   explicitly everywhere this family is used; nothing here should rely on a
-   browser's default h1/button boldness. Everything else (labels, names,
-   settings) stays on the UI face set on html/body above. */
-h1, .tile, button.primary {
+/* M14 brand pass: titles, hero numbers, and tile numerals carry the
+   identity - Crimson Pro at 800, with lining + tabular figures forced so
+   every digit is the same width and sits on the baseline (its default
+   old-style figures would drop below it). Button labels moved OFF the
+   display face entirely - they're Overpass 700 now (see button.primary
+   below), a deliberate split from the old h1/.tile/button.primary rule
+   that put all three on the same face/weight. */
+h1, .tile {
   font-family: var(--font-display);
-  font-weight: 900;
+  font-weight: 800;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
 }
 
 /* Form controls don't reliably inherit body's font-family across engines
@@ -106,6 +109,7 @@ button.primary {
   width: 100%;
   padding: 1em;
   font-size: 1.1rem;
+  font-weight: 700; /* Overpass bold label, not the display face - see h1/.tile above */
   color: var(--btn-primary-fg);
   background: var(--btn-primary-bg);
   border: 3px solid var(--btn-primary-bg);
@@ -117,6 +121,25 @@ button.primary:disabled {
   color: var(--text-dim);
 }
 button.primary:not(:disabled):active { background: var(--btn-primary-active-bg); }
+
+/* M14 brand pass: on the Play screen only, the promoted primary button
+   carries the active player's colour instead of the fixed neutral above -
+   falls back to --btn-primary-bg/-fg if --player-accent* is ever unset, so
+   nothing breaks if this renders before renderPlay's first pass. Whichever
+   primary sibling isn't the current single promoted action gets .is-muted
+   (set by renderPlayButtons, always alongside :disabled - see its
+   comment) instead of relying on the plain :disabled look, so a muted
+   button never accidentally inherits an accent-tinted disabled state. */
+#screen-play button.primary {
+  background: var(--player-accent, var(--btn-primary-bg));
+  border-color: var(--player-accent, var(--btn-primary-bg));
+  color: var(--player-accent-ink, var(--btn-primary-fg));
+}
+#screen-play button.primary.is-muted {
+  background: var(--bg-subtle);
+  border-color: var(--bg-subtle);
+  color: var(--text-dim);
+}
 
 button.secondary {
   display: block;
@@ -409,38 +432,95 @@ button.secondary:active { background: var(--bg-subtle); }
   padding-bottom: calc(1rem + 48px);
   overflow-y: auto;
 }
-/* Issue #3: Settings is now a normal flow item in .play-toprow (left-
-   aligned, next to the right-aligned boost toast) rather than an
-   absolutely/fixed-positioned corner chip - it moves with the rest of the
-   header instead of floating over the rack. */
-.play-toprow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-  flex: 0 0 auto;
-  margin-bottom: 0.5rem;
-}
-.settings-inline {
-  flex: 0 0 auto;
-  padding: 0.5em 0.9em;
-  font-size: 0.85rem;
-  color: var(--text-soft);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-
 .play-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   flex: 0 0 auto;
+  min-height: 42px;
 }
 .play-header h1 {
   margin: 0;
   font-size: 1.5rem;
+}
+/* M14 brand pass: name / timer / settings cog / boost chips / toast /
+   message all read the active player's colour - renderPlay/applyTheme set
+   --player-accent-text per turn (fill on dark, edge on light - see
+   app.js), this is the one utility class that consumes it everywhere. */
+.play-accent-text { color: var(--player-accent-text, var(--fg)); }
+
+/* Settings (icon-only cog now) + two permanent boost chips + the boost-
+   name toast, all in one row below identity. Replaces the old
+   .play-toprow (settings + toast, above identity) and the separate
+   #play-boost-count text row (issue #3/#5) - superseded by this row. */
+.play-chrome-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  margin: 0.5rem 0;
+  min-height: 34px;
+}
+.settings-icon-btn {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.settings-icon-btn svg { width: 16px; height: 16px; }
+
+.play-boost-chips {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.boost-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 7px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  /* dimmed to a plain neutral at 0 (see renderPlayBoostCount), tinted in
+     the player's colour otherwise via .play-accent-text (in the HTML). */
+}
+.boost-chip.dim { color: var(--text-dim); }
+.boost-chip svg { width: 17px; height: 17px; flex: none; }
+.boost-chip-count { font-weight: 700; font-size: 0.75rem; color: var(--fg); }
+
+/* Boost-earned toast: right-aligned name pill that, after a beat, shrinks
+   (width/opacity/padding) to "merge" into its counter chip, which is when
+   the chip's own count actually jumps to the new total (see
+   renderPlayBoostAnnouncement's BOOST_TOAST_DISPLAY_MS/BOOST_TOAST_COLLAPSE_MS -
+   durations are a judgement call, not measured; see DECISIONS.md). */
+.boost-toast {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  transition: max-width 0.28s ease, opacity 0.28s ease, padding 0.28s ease, margin 0.28s ease;
+  max-width: 160px;
+}
+.boost-toast.collapsing {
+  max-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  opacity: 0;
 }
 /* M13/D-55: the avatar sits left of the player's name, tap-to-cycle. Plain
    button reset so it reads as an avatar, not a button, with its own tap
@@ -457,7 +537,7 @@ button.secondary:active { background: var(--bg-subtle); }
   width: 2.4rem;
   height: 2.4rem;
   padding: 0;
-  border: none;
+  border: 2px solid var(--player-accent, var(--bg-subtle));
   border-radius: 50%;
   background: var(--bg-subtle);
   flex-shrink: 0;
@@ -499,7 +579,8 @@ button.secondary:active { background: var(--bg-subtle); }
   border-width: 3px;
   border-radius: var(--radius-tile);
   font-size: clamp(0.75rem, calc(70cqh / var(--rack-rows, 3)), 1.6rem);
-  /* font-weight: 900 - from the shared h1/.tile/button.primary rule above */
+  /* font-weight: 800 - from the shared h1/.tile rule above */
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -670,49 +751,24 @@ button.secondary:active { background: var(--bg-subtle); }
 
 /* Time challenge HUD (M9). Always "running" here - the timer only shows on
    this screen while it's actively counting down (paused state lives on the
-   turn card instead, .corner-timer). */
+   turn card instead, .corner-timer). M14: colour moved from a fixed
+   accent-danger red to the player accent (.play-accent-text, in the HTML) -
+   matches PlayScreen_Redesign's Frame C, which shows the timer in the
+   player's colour, not red. */
 #play-timer {
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 900;
-  color: var(--accent-danger);
   flex: 0 0 auto;
-}
-
-/* Issue #5: reserves its line always (visibility, not hidden) - boost mode
-   is a live, next-lap-only setting, so toggling it mid-match must not
-   shift the rack below it. min-height measured, not guessed (see
-   DECISIONS.md). */
-#play-boost-count {
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-soft);
-  margin-bottom: 0.5rem;
-  min-height: 1.2em;
-  flex: 0 0 auto;
-}
-
-/* Fixed gold-on-dark regardless of theme - reads fine either way, and a
-   highlight banner shouldn't quietly blend into the current theme.
-   Lives in the header row now (see .play-header), right-aligned against
-   the player name on the left - a compact toast, not a full-width banner. */
-#play-boost-announcement {
-  text-align: right;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #111111;
-  background: #f9c74f;
-  border-radius: 8px;
-  padding: 0.35em 0.6em;
-  flex: 0 1 auto;
-  min-width: 0;
 }
 
 /* Text lives in #play-message-area now (issue #3); the spend/decline
-   buttons live in the shared #screen-play .action-row (issue #5). */
+   buttons live in the shared #screen-play .action-row (issue #5). M14:
+   colour moved from a fixed accent-danger red to the player accent
+   (.play-accent-text, in the HTML) - matches PlayScreen_Redesign's Frame B,
+   which shows this exact prompt in the player's colour, not red. */
 #play-boost-offer-text {
   font-size: 0.95rem;
-  color: var(--accent-danger);
 }
 
 /* End screen */

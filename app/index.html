@@ -4,14 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flip the Number — prototype</title>
-<!-- Vollkorn (display, Black/900) + Overpass (UI), via network link - the
-     §3.1 offline-purity caveat is knowingly accepted (first load needs
-     network; the fallback stacks in style.css's --font-display/--font-ui
-     apply if the request fails or is blocked). Every weight either font is
-     used at anywhere in the app must be requested here. -->
+<!-- M14 brand pass: Crimson Pro (display - titles + tile numerals) +
+     Overpass (UI/body), via network link - the §3.1 offline-purity caveat
+     is knowingly accepted (first load needs network; the fallback stacks
+     in style.css's --font-display/--font-ui apply if the request fails or
+     is blocked). Every weight either font is used at anywhere in the app
+     must be requested here. Supersedes Vollkorn. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vollkorn:wght@600;700;900&family=Overpass:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600;700;800&family=Overpass:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -110,6 +111,16 @@
           <button type="button" class="toggle-btn" data-theme="light">Light</button>
         </div>
       </div>
+
+      <!-- M14 brand pass: a skin is a tile palette only, independent of
+           theme and of player identity colour - see DECISIONS.md. -->
+      <div class="setting-row">
+        <span>Tile skin</span>
+        <div class="toggle-group" id="skin-toggle-group">
+          <button type="button" class="toggle-btn" data-skin="colorful">Colorful</button>
+          <button type="button" class="toggle-btn" data-skin="mono">Mono</button>
+        </div>
+      </div>
     </div>
 
     <!-- 3c Dev -->
@@ -161,24 +172,40 @@
   </section>
 
   <section id="screen-play" class="screen" hidden>
-    <!-- Issue #3: two header rows - settings/toast, then avatar+name/counter -
-         replacing the old fixed-corner Settings button and standalone
-         centered timer block. -->
-    <div class="play-toprow">
-      <button type="button" id="settings-from-play" class="settings-inline">Settings</button>
-      <div id="play-boost-announcement"></div>
-    </div>
+    <!-- M14 brand pass: identity is now the topmost row (was preceded by a
+         settings/toast strip); chrome (settings + boost chips + toast)
+         moved into one row directly below it - see PlayScreen_Redesign.dc.html
+         zones 1/2. -->
     <div class="play-header">
       <div id="play-identity">
         <button type="button" id="play-avatar-btn" class="avatar-btn" title="Tap to change your avatar">
           <img id="play-avatar-img" alt="">
         </button>
-        <h1 id="play-player-name"></h1>
+        <h1 id="play-player-name" class="play-accent-text"></h1>
       </div>
-      <div id="play-timer" hidden></div>
+      <div id="play-timer" class="play-accent-text" hidden></div>
     </div>
 
-    <div id="play-boost-count"></div>
+    <!-- Settings (icon-only cog now, was a text button) - two permanent
+         boost chips (icon + count, always present, dimmed at 0) - a
+         name-only toast that shrinks into its counter after a beat. All
+         three read the active player's colour (renderPlay/applyTheme). -->
+    <div class="play-chrome-row">
+      <button type="button" id="settings-from-play" class="settings-icon-btn play-accent-text" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+      <div id="play-boost-chips" class="play-boost-chips" hidden>
+        <span class="boost-chip play-accent-text" id="play-boost-chip-oneForTwo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="9" height="11" rx="2.5" fill="currentColor" stroke="none"></rect><rect x="13.5" y="7" width="7.5" height="11" rx="2.5"></rect></svg>
+          <span class="boost-chip-count">0</span>
+        </span>
+        <span class="boost-chip play-accent-text" id="play-boost-chip-overpay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 13 12 7 18 13"></polyline><polyline points="6 18 12 12 18 18"></polyline></svg>
+          <span class="boost-chip-count">0</span>
+        </span>
+      </div>
+      <div id="play-boost-announcement" class="boost-toast play-accent-text"></div>
+    </div>
 
     <div id="play-rack"></div>
 
@@ -209,8 +236,8 @@
          used to occupy, one less variably-sized element pushing the rack
          around. -->
     <div id="play-message-area">
-      <div id="play-message"></div>
-      <div id="play-boost-offer-text"></div>
+      <div id="play-message" class="play-accent-text"></div>
+      <div id="play-boost-offer-text" class="play-accent-text"></div>
     </div>
   </section>
 

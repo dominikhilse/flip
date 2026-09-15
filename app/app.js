@@ -51,6 +51,7 @@
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleGroupEl = document.getElementById('theme-toggle-group');
+  var skinToggleGroupEl = document.getElementById('skin-toggle-group');
   var startGameBtn = document.getElementById('start-game');
   var backToGameBtn = document.getElementById('back-to-game');
   var restartMatchBtn = document.getElementById('restart-match');
@@ -72,7 +73,11 @@
   var playAvatarBtn = document.getElementById('play-avatar-btn');
   var playAvatarImgEl = document.getElementById('play-avatar-img');
   var playTimerEl = document.getElementById('play-timer');
-  var playBoostCountEl = document.getElementById('play-boost-count');
+  var playBoostChipsEl = document.getElementById('play-boost-chips');
+  var playBoostChipEls = {
+    overpay: document.getElementById('play-boost-chip-overpay'),
+    oneForTwo: document.getElementById('play-boost-chip-oneForTwo')
+  };
   var playBoostAnnouncementEl = document.getElementById('play-boost-announcement');
   var playMessageEl = document.getElementById('play-message');
   var playSelectionSumEl = document.getElementById('play-selection-sum');
@@ -156,6 +161,31 @@
     var wantsLight = settings.theme === 'light';
     var showLight = wantsLight !== overpayFlipActive();
     document.body.classList.toggle('theme-light', showLight);
+    applyPlayerAccent(showLight);
+  }
+
+  // M14 brand pass: the active player's identity colour drives the Play-
+  // screen chrome (name/timer/settings/boost chips/toast/promoted button/
+  // message - see .play-accent-text and #screen-play button.primary in
+  // style.css). Fill is used straight on dark; on light, some fills fail
+  // 4.5:1 so text/icons drop to the hue's darker "edge" partner instead -
+  // the button/toast/chip *fills* still use the player colour directly with
+  // a cream ink, only the *text-on-bare-background* uses edge. No current
+  // player yet (Setup/Launch, or before the first turn) - leave the
+  // variables unset; every consumer falls back to a neutral default (see
+  // style.css's var(--player-accent, ...) fallbacks).
+  function applyPlayerAccent(showLight) {
+    var body = document.body;
+    if (!game || !game.players || !game.players.length) {
+      body.style.removeProperty('--player-accent');
+      body.style.removeProperty('--player-accent-ink');
+      body.style.removeProperty('--player-accent-text');
+      return;
+    }
+    var p = currentPlayer();
+    body.style.setProperty('--player-accent', p.color);
+    body.style.setProperty('--player-accent-ink', THEME.playerNameTextColor);
+    body.style.setProperty('--player-accent-text', showLight ? playerEdge(p.color) : p.color);
   }
 
   // ---- Setup screen ----
@@ -343,6 +373,12 @@
     var themeBtns = themeToggleGroupEl.querySelectorAll('.toggle-btn');
     themeBtns.forEach(function (btn) {
       btn.classList.toggle('active', settings.theme === btn.getAttribute('data-theme'));
+    });
+    // M14: skin is cosmetic like theme (a tile palette only) - same
+    // immediate-apply, no-chip treatment.
+    var skinBtns = skinToggleGroupEl.querySelectorAll('.toggle-btn');
+    skinBtns.forEach(function (btn) {
+      btn.classList.toggle('active', settings.skin === btn.getAttribute('data-skin'));
     });
 
     // Dev mode (M8) dice-choice test instrument - applies immediately like
@@ -540,6 +576,14 @@
     applyTheme();
   });
 
+  skinToggleGroupEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    queueSettingChange('skin', btn.getAttribute('data-skin'));
+    renderSettingsControls();
+    if (game) renderPlayRack();
+  });
+
   startGameBtn.addEventListener('click', function () {
     if (roster.length < 2) return;
     startNewGame();
@@ -575,11 +619,13 @@
   // game instantly - they're input-path, not rules, so there's no fairness
   // reason to wait. Rule-affecting keys are queued instead: the live effect
   // on the current game waits for the next lap boundary. theme is purely
-  // cosmetic and never touches game state at all - see applyTheme().
+  // cosmetic and never touches game state at all - see applyTheme(). skin
+  // (M14) is the same kind of cosmetic setting, just for tile colour
+  // instead of light/dark - see activeSkinTiles().
   function queueSettingChange(key, value) {
     settings[key] = value;
     STORAGE.saveSettings(settings);
-    if (key === 'theme' || !game) return;
+    if (key === 'theme' || key === 'skin' || !game) return;
     if (IMMEDIATE_SETTING_KEYS.indexOf(key) !== -1) {
       game[key] = value;
       return;
@@ -749,6 +795,10 @@
   // handoff from a mid-turn pickup pause (see onFlatChange below), which
   // shows the same turn card without touching currentRoll/selected.
   function beginTurn() {
+    // M14: abandon any boost toast still mid-animation from the previous
+    // player - its own pending setTimeouts check boostToastState before
+    // touching the DOM, so nulling it here is enough to make them no-ops.
+    boostToastState = null;
     deliverPendingBoost(currentPlayer());
     game.currentRoll = null;
     game.selected = new Set();
@@ -964,7 +1014,13 @@
     var credits = p.pendingBoostCredits;
     p.pendingBoostCredits = { overpay: 0, oneForTwo: 0 };
     if (!(credits.overpay || credits.oneForTwo) || !boostModeActive()) return;
+    // M14: amounts (not just types) are recorded alongside the delivered
+    // list - the boost-chip toast (renderPlayBoostAnnouncement) needs the
+    // exact pre-award count to hold steady until the toast "merges", and a
+    // rare simultaneous double-award (see comment above) can deliver more
+    // than 1 of a type in one go.
     var delivered = [];
+    var amounts = { overpay: 0, oneForTwo: 0 };
     BOOST_TYPES.forEach(function (type) {
       var held = p.boosts.overpay + p.boosts.oneForTwo;
       var room = Math.max(0, CONFIG.boostMaxHeld - held);
@@ -972,9 +1028,10 @@
       if (toAdd > 0) {
         p.boosts[type] += toAdd;
         delivered.push(type);
+        amounts[type] = toAdd;
       }
     });
-    if (delivered.length) p.pendingBoostAnnouncement = delivered;
+    if (delivered.length) p.pendingBoostAnnouncement = { types: delivered, amounts: amounts };
   }
 
   // Dry streak (§3.6): fewer than boostDryStreakThreshold clean (exact-move-
@@ -1182,8 +1239,105 @@
     beginTurn();
   }
 
+  // ---- M14 brand pass: skins + player-accent colour ----
+
+  // The player's identity colour (THEME.playerColors) is a flat fill hex,
+  // theme/skin-independent by design (see theme.js's comment on
+  // playerColors) - but the light theme needs a darker "edge" partner for
+  // contrast (Part 3 of DevHandoff_BrandSpec_v2). Rather than restructuring
+  // playerColors into {fill,edge,ink} triples (which would break loading
+  // existing persisted rosters - storage.js stores p.color as a plain
+  // string), look the edge up from the colorful skin's tile table: player
+  // fills are, by construction, literally the same 12 hexes as
+  // skins.colorful.tiles[1..12].fill, in the same order.
+  var PLAYER_EDGE_BY_FILL = (function () {
+    var map = {};
+    for (var n = 1; n <= 12; n++) {
+      var t = THEME.skins.colorful.tiles[n];
+      map[t.fill] = t.edge;
+    }
+    return map;
+  })();
+  function playerEdge(fillHex) {
+    return PLAYER_EDGE_BY_FILL[fillHex] || fillHex;
+  }
+
+  function hexToRgb(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+  function rgbToHex(r, g, b) {
+    function c(v) { return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'); }
+    return '#' + c(r) + c(g) + c(b);
+  }
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+    if (max === min) { h = s = 0; } else {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+      else if (max === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+    }
+    return { h: h, s: s * 100, l: l * 100 };
+  }
+  function hslToRgb(h, s, l) {
+    s /= 100; l /= 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l - c / 2, r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; } else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+    return { r: (r + m) * 255, g: (g + m) * 255, b: (b + m) * 255 };
+  }
+
+  // Mono skin: derive a 12-stop lightness ramp from the active player's own
+  // hue/saturation (hue+sat held fixed; only L steps) instead of a static
+  // table, so "mono" always matches whoever's turn it is. The exact L range
+  // (82 -> 20), the edge step (-14 L) and the ink flip point (L > 48 -> dark
+  // ink) are a judgement call, not measured - PlayScreen_Redesign.dc.html's
+  // own mockup swatches were reverse-engineered for a plausible target, but
+  // BrandSpec v2 explicitly flags "exact 12 L-steps + min delta-L" as an
+  // open question it doesn't resolve. Revisit if a real device readability
+  // pass says otherwise - see DECISIONS.md.
+  function monoRampTiles(fillHex) {
+    var rgb = hexToRgb(fillHex);
+    var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    var lMax = 82, lMin = 20;
+    var tiles = {};
+    for (var n = 1; n <= 12; n++) {
+      var t = (n - 1) / 11;
+      var l = lMax - t * (lMax - lMin);
+      var fillRgb = hslToRgb(hsl.h, hsl.s, l);
+      var fill = rgbToHex(fillRgb.r, fillRgb.g, fillRgb.b);
+      var edgeRgb = hslToRgb(hsl.h, hsl.s, Math.max(8, l - 14));
+      var edge = rgbToHex(edgeRgb.r, edgeRgb.g, edgeRgb.b);
+      var ink;
+      if (l > 48) {
+        var inkRgb = hslToRgb(hsl.h, Math.min(hsl.s, 45), 14);
+        ink = rgbToHex(inkRgb.r, inkRgb.g, inkRgb.b);
+      } else {
+        ink = '#FBF5E9';
+      }
+      tiles[n] = { fill: fill, edge: edge, ink: ink };
+    }
+    return tiles;
+  }
+
+  // Active skin's tile table - colorful is the static, unchanged CVD-safe
+  // set; mono is derived fresh per render from the current player's colour.
+  function activeSkinTiles() {
+    if (settings.skin === 'mono') return monoRampTiles(currentPlayer().color);
+    return THEME.skins.colorful.tiles;
+  }
+
   function renderPlayRack() {
     var p = currentPlayer();
+    var skinTiles = activeSkinTiles();
     // Exposed as a CSS custom property so .tile's font-size (style.css) can
     // scale against the actual row height, not just the rack container's
     // total height - cqh alone can't tell 3 short rows from 4 shorter ones,
@@ -1201,7 +1355,7 @@
       // tiles use THEME.closedTile regardless of value - the desaturated
       // fill plus the CSS inset shadow (.tile.closed) are two of the three
       // redundant closed-state cues; the dim `ink` here is the third.
-      var colors = tile.open ? THEME.tileColors[tile.value] : THEME.closedTile;
+      var colors = tile.open ? skinTiles[tile.value] : THEME.closedTile;
       btn.style.background = colors.fill;
       btn.style.borderColor = colors.edge;
       btn.style.color = colors.ink;
@@ -1372,39 +1526,90 @@
     return dice[0] === dice[1] ? '' + dice[0] : dice[0] + ' or ' + dice[1];
   }
 
-  // Issue #5: visibility, not the `hidden` attribute - this row must keep
-  // reserving its space regardless of boost mode, or toggling it mid-game
-  // (a live-at-end-of-lap setting) shifts the rack. Same pattern as the
-  // dice-total fix (issue #1) and everything below it.
+  // M14 brand pass: the old text summary ("Overpay: N (dot) 1-for-2: N")
+  // is now two permanent icon+count chips (index.html), still using the
+  // `hidden` attribute for the whole chips wrapper - unlike the vertical-
+  // stack elements elsewhere on this screen, this row's own height is
+  // already fixed by its cog-button/toast siblings (see .play-chrome-row),
+  // so hiding just the chips only affects horizontal space, not the anti-
+  // jump vertical budget (issue #5).
+  //
+  // The "last tile is always exact-only" note that used to accompany the
+  // counts as prose is dropped here - there's no room for prose in a
+  // permanent icon+count chip, and the underlying rule is unaffected (see
+  // DECISIONS.md).
   function renderPlayBoostCount() {
     var p = currentPlayer();
     if (!boostModeActive()) {
-      playBoostCountEl.style.visibility = 'hidden';
-      playBoostCountEl.textContent = '';
+      playBoostChipsEl.hidden = true;
       return;
     }
-    playBoostCountEl.style.visibility = '';
-    // The last remaining tile is always exact-only (never boostable, even
-    // holding a boost) - say so plainly instead of showing a count that
-    // implies a boost could help here.
-    if (RULES.openValues(p.rack).length === 1) {
-      playBoostCountEl.textContent = 'No boosts for the last number';
-    } else {
-      playBoostCountEl.textContent = 'Overpay: ' + p.boosts.overpay + ' · 1-for-2: ' + p.boosts.oneForTwo;
-    }
+    playBoostChipsEl.hidden = false;
+    BOOST_TYPES.forEach(function (type) {
+      var count = p.boosts[type];
+      // While this type's toast hasn't finished "merging" yet, hold the
+      // chip at its pre-award count - the visible bump happens when the
+      // toast collapses (see triggerBoostToast), not the instant the award
+      // actually lands in game state (deliverPendingBoost, at turn start).
+      if (boostToastState && !boostToastState.merged && boostToastState.amounts[type]) {
+        count -= boostToastState.amounts[type];
+      }
+      var chip = playBoostChipEls[type];
+      chip.querySelector('.boost-chip-count').textContent = count;
+      chip.classList.toggle('dim', count === 0);
+    });
+  }
+
+  // Transient UI-only state for the boost-earned toast (never persisted,
+  // never read by game logic) - tracks a toast through its two phases:
+  // held fully visible, then collapsing/merging into its chip. See
+  // BOOST_TOAST_DISPLAY_MS/BOOST_TOAST_COLLAPSE_MS below for the timing.
+  var boostToastState = null;
+
+  // "A beat" before the toast starts merging, and the CSS collapse
+  // duration it merges over - neither is specified by either redesign doc
+  // (a judgement call, not measured; tune by feel like the other cosmetic
+  // timings in this file - config.js's diceAnimationDurationMs is the same
+  // kind of value). BOOST_TOAST_COLLAPSE_MS must match style.css's
+  // .boost-toast transition-duration.
+  var BOOST_TOAST_DISPLAY_MS = 1200;
+  var BOOST_TOAST_COLLAPSE_MS = 280;
+
+  function triggerBoostToast(delivery) {
+    boostToastState = { amounts: delivery.amounts, merged: false };
+    renderPlayBoostCount();
+    playBoostAnnouncementEl.classList.remove('collapsing');
+    playBoostAnnouncementEl.style.visibility = '';
+    playBoostAnnouncementEl.textContent = delivery.types.map(function (t) { return BOOST_TYPE_LABELS[t]; }).join(' + ');
+    setTimeout(function () {
+      if (!boostToastState) return; // a fresh game/turn started; abandon this toast
+      playBoostAnnouncementEl.classList.add('collapsing');
+      setTimeout(function () {
+        if (!boostToastState) return;
+        boostToastState.merged = true;
+        playBoostAnnouncementEl.style.visibility = 'hidden';
+        playBoostAnnouncementEl.classList.remove('collapsing');
+        playBoostAnnouncementEl.textContent = '';
+        renderPlayBoostCount();
+        boostToastState = null;
+      }, BOOST_TOAST_COLLAPSE_MS);
+    }, BOOST_TOAST_DISPLAY_MS);
   }
 
   function renderPlayBoostAnnouncement() {
     var p = currentPlayer();
-    if (!p.pendingBoostAnnouncement || !p.pendingBoostAnnouncement.length) {
-      playBoostAnnouncementEl.style.visibility = 'hidden';
-      playBoostAnnouncementEl.textContent = '';
+    if (p.pendingBoostAnnouncement) {
+      var delivery = p.pendingBoostAnnouncement;
+      p.pendingBoostAnnouncement = false;
+      triggerBoostToast(delivery);
       return;
     }
-    playBoostAnnouncementEl.style.visibility = '';
-    var labels = p.pendingBoostAnnouncement.map(function (type) { return BOOST_TYPE_LABELS[type]; });
-    playBoostAnnouncementEl.textContent = 'Boost earned: ' + labels.join(' + ') + '!';
-    p.pendingBoostAnnouncement = false;
+    // A toast already mid-flight from an earlier render owns the DOM until
+    // its own timers finish (see triggerBoostToast) - leave it alone.
+    if (!boostToastState) {
+      playBoostAnnouncementEl.style.visibility = 'hidden';
+      playBoostAnnouncementEl.textContent = '';
+    }
   }
 
   // Issue #5: the spend/decline buttons now live permanently in the shared
@@ -1480,23 +1685,33 @@
     } else {
       playConfirmBtn.disabled = !currentSelectionValid(currentPlayer());
     }
+
+    // M14: exactly one primary is ever "promoted" (the player-accent
+    // colour) at a time; its sibling drops to a muted neutral instead -
+    // always alongside :disabled here (Roll/Confirm are mutually exclusive
+    // by construction, see the comment above), never in place of it.
+    playRollBtn.classList.toggle('is-muted', playRollBtn.disabled);
+    playConfirmBtn.classList.toggle('is-muted', playConfirmBtn.disabled);
   }
 
   function renderPlay() {
+    applyTheme(); // sets --player-accent* (M14) before anything below reads it
     var p = currentPlayer();
     playPlayerNameEl.textContent = p.name;
-    playPlayerNameEl.style.color = p.color;
     playAvatarImgEl.src = 'avatars/' + p.avatar;
     playAvatarImgEl.alt = p.name + '’s avatar';
-    renderPlayBoostCount();
+    // Announcement first: if there's a fresh boost to announce, it sets
+    // boostToastState before renderPlayBoostCount reads it, so the chip
+    // shows its held-steady pre-award count in this same render pass
+    // rather than flashing the real count for one frame first.
     renderPlayBoostAnnouncement();
+    renderPlayBoostCount();
     renderPlayRack();
     renderPlayDice();
     renderPlayMessage();
     renderPlaySelectionSum();
     renderPlayBoostOffer();
     renderPlayButtons();
-    applyTheme();
   }
 
   playRollBtn.addEventListener('click', onRoll);
