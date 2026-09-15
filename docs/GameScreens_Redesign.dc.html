@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/organic-ad4e9535-b5a6-4ddc-b94d-ce26fc9a3813/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600;700;800&family=Overpass:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: var(--color-bg); }
+  a { color: var(--color-accent-700); } a:hover { color: var(--color-accent); }
+</style>
+</helmet>
+<div style="max-width:1320px; margin:0 auto; padding:clamp(20px,4vw,52px) clamp(16px,4vw,40px) 120px; font-family:'Overpass',system-ui,sans-serif; color:var(--color-text);">
+
+  <header>
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">Flip the Number · The rest of the flow · Hi-fi redesign</div>
+    <h1 style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:clamp(34px,6vw,60px); line-height:1.02; letter-spacing:-0.01em; margin:12px 0 10px; font-feature-settings:'lnum' 1,'tnum' 1;">Every other screen, on brand.</h1>
+    <p style="font-size:clamp(15px,1.7vw,17px); color:var(--color-neutral-700); max-width:70ch;">The Play screen's language carried to the screens around it — the <strong>handoff card</strong>, the <strong>New Game / Settings</strong> menu, and the <strong>results</strong>. Same rules throughout: <strong>Crimson&nbsp;Pro</strong> for titles and numerals, <strong>Overpass</strong> for UI, the <strong>Colorful</strong> skin, and the <strong>active player's colour driving the chrome</strong> wherever a turn is in play. Menu chrome, which belongs to no one player, wears the brand terracotta instead.</p>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
+      <span class="tag tag-accent">Handoff · Setup · Results</span>
+      <span class="tag tag-accent-2">Matches PlayScreen exactly</span>
+      <span class="tag tag-neutral">Colorful default skin</span>
+      <span class="tag tag-outline">Player colour = chrome</span>
+    </div>
+  </header>
+
+  <div style="display:flex; flex-wrap:wrap; gap:34px; margin-top:44px; align-items:flex-start;">
+
+    <!-- ══ FRAME 1 · TURN / HANDOFF CARD (Mia · Teal, dark) ══ -->
+    <div>
+      <div style="width:322px; background:#111; color:#eee; border:11px solid #0b0b0b; border-radius:38px; overflow:hidden; box-shadow:var(--shadow-lg);">
+        <div style="display:flex; justify-content:space-between; padding:11px 22px 4px; font:400 11px 'Overpass'; opacity:.65;"><span>9:41</span><span>▮▮▮ ▮</span></div>
+        <div style="padding:6px 18px 24px; min-height:512px; display:flex; flex-direction:column;">
+
+          <!-- settings, top-right -->
+          <div style="display:flex; justify-content:flex-end; min-height:34px;">
+            <span style="width:32px; height:32px; border-radius:8px; background:#1a2624; border:1px solid #2c4a46; color:#2FBEB0; flex:none; display:inline-flex; align-items:center; justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </span>
+          </div>
+
+          <!-- centered identity -->
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:0;">
+            <span style="width:104px; height:104px; border-radius:50%; overflow:hidden; background:#26A69A; border:3px solid #26A69A; flex:none; display:block; position:relative; box-shadow:0 0 0 10px rgba(38,166,154,.14);"><img src="app/avatars/05.png" alt="" style="position:absolute; top:0; left:50%; width:150%; transform:translateX(-50%); display:block;"></span>
+            <div style="font:600 12px 'Overpass'; letter-spacing:0.12em; text-transform:uppercase; color:#6f6f6f; margin-top:22px;">Player 2 of 3 · your turn</div>
+            <div style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:50px; line-height:1; color:#2FBEB0; margin-top:6px;">Mia</div>
+            <div style="font:400 14px 'Overpass'; color:#bdbdbd; margin-top:14px; max-width:22ch;">Lay the phone flat to see your rack, or tap to begin.</div>
+          </div>
+
+          <!-- action -->
+          <div style="margin-top:auto;">
+            <div style="display:flex; align-items:center; justify-content:center; border-radius:14px; background:#26A69A; color:#FBF5E9; font:700 17px 'Overpass'; padding:15px 0; border:3px solid #26A69A;">Start turn</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:7px; margin-top:12px; font:400 12px 'Overpass'; color:#7a7a7a;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+              <span>or lay the phone flat</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div style="text-align:center; font:600 12px 'Overpass'; color:var(--color-neutral-700); margin-top:12px; max-width:322px;">1 · Handoff card <span style="color:var(--color-neutral-400);">— whose turn, in their colour; Settings reachable</span></div>
+    </div>
+
+    <!-- ══ FRAME 2 · SETUP / NEW GAME — PLAYERS (dark, brand chrome) ══ -->
+    <div>
+      <div style="width:322px; background:#111; color:#eee; border:11px solid #0b0b0b; border-radius:38px; overflow:hidden; box-shadow:var(--shadow-lg);">
+        <div style="display:flex; justify-content:space-between; padding:11px 22px 4px; font:400 11px 'Overpass'; opacity:.65;"><span>9:41</span><span>▮▮▮ ▮</span></div>
+        <div style="padding:8px 16px 0;">
+          <div style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:28px; line-height:1; color:#f2ede3;">New Game</div>
+          <div style="font:400 12px 'Overpass'; color:#8a8a8a; margin-top:3px;">Pass-and-play · 2–8 players</div>
+          <!-- tabs -->
+          <div style="display:flex; gap:4px; margin-top:14px;">
+            <span style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 8px; color:#E0975A; border-bottom:2.5px solid #C67139; font:700 10px 'Overpass';"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Players</span>
+            <span style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 8px; color:#8a8a8a; border-bottom:2.5px solid transparent; font:600 10px 'Overpass';"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Rules</span>
+            <span style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 8px; color:#8a8a8a; border-bottom:2.5px solid transparent; font:600 10px 'Overpass';"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>App</span>
+            <span style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 8px; color:#8a8a8a; border-bottom:2.5px solid transparent; font:600 10px 'Overpass';"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-2.8-2.8 2.1-2.1z"/></svg>Dev</span>
+          </div>
+        </div>
+
+        <div style="padding:14px 16px 16px; border-top:1px solid #262626; min-height:326px;">
+          <div style="font:700 11px 'Overpass'; letter-spacing:0.05em; text-transform:uppercase; color:#6a6a6a; margin-bottom:2px;">Roster (3)</div>
+
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px dashed #262626;">
+            <span style="width:30px; height:30px; border-radius:50%; overflow:hidden; background:#26A69A; border:2px solid #26A69A; flex:none; display:block; position:relative;"><img src="app/avatars/05.png" alt="" style="position:absolute; top:0; left:50%; width:150%; transform:translateX(-50%); display:block;"></span>
+            <span style="flex:1; font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:19px; color:#2FBEB0;">Mia</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b85c50" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px dashed #262626;">
+            <span style="width:30px; height:30px; border-radius:50%; background:#3D7BC0; border:2px solid #21507E; flex:none; display:inline-flex; align-items:center; justify-content:center; font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:16px; color:#FBF5E9;">S</span>
+            <span style="flex:1; font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:19px; color:#6FA6E0;">Sam</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b85c50" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 0;">
+            <span style="width:30px; height:30px; border-radius:50%; overflow:hidden; background:#7E9E38; border:2px solid #7E9E38; flex:none; display:block; position:relative;"><img src="app/avatars/12.png" alt="" style="position:absolute; top:0; left:50%; width:150%; transform:translateX(-50%); display:block;"></span>
+            <span style="flex:1; font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:19px; color:#A6C766;">Theo</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b85c50" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+          </div>
+
+          <div style="font:700 11px 'Overpass'; letter-spacing:0.05em; text-transform:uppercase; color:#6a6a6a; margin:16px 0 8px;">Add player</div>
+          <div style="display:flex; gap:8px;">
+            <span style="flex:1; border:1.5px dashed #3a3a3a; border-radius:999px; padding:10px 14px; font:400 12px 'Overpass'; color:#6a6a6a;">Name…</span>
+            <span style="background:transparent; border:1.5px solid #4a4a4a; color:#ddd; border-radius:999px; padding:10px 18px; font:700 12px 'Overpass'; display:inline-flex; align-items:center; gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</span>
+          </div>
+          <div style="font:400 10.5px 'Overpass'; color:#7a7a7a; margin:12px 2px 8px;">Colour · taken hues are dimmed</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#D34D4D; border:2px solid #99302F;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#E5842A; border:2px solid #A45610;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#E4BE2F; border:2px solid #9C7F16;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#7E9E38; border:2px solid #4C641F; opacity:.34;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#26A69A; border:2px solid #146B62; opacity:.34;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#3D7BC0; border:2px solid #21507E; opacity:.34;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#6A5AC8; border:2px solid #3E3583;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#B45699; border:2px solid #77335F;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#A65E38; border:2px solid #6E3A1F;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#6CB7E2; border:2px solid #2E6E96;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#E08AA1; border:2px solid #A24C63;"></span>
+            <span style="position:relative; width:22px; height:22px; border-radius:50%; background:#8CA07D; border:2px solid #56674A;"></span>
+          </div>
+          <div style="background:#1c1c1c; border:1px dashed #3a3a3a; border-radius:10px; padding:9px 11px; font:400 11px 'Overpass'; color:#9a9a9a; margin-top:14px;">At least 2 players to start · roster edits apply next game.</div>
+        </div>
+
+        <div style="padding:12px 16px 16px; border-top:1px solid #262626;">
+          <div style="display:flex; align-items:center; justify-content:center; border-radius:14px; background:#C67139; color:#FBF5E9; font:700 16px 'Overpass'; padding:14px 0; border:3px solid #C67139;">Start game</div>
+        </div>
+      </div>
+      <div style="text-align:center; font:600 12px 'Overpass'; color:var(--color-neutral-700); margin-top:12px; max-width:322px;">2 · New Game → Players <span style="color:var(--color-neutral-400);">— menu chrome is brand terracotta; each player wears their own hue</span></div>
+    </div>
+
+    <!-- ══ FRAME 3 · SETTINGS — RULES (dark, mid-match) ══ -->
+    <div>
+      <div style="width:322px; background:#111; color:#eee; border:11px solid #0b0b0b; border-radius:38px; overflow:hidden; box-shadow:var(--shadow-lg);">
+        <div style="display:flex; justify-content:space-between; padding:11px 22px 4px; font:400 11px 'Overpass'; opacity:.65;"><span>9:41</span><span>▮▮▮ ▮</span></div>
+        <div style="padding:8px 16px 0;">
+          <div style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:28px; line-height:1; color:#f2ede3;">Settings</div>
+          <div style="font:400 12px 'Overpass'; color:#8a8a8a; margin-top:3px;">Match in progress</div>
+          <div style="display:flex; gap:4px; margin-top:14px;">
+            <span style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 8px; color:#8a8a8a; border-bottom:2.5px solid transparent; font:600 10px 'Overpass';"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Players</span>
+            <span style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 8px; color:#E0975A; border-bottom:2.5px solid #C67139; font:700 10px 'Overpass';"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Rules</span>
+            <span style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 8px; color:#8a8a8a; border-bottom:2.5px solid transparent; font:600 10px 'Overpass';"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="9" y1="18" x2="15" y2="18"/></svg>App</span>
+            <span style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 0 8px; color:#8a8a8a; border-bottom:2.5px solid transparent; font:600 10px 'Overpass';"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-2.8-2.8 2.1-2.1z"/></svg>Dev</span>
+          </div>
+        </div>
+
+        <div style="padding:14px 16px 16px; border-top:1px solid #262626; min-height:326px;">
+          <div style="background:#241f17; border:1px dashed #5a4a2e; border-radius:10px; padding:9px 11px; font:400 11px 'Overpass'; color:#d9c199; margin-bottom:6px;">Match in progress — rule changes apply at the next lap.</div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px dashed #262626;">
+            <div style="font:400 13.5px 'Overpass'; color:#ddd;">Rack size <span style="font:700 8.5px 'Overpass'; letter-spacing:.03em; text-transform:uppercase; color:#D9A15E; background:#2a2420; border:1px solid #4a3d2c; border-radius:999px; padding:2px 7px; vertical-align:middle;">next game</span></div>
+            <div style="display:inline-flex; border:1.5px solid #3a3a3a; border-radius:999px; overflow:hidden; flex:none;"><span style="font:600 12px 'Overpass'; color:#9a9a9a; padding:6px 15px;">9</span><span style="font:700 12px 'Overpass'; color:#141414; background:#f0efe9; padding:6px 15px;">12</span></div>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px dashed #262626;">
+            <div style="font:400 13.5px 'Overpass'; color:#ddd;">Placement <span style="font:700 8.5px 'Overpass'; letter-spacing:.03em; text-transform:uppercase; color:#D9A15E; background:#2a2420; border:1px solid #4a3d2c; border-radius:999px; padding:2px 7px; vertical-align:middle;">next lap</span></div>
+            <div style="display:inline-flex; border:1.5px solid #3a3a3a; border-radius:999px; overflow:hidden; flex:none;"><span style="font:700 12px 'Overpass'; color:#141414; background:#f0efe9; padding:6px 12px;">Win</span><span style="font:600 12px 'Overpass'; color:#9a9a9a; padding:6px 12px;">Top 2</span><span style="font:600 12px 'Overpass'; color:#9a9a9a; padding:6px 12px;">All</span></div>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px dashed #262626;">
+            <div><div style="font:400 13.5px 'Overpass'; color:#ddd;">Overpay <span style="font:700 8.5px 'Overpass'; letter-spacing:.03em; text-transform:uppercase; color:#D9A15E; background:#2a2420; border:1px solid #4a3d2c; border-radius:999px; padding:2px 7px; vertical-align:middle;">next lap</span></div><div style="font:400 10.5px 'Overpass'; color:#7a7a7a; margin-top:2px;">A strict · D overpay</div></div>
+            <div style="display:inline-flex; border:1.5px solid #3a3a3a; border-radius:999px; overflow:hidden; flex:none;"><span style="font:700 12px 'Overpass'; color:#141414; background:#f0efe9; padding:6px 15px;">A</span><span style="font:600 12px 'Overpass'; color:#9a9a9a; padding:6px 15px;">D</span></div>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0;">
+            <div><div style="font:400 13.5px 'Overpass'; color:#ddd;">Boost mode <span style="font:700 8.5px 'Overpass'; letter-spacing:.03em; text-transform:uppercase; color:#D9A15E; background:#2a2420; border:1px solid #4a3d2c; border-radius:999px; padding:2px 7px; vertical-align:middle;">next lap</span></div><div style="font:400 10.5px 'Overpass'; color:#7a7a7a; margin-top:2px;">A only</div></div>
+            <span style="width:44px; height:26px; border-radius:999px; background:#333; border:1px solid #444; position:relative; flex:none; display:inline-block;"><span style="position:absolute; top:2px; left:3px; width:20px; height:20px; border-radius:50%; background:#888;"></span></span>
+          </div>
+        </div>
+
+        <div style="padding:12px 16px 16px; border-top:1px solid #262626; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; justify-content:center; border-radius:14px; background:#C67139; color:#FBF5E9; font:700 16px 'Overpass'; padding:14px 0; border:3px solid #C67139;">Back to game</div>
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; border-radius:12px; background:transparent; color:#ccc; font:600 13px 'Overpass'; padding:10px 0; border:1.5px solid #444;">Restart match</div>
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; border-radius:12px; background:transparent; color:#E4796B; font:600 13px 'Overpass'; padding:10px 0; border:1.5px solid #6e3630;">End match</div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center; font:600 12px 'Overpass'; color:var(--color-neutral-700); margin-top:12px; max-width:322px;">3 · Settings → Rules <span style="color:var(--color-neutral-400);">— segmented + toggles; “next lap / next game” chips; guarded destructive zone</span></div>
+    </div>
+
+    <!-- ══ FRAME 4 · RESULTS (dark, Mia wins) ══ -->
+    <div>
+      <div style="width:322px; background:#111; color:#eee; border:11px solid #0b0b0b; border-radius:38px; overflow:hidden; box-shadow:var(--shadow-lg);">
+        <div style="display:flex; justify-content:space-between; padding:11px 22px 4px; font:400 11px 'Overpass'; opacity:.65;"><span>9:41</span><span>▮▮▮ ▮</span></div>
+        <div style="padding:10px 18px 24px; min-height:512px; display:flex; flex-direction:column;">
+
+          <div style="text-align:center; margin-top:6px;">
+            <div style="font:600 12px 'Overpass'; letter-spacing:0.14em; text-transform:uppercase; color:#6f6f6f;">Final scores</div>
+            <div style="display:inline-flex; align-items:center; gap:9px; margin-top:8px;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#2FBEB0" stroke="none"><path d="M3 7l4.5 3L12 4l4.5 6L21 7l-1.8 11H4.8z"/></svg>
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:40px; line-height:1; color:#2FBEB0;">Mia wins!</span>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:9px; margin-top:26px;">
+            <!-- 1st -->
+            <div style="display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:16px; background:#132523; border:1.5px solid #2c4a46;">
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:22px; color:#2FBEB0; width:20px; text-align:center; font-feature-settings:'lnum' 1,'tnum' 1;">1</span>
+              <span style="width:40px; height:40px; border-radius:50%; overflow:hidden; background:#26A69A; border:2px solid #26A69A; flex:none; display:block; position:relative;"><img src="app/avatars/05.png" alt="" style="position:absolute; top:0; left:50%; width:150%; transform:translateX(-50%); display:block;"></span>
+              <span style="flex:1; font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:22px; color:#2FBEB0;">Mia</span>
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:26px; color:#f2ede3; font-feature-settings:'lnum' 1,'tnum' 1;">12</span>
+            </div>
+            <!-- 2nd -->
+            <div style="display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:16px; background:#191919; border:1px solid #2a2a2a;">
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:20px; color:#8a8a8a; width:20px; text-align:center; font-feature-settings:'lnum' 1,'tnum' 1;">2</span>
+              <span style="width:40px; height:40px; border-radius:50%; overflow:hidden; background:#7E9E38; border:2px solid #7E9E38; flex:none; display:block; position:relative;"><img src="app/avatars/12.png" alt="" style="position:absolute; top:0; left:50%; width:150%; transform:translateX(-50%); display:block;"></span>
+              <span style="flex:1; font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:21px; color:#A6C766;">Theo</span>
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:24px; color:#cfc8bb; font-feature-settings:'lnum' 1,'tnum' 1;">7</span>
+            </div>
+            <!-- 3rd -->
+            <div style="display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:16px; background:#191919; border:1px solid #2a2a2a;">
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:20px; color:#8a8a8a; width:20px; text-align:center; font-feature-settings:'lnum' 1,'tnum' 1;">3</span>
+              <span style="width:40px; height:40px; border-radius:50%; background:#3D7BC0; border:2px solid #21507E; flex:none; display:inline-flex; align-items:center; justify-content:center; font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:20px; color:#FBF5E9;">S</span>
+              <span style="flex:1; font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:21px; color:#6FA6E0;">Sam</span>
+              <span style="font-family:'Crimson Pro',Georgia,serif; font-weight:800; font-size:24px; color:#cfc8bb; font-feature-settings:'lnum' 1,'tnum' 1;">4</span>
+            </div>
+          </div>
+
+          <div style="margin-top:auto; display:flex; flex-direction:column; gap:9px;">
+            <div style="display:flex; align-items:center; justify-content:center; border-radius:14px; background:#C67139; color:#FBF5E9; font:700 17px 'Overpass'; padding:15px 0; border:3px solid #C67139;">Play again</div>
+            <div style="display:flex; align-items:center; justify-content:center; border-radius:14px; background:transparent; color:#ccc; font:600 15px 'Overpass'; padding:12px 0; border:1.5px solid #444;">New game</div>
+          </div>
+
+        </div>
+      </div>
+      <div style="text-align:center; font:600 12px 'Overpass'; color:var(--color-neutral-700); margin-top:12px; max-width:322px;">4 · Results <span style="color:var(--color-neutral-400);">— winner tinted in their colour; scores in Crimson Pro; rematch or new table</span></div>
+    </div>
+
+  </div>
+
+  <!-- ══ NOTES ══ -->
+  <section style="margin-top:60px;">
+    <div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent-700); font-weight:700;">How these hold together</div>
+    <h2 style="font-family:'Crimson Pro',Georgia,serif; font-weight:700; font-size:clamp(24px,4vw,34px); margin:6px 0 4px;">One system, four screens</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-top:22px;">
+      <div class="card elev-sm"><div class="card-kicker">Whose colour</div><p class="card-body">On the <strong>handoff</strong> and <strong>results</strong> a single player owns the moment, so their hue drives name, avatar ring, buttons and highlight. In <strong>Settings</strong> no one player is active, so chrome falls back to the brand <strong>terracotta</strong>; each player still wears their own hue in the roster.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Type, everywhere</div><p class="card-body">Crimson Pro carries every name, score and title (lining + tabular numerals); Overpass carries every label, control and body line. No third face enters the flow.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Same frame</div><p class="card-body">Identical 322px device shell, status bar, radii, dashed dividers and pill buttons as the Play screen — these read as the same app, not four mockups.</p></div>
+      <div class="card elev-sm"><div class="card-kicker">Both themes</div><p class="card-body">Shown dark to sit beside the Play screen; each inverts to the light ground on the same tokens, and the overpay flip only swaps chrome — player hues stay put.</p></div>
+    </div>
+    <p style="margin-top:20px; font-size:13px; color:var(--color-neutral-600); border-left:3px solid var(--color-accent-300); padding-left:14px; max-width:74ch;">Only <code>app/avatars/05.png</code> (Mia) and <code>12.png</code> (Theo) exist so far — Sam falls back to a <strong>colour + monogram</strong> circle, which is also the intended default before a player picks an avatar. Drop in the remaining avatars and they slot straight into these same rings.</p>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>
