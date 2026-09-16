@@ -14,6 +14,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600;700;800&family=Overpass:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+
+<!-- Home-screen install, adapted from Spudling's M6.3 pattern (no service
+     worker here - CLAUDE.md bars one; this is manifest + icon links only).
+     Paths are relative (no leading slash) since the app is served from a
+     subpath (/flip/app/), not a domain root - an absolute "/icon-512.png"
+     would resolve to the repo root and 404. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon-512.png">
+<meta name="theme-color" content="#111111">
+
+<!-- iOS's "Add to Home Screen" predates full Web App Manifest support and
+     has never fully honoured manifest.json for standalone launch or the
+     icon - these Apple-specific tags are what actually drive it there.
+     Kept alongside the manifest, not instead of it. -->
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flip the Number">
 </head>
 <body>
 

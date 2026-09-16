@@ -1187,3 +1187,37 @@ close/restart/new-tab. Investigated before touching anything further:
   has no real downside either way.
 - **Not confirmed working** - asked the user for a fresh screenshot before assuming this was
   the actual root cause, rather than declaring it fixed on a guess a second time.
+
+### 2026-09-17 — PWA install wiring (manifest + head tags), adapted from Spudling
+User added `app/assets/{icon-192,icon-512,apple-touch-icon}.png` (commit `ffb1e0d`) but nothing
+referenced them yet. Asked to check how a sibling project ("Spudling") had implemented the same
+thing, then apply the equivalent here.
+
+Spudling's pattern (its M6.3 commit): a `manifest.webmanifest` (name/short_name/start_url/
+display: standalone/background_color/theme_color/icons array) plus, in `<head>`, `<link
+rel="manifest">`, `<link rel="icon">`, `<meta name="theme-color">`, and a separate set of
+Apple-only tags (`<link rel="apple-touch-icon">` + three `apple-mobile-web-app-*` metas) kept
+*alongside* the manifest rather than instead of it, since iOS's Add to Home Screen predates full
+manifest.json support and has never fully honoured it for standalone launch or the icon. No
+service worker was part of that commit either - manifest/icons and service-worker registration
+are separate concerns there too.
+
+Two adaptations for this project, not a straight copy:
+- **All paths relative, no leading slash** (`manifest.webmanifest`, `assets/icon-192.png`, ...).
+  Spudling is served from its domain root, so its absolute `/icon-512.png`-style paths resolve
+  correctly there; this app is served from a subpath (`/flip/app/`), where the same absolute
+  path would resolve to the repo root and 404. Matches the relative-path convention
+  `app/index.html` already uses for `style.css`.
+- **`start_url: "."`** rather than `"/"`, for the same subpath reason - `app/` is where the
+  installable page actually lives (the repo-root `index.html` is a one-link splash into `app/`,
+  not part of the installed experience).
+- `background_color`/`theme_color` both set to `#111111` - the app's root/dark-theme `--bg`
+  (`style.css`), which is also the launch screen's fixed background regardless of site theme,
+  making it the closest thing this app has to a single "brand" chrome colour for a splash/status
+  bar.
+- No service worker added - locked constraint, and consistent with Spudling's own M6.3 scope.
+
+**Verified**: served `app/` from the local dev server and confirmed via `fetch()` in-page that
+`manifest.webmanifest` (200, `application/manifest+json`) and all three icon files (200) resolve
+correctly relative to `app/`, and that `document.head` contains the expected tags; zero console
+errors on load.
