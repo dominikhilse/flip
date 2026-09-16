@@ -191,6 +191,17 @@ button.primary.danger {
   border-color: var(--player-accent, var(--btn-primary-bg));
   color: var(--player-accent-ink, var(--btn-primary-fg));
 }
+/* GH #6: the promoted button's label ("Roll", "Confirm"...) was a fixed
+   cream (THEME.playerNameTextColor) regardless of theme - the one "white
+   accent" on this screen that didn't flip with the rest of the UI. A
+   literal dark colour, not --accent-sand-ink - that token flips the
+   *other* way (cream in light theme), tuned for sand's own fill getting
+   darker in light theme, which isn't this button's situation at all.
+   :not(.is-muted) keeps this from also touching the muted sibling
+   button's own --text-dim colour. */
+body.theme-light #screen-play button.primary:not(.is-muted) {
+  color: #241C10;
+}
 #screen-play button.primary.is-muted {
   background: var(--bg-subtle);
   border-color: var(--bg-subtle);
@@ -216,8 +227,20 @@ button.secondary:active { background: var(--bg-subtle); }
 .screen button.secondary + button {
   margin-top: 0.5rem;
 }
-/* .banner-actions already gaps its buttons via flex `gap` (M15) - undo the
-   generic sibling-margin rule above so the two don't stack. */
+/* GH #5: .action-row and .banner-actions are always horizontal flex rows
+   that already space their own buttons via `gap` - the generic stacking
+   margin above is for plain block-stacked groups (#setup-footer) and was
+   never meant to reach a flex row, but `.screen button.primary + button`
+   still matched Play's #screen-play .action-row (a sibling `<button>`
+   following a `button.primary`, inside a `.screen`) and pushed "Stay
+   stalled"/whichever secondary sits after a primary down by 0.5rem within
+   the row - both buttons already measured the same explicit height, so
+   this alone was the entire "Use boost sits higher than Stay stalled"
+   report, not a leftover height difference. Undoing it for every
+   `.action-row`/`.banner-actions`, not just the one screen it was caught
+   on, since neither ever wants it. */
+.action-row button.primary + button,
+.action-row button.secondary + button,
 .banner-actions button.primary + button,
 .banner-actions button.secondary + button {
   margin-top: 0;
@@ -813,10 +836,18 @@ button.secondary:active { background: var(--bg-subtle); }
   margin: 0.5rem 0;
   min-height: 34px;
 }
+/* GH #6: horizontally centered under the avatar circle above it (2.4rem
+   wide vs. this button's 2rem - both rows start from the same left edge,
+   so half the width difference centers this one under that one). Colour
+   is deliberately plain (--bg-subtle/--border/inherited icon colour, no
+   .play-accent-text) - settings is chrome, not the player's identity, and
+   should read white in dark theme / near-black in light theme regardless
+   of whose turn it is, not the active player's own colour. */
 .settings-icon-btn {
   flex: 0 0 auto;
   width: 2rem;
   height: 2rem;
+  margin-left: 0.2rem;
   padding: 0;
   display: inline-flex;
   align-items: center;

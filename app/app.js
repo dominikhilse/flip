@@ -1144,7 +1144,13 @@
   // Dry streak (§3.6): fewer than boostDryStreakThreshold clean (exact-move-
   // possible) rolls in the player's last boostDryStreakWindow rolls. Skipped
   // on a turn where this same player just spent a boost (no re-earn).
+  //
+  // GH #6: a player down to their last open tile never gets a new credit -
+  // that tile is always exact-only (RULES, never boostable even holding
+  // one), so any boost earned now can't help this game and would only
+  // carry over to next round, which read as confusing in the moment.
   function maybeAwardDryStreakBoost(p) {
+    if (RULES.openValues(p.rack).length === 1) return;
     var recent = p.rollHistory.slice(-CONFIG.boostDryStreakWindow);
     var cleanCount = recent.filter(Boolean).length;
     if (cleanCount < CONFIG.boostDryStreakThreshold) awardBoost(p);
@@ -1152,11 +1158,15 @@
 
   // Trailing-at-finish (§3.6): the moment any player shuts, whichever
   // remaining (not-yet-finished) player(s) have the most open tiles are
-  // awarded a boost each - ties all awarded.
+  // awarded a boost each - ties all awarded. GH #6: if the trailing
+  // player(s) are already down to their last tile (maxOpen === 1, i.e.
+  // every remaining player is on their last tile), nobody here can
+  // actually use a boost this game either - see the comment above.
   function awardTrailingBoosts() {
     var remaining = game.players.filter(function (pl) { return !pl.finished; });
     if (remaining.length === 0) return;
     var maxOpen = Math.max.apply(null, remaining.map(function (pl) { return RULES.openValues(pl.rack).length; }));
+    if (maxOpen === 1) return;
     remaining.forEach(function (pl) {
       if (RULES.openValues(pl.rack).length === maxOpen) awardBoost(pl);
     });

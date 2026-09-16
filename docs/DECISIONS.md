@@ -1106,3 +1106,59 @@ project's convention for exactly this kind of drift between sessions.
   screen screenshot-confirmed unaffected, and a full automated multi-player game (real button/
   tile clicks, not direct state mutation) completed to `screen-end` with zero console errors
   after stripping the debug hook.
+
+### 2026-09-19 — GH issues #5 & #6
+- **GH #5 (Use boost sits higher than Stay stalled)**: root cause was a completely different
+  rule than the M16 button-height work touched. `.screen button.primary + button, .screen
+  button.secondary + button { margin-top: 0.5rem; }` exists to space *vertically-stacked*
+  button groups (`#setup-footer`'s Start/Back/Restart/End) - but `#screen-play .action-row` is
+  a `.screen` descendant too, and "Stay stalled" is a `<button>` immediately following a
+  `button.primary` sibling ("Use boost"), so the selector matched there as well and pushed it
+  down 0.5rem *within* the horizontal row. Both buttons already measured the identical explicit
+  height (4.3rem, from M16) - this was a pure position offset, invisible to a height-only
+  `getBoundingClientRect` check, which is exactly why M16's verification passed while this
+  survived. Fixed by extending the existing `.banner-actions` override (already added for
+  End/Timeout) to cover `.action-row` too - neither ever wants stacking margin, both space
+  their own buttons via flex `gap`.
+- **GH #6, bullet 1 (stop collecting boosts once down to the last tile)**: guarded both award
+  paths - `maybeAwardDryStreakBoost` returns early when `RULES.openValues(p.rack).length === 1`
+  for that player, and `awardTrailingBoosts` skips entirely when every remaining player is
+  already on their last tile (`maxOpen === 1`). The underlying rule (last tile is always
+  exact-only, never boostable) is unchanged - this only stops a *new* credit from being banked
+  in a situation where it could never help this game, matching the report's own reasoning
+  ("would technically transfer to next round, but still confusing in the moment").
+- **GH #6, bullet 2 (Play's settings icon shows in the player's colour, not the theme)**:
+  removed `.play-accent-text` from `#settings-from-play` - it now just inherits the ambient
+  `--fg`, i.e. white in dark theme / near-black in light theme, matching the turn card's
+  settings icon (already theme-neutral since M15) rather than the player's own hue. This is a
+  partial narrowing of the M15 "Play screen keeps all its player-tinted chrome" answer -
+  settings specifically is chrome, not identity, same reasoning as every other screen's own
+  sand-vs-player-hue split; the promoted button, boost chips, name, and message stay
+  player-accented as already decided.
+- **GH #6, bullet 3 ("white accents" not following the theme, e.g. "Roll")**: the promoted
+  button's ink (`--player-accent-ink`) was a flat `THEME.playerNameTextColor` cream constant
+  regardless of theme - the one text colour on this screen that never changed with light/dark.
+  Added `body.theme-light #screen-play button.primary:not(.is-muted) { color: #241C10; }` (a
+  literal dark colour, not `--accent-sand-ink` - tried that first, but that token flips the
+  *other* way, cream in light theme, since it's tuned for sand's own fill going darker in light
+  theme, not this button's situation at all - caught by checking its resolved value before
+  trusting it, not by assuming the name matched the need). `:not(.is-muted)` keeps the muted
+  sibling button's own `--text-dim` untouched. Scanned for other hardcoded/fixed-regardless-of-
+  theme "white accents" on Play (tile selection outline, boost-chip-count, avatar ring) -
+  everything else already reads a var that already flips correctly; this button ink was the
+  one real instance.
+- **GH #6, bullet 4 (settings icon should sit centered under the avatar)**: added
+  `margin-left: 0.2rem` to the shared `.settings-icon-btn` rule (avatar-btn is 2.4rem wide,
+  settings-icon-btn 2rem - half the difference centers one under the other, both rows sharing
+  the same left origin). Shared class, so this centers it identically on both Play and the turn
+  card (already centered under its own mini avatar there) without any per-screen scoping.
+- **Verified**: temporary debug hook (removed before commit; dev-server port rotated across
+  CSS-affecting edits, reverted to 8123); GH #5 reproduced in the exact reported state (boost-
+  offer pending, light theme) and confirmed `topDelta: 0` via `getBoundingClientRect` after the
+  fix; dry-streak and trailing-boost guards unit-tested directly (both correctly skip at exactly
+  one open tile, both still award normally above that); settings-icon colour and button ink
+  checked in both themes via `getComputedStyle` (white/black settings icon, cream ink in dark
+  theme unchanged, `#241C10` ink in light theme); settings-icon horizontal centering confirmed
+  via bounding-box centre comparison against the avatar (sub-pixel delta); a full automated
+  multi-player game completed with zero console errors; turn card re-screenshotted to confirm
+  the shared `.settings-icon-btn` change reads correctly there too.
