@@ -269,9 +269,12 @@
        overriding the relevant custom properties (--fg/--text-dim/
        --text-soft/--border/--bg-subtle/--player-accent) once, in style.css,
        rather than re-declaring color on every element - see that rule's
-       own comment. Player names (h1) have no class here for the same
-       reason: they just inherit the section's plain white `color`.
-       M16's structural mirroring of #screen-play's header/chrome-row
+       own comment. Player names (h1) have no class here since they're
+       targeted directly by id instead (#turncard-name/#turncard-mini-name
+       in style.css) - they're the one exception to "everything fixed
+       white", reading the per-turn dark player-colour partner instead
+       (see showTurnCardFor in app.js). M16's structural mirroring of
+       #screen-play's header/chrome-row
        (mini avatar+name left / timer right / settings alone below) is
        kept - only the colour treatment changed. -->
   <section id="screen-turncard" class="screen turncard-screen" hidden>

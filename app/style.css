@@ -710,6 +710,14 @@ button.secondary:active { background: var(--bg-subtle); }
   color: var(--text-dim);
   margin-top: 1.4rem;
 }
+/* Player identity, not generic chrome - reads the per-turn dark fill/edge
+   partner set in showTurnCardFor (app.js), the same partner colour tiles
+   use as ink on a light fill, rather than the fixed white every other
+   element on this screen uses (see the #screen-turncard override above). */
+#turncard-name,
+#turncard-mini-name {
+  color: var(--turncard-name-color, #ffffff);
+}
 #turncard-name {
   font-family: var(--font-display);
   font-size: 2.6rem;

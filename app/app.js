@@ -878,6 +878,12 @@
   // colour and needs a constant, not another copy of it.
   function showTurnCardFor(p) {
     turncardScreenEl.style.background = p.color;
+    // Name text is the one exception to "everything else is fixed white" -
+    // it reads as the player's own identity, not generic chrome, so it gets
+    // the same dark fill/edge partner tiles already use for ink on a light
+    // fill (playerEdge, defined below) rather than plain white or the fill
+    // colour itself repeated on top of itself.
+    turncardScreenEl.style.setProperty('--turncard-name-color', playerEdge(p.color));
     turncardNameEl.textContent = p.name;
     turncardAvatarImgEl.src = 'avatars/' + p.avatar;
     turncardAvatarImgEl.alt = p.name + '’s avatar';
