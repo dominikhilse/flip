@@ -870,14 +870,14 @@
     return game.players[game.turnIndex];
   }
 
-  // M15 brand pass: the turn card used to fill the whole screen with the
-  // player's flat colour; the design session deliberately changed that to
-  // the same dark/light surface as every other screen, with the player's
-  // colour carried only by the avatar ring/glow and name (see
-  // DECISIONS.md, and applyTheme's --player-accent* wiring). applyTheme()
-  // is called here (not just left to renderPlay) so the accent vars are
-  // already correct for the new player before the turn card itself paints.
+  // M17: back to a full-bleed player-colour background (M15 had moved this
+  // to a themed dark/light surface; that's reverted - see DECISIONS.md).
+  // Everything else on the card reads fixed white/translucent instead of
+  // a theme token or --player-accent* (see style.css's #screen-turncard
+  // override block), since the background itself now IS the player's
+  // colour and needs a constant, not another copy of it.
   function showTurnCardFor(p) {
+    turncardScreenEl.style.background = p.color;
     turncardNameEl.textContent = p.name;
     turncardAvatarImgEl.src = 'avatars/' + p.avatar;
     turncardAvatarImgEl.alt = p.name + '’s avatar';

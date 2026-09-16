@@ -607,9 +607,32 @@ button.secondary:active { background: var(--bg-subtle); }
   height: 100dvh;
   padding-bottom: calc(1rem + 48px);
 }
-/* Paused-timer HUD (M9) - neutral chrome, not the player's colour (see the
-   sand-vs-player-hue colour-role split); struck-through reads as "paused"
-   on its own, no label text needed (issue #3). */
+/* M17: the background is an arbitrary saturated player colour again (set
+   inline by showTurnCardFor, JS - always wins over any CSS background
+   here), not a dark/light theme surface - so every piece of shared chrome
+   this screen reuses from Play (.settings-icon-btn, .avatar-btn, and the
+   plain inherited `color` names get via .play-header h1) needs a fixed,
+   theme-independent treatment instead. Overriding the underlying custom
+   properties ONCE, scoped to this screen, does that for every consumer
+   without re-declaring each one - #screen-turncard is the only place any
+   of these five tokens differ from the global dark/light values, and nothing
+   outside this subtree can see the override (custom properties don't leak
+   sideways or back up the tree). --player-accent covers the avatar ring
+   +glow below (both already reference it); a plain `color` covers anything
+   with no explicit colour of its own (the h1 names). */
+#screen-turncard {
+  --fg: #ffffff;
+  --text-dim: rgba(255, 255, 255, 0.72);
+  --text-soft: rgba(255, 255, 255, 0.88);
+  --border: rgba(255, 255, 255, 0.4);
+  --bg-subtle: rgba(0, 0, 0, 0.25);
+  --player-accent: #ffffff;
+  color: #ffffff;
+}
+/* Paused-timer HUD (M9) - fixed white/translucent chrome now (see the
+   #screen-turncard override above), not the player's colour or a theme
+   token; struck-through reads as "paused" on its own, no label text
+   needed (issue #3). */
 .turncard-timer {
   font-family: var(--font-display);
   font-weight: 900;
@@ -625,29 +648,31 @@ button.secondary:active { background: var(--bg-subtle); }
   justify-content: center;
   text-align: center;
 }
-/* Bigger version of Play's .avatar-btn - same head/bust crop technique,
-   just larger, with the player's colour as a ring + soft glow (M15 -
-   supersedes the old full-uncropped-character treatment from issue #2). */
+/* M17: big and shows the whole character again (not the head/bust crop
+   Play's small .avatar-btn uses) - source art is a full-body SQUARE image,
+   so a plain 100%x100% object-fit:cover inside this equally-square-before-
+   the-circular-mask box shows all of it with no cropping beyond what the
+   circle itself clips at the very corners. Ring + glow are white (see the
+   #screen-turncard override above - both already read --player-accent,
+   which now resolves to white here), since the background is the player's
+   own colour and a same-colour ring would be invisible on it. */
 .turncard-avatar-btn {
   display: block;
   position: relative;
-  width: 7.2rem;
-  height: 7.2rem;
+  width: 11rem;
+  height: 11rem;
   padding: 0;
-  border: 3px solid var(--player-accent, var(--bg-subtle));
+  border: 4px solid var(--player-accent, var(--bg-subtle));
   border-radius: 50%;
   background: var(--bg-subtle);
   overflow: hidden;
-  box-shadow: 0 0 0 12px color-mix(in srgb, var(--player-accent, transparent) 14%, transparent);
+  box-shadow: 0 0 0 16px color-mix(in srgb, var(--player-accent, transparent) 18%, transparent);
 }
 .turncard-avatar-btn img {
   display: block;
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 150%;
-  height: auto;
-  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .turncard-seat-label {
   font-size: 0.75rem;

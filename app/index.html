@@ -242,24 +242,25 @@
     </div>
   </section>
 
-  <!-- M15/M16 brand pass (GameScreens_Redesign Frame 2): a deliberate
-       change from the old full-bleed player-colour card to the same
-       dark/light surface as every other screen - the player's colour now
-       lives only in the avatar ring/glow and name (see DECISIONS.md).
-       M16: the top area now mirrors #screen-play's own header/chrome-row
-       *exactly* - mini avatar+name left / timer right on row 1
-       (.play-header/.identity-row, reused verbatim), settings alone on
-       the left on row 2 (.play-chrome-row) - so the top-left/top-right
-       corners land in the identical spot on both screens instead of
-       swapping sides, and settings isn't a lone icon with nothing to
-       anchor it to. The big centered avatar/name below is unchanged -
-       this mini pair is a consistency echo, not a replacement, and isn't
-       independently interactive (tap-to-cycle stays on the big avatar). -->
+  <!-- M17: reverted back to a full-bleed player-colour background (see
+       showTurnCardFor in app.js) - supersedes M15's move to a themed
+       dark/light surface; see DECISIONS.md. Because the background is now
+       an arbitrary saturated player colour rather than a dark/light theme
+       surface, every piece of turncard chrome is fixed white/translucent
+       instead of theme-token-driven - scoped entirely via #screen-turncard
+       overriding the relevant custom properties (--fg/--text-dim/
+       --text-soft/--border/--bg-subtle/--player-accent) once, in style.css,
+       rather than re-declaring color on every element - see that rule's
+       own comment. Player names (h1) have no class here for the same
+       reason: they just inherit the section's plain white `color`.
+       M16's structural mirroring of #screen-play's header/chrome-row
+       (mini avatar+name left / timer right / settings alone below) is
+       kept - only the colour treatment changed. -->
   <section id="screen-turncard" class="screen turncard-screen" hidden>
     <div class="play-header">
       <div class="identity-row">
         <span class="avatar-btn" aria-hidden="true"><img id="turncard-mini-avatar-img" alt=""></span>
-        <h1 id="turncard-mini-name" class="play-accent-text"></h1>
+        <h1 id="turncard-mini-name"></h1>
       </div>
       <div id="turncard-timer" class="turncard-timer" hidden></div>
     </div>
@@ -273,7 +274,7 @@
         <img id="turncard-avatar-img" alt="">
       </button>
       <div id="turncard-seat-label" class="turncard-seat-label"></div>
-      <div id="turncard-name" class="play-accent-text"></div>
+      <div id="turncard-name"></div>
       <div class="turncard-flat-hint">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2.4" transform="rotate(-6 12 12)"></rect><circle cx="12" cy="12" r="1"></circle></svg>
         <div id="turncard-instruction">Lay the phone flat to start your turn</div>

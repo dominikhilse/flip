@@ -1069,3 +1069,40 @@ feel - each one measured before and after via a temporary debug hook, not guesse
   before/after each fix; turn card and Play screens screenshot-compared side by side for exact
   corner alignment; a full automated multi-player game completed with zero console errors after
   stripping the debug hook.
+
+### 2026-09-18 — M17: turn card reverts to a full-bleed player-colour background
+Explicit user request, and a direct reversal of M15's own decision - noted here per this
+project's convention for exactly this kind of drift between sessions.
+
+- **Background**: `showTurnCardFor` (app.js) sets `turncardScreenEl.style.background = p.color`
+  again, restoring the pre-M15 full-bleed treatment M15 had deliberately moved away from (see
+  that entry above). The turn card is once again fully theme-independent - confirmed identical
+  under `.theme-light` since nothing on it reads a dark/light token any more.
+- **Chrome**: since the background is now an arbitrary saturated player colour rather than a
+  dark/light surface, every element this screen reuses from Play (`.settings-icon-btn`,
+  `.avatar-btn`, the plain-inherited `color` on the name `h1`s) needed a fixed, theme-
+  independent treatment instead of the token/`--player-accent`-driven one M16 gave it. Rather
+  than re-declare colour on each of those shared-class elements individually (and risk missing
+  one, or leaking a change into Play, which uses the same classes), scoped an override of the
+  underlying custom properties (`--fg`, `--text-dim`, `--text-soft`, `--border`, `--bg-subtle`,
+  `--player-accent`) once on `#screen-turncard` itself - every consumer picks it up
+  automatically, and custom properties don't leak sideways or back up the tree, so Play (same
+  classes, same property names, different scope) is provably unaffected - confirmed by
+  screenshot immediately after this change. `#turncard-name`/`#turncard-mini-name` dropped
+  `.play-accent-text` entirely (that class means "the player's colour," which is now the
+  background itself, not the text) and just inherit the section's plain white `color`.
+- **Avatar**: enlarged (7.2rem -> 11rem) and switched from the oversized-image/head-crop
+  technique (Play's small `.avatar-btn` still uses that) to a plain `object-fit: cover` fill.
+  The source art is a full-body *square* image, so at 1:1 box proportions this shows the whole
+  character with no cropping beyond what the circular mask itself clips at the very corners -
+  matching "enlarge the circle so it fits the entire avatar" as closely as a circular frame
+  around a square image can. Ring and glow read `--player-accent`, which the override above
+  resolves to white - a same-colour ring on a same-colour background would have been invisible.
+  The small top-left mini avatar (added in M16, explicitly *not* what this request called "the
+  large avatar circle in the center") keeps its existing head/bust crop.
+- **Verified**: temporary debug hook (removed before commit; dev-server port rotated, reverted
+  to 8123); screenshotted across two different player colours to confirm the white ring/glow/
+  text/chrome hold up regardless of hue, confirmed identical under forced `.theme-light`, Play
+  screen screenshot-confirmed unaffected, and a full automated multi-player game (real button/
+  tile clicks, not direct state mutation) completed to `screen-end` with zero console errors
+  after stripping the debug hook.
