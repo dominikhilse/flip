@@ -219,6 +219,19 @@
         </div>
       </div>
       <div class="setting-note" id="dev-time-challenge-status">Currently off</div>
+
+      <!-- M16: live-tunable dice-roll animation duration (config.js's own
+           comment already calls this "purely cosmetic... tune by feel",
+           not a measured threshold like the motion values) - takes effect
+           on the very next roll, nothing to "Set" or persist. -->
+      <div class="setting-row">
+        <span>Dice roll animation</span>
+        <div class="dev-anim-input-row">
+          <input type="number" id="dev-dice-anim-input" min="0" step="50">
+          <span class="setting-note-inline">ms</span>
+        </div>
+      </div>
+      <div class="setting-note">Purely cosmetic wobble/flash duration before the dice settle on the real (already-decided) result - applies to the very next roll.</div>
     </div>
 
     <div id="setup-footer">
@@ -229,16 +242,28 @@
     </div>
   </section>
 
-  <!-- M15 brand pass (GameScreens_Redesign Frame 2): a deliberate change
-       from the old full-bleed player-colour card to the same dark/light
-       surface as every other screen - the player's colour now lives only
-       in the avatar ring/glow and name (see DECISIONS.md). Settings moved
-       from a top-left text corner button to an icon, sharing a row with
-       the timer chip (was a separately absolutely-positioned corner) so
-       the two can never collide. -->
+  <!-- M15/M16 brand pass (GameScreens_Redesign Frame 2): a deliberate
+       change from the old full-bleed player-colour card to the same
+       dark/light surface as every other screen - the player's colour now
+       lives only in the avatar ring/glow and name (see DECISIONS.md).
+       M16: the top area now mirrors #screen-play's own header/chrome-row
+       *exactly* - mini avatar+name left / timer right on row 1
+       (.play-header/.identity-row, reused verbatim), settings alone on
+       the left on row 2 (.play-chrome-row) - so the top-left/top-right
+       corners land in the identical spot on both screens instead of
+       swapping sides, and settings isn't a lone icon with nothing to
+       anchor it to. The big centered avatar/name below is unchanged -
+       this mini pair is a consistency echo, not a replacement, and isn't
+       independently interactive (tap-to-cycle stays on the big avatar). -->
   <section id="screen-turncard" class="screen turncard-screen" hidden>
-    <div class="turncard-toprow">
+    <div class="play-header">
+      <div class="identity-row">
+        <span class="avatar-btn" aria-hidden="true"><img id="turncard-mini-avatar-img" alt=""></span>
+        <h1 id="turncard-mini-name" class="play-accent-text"></h1>
+      </div>
       <div id="turncard-timer" class="turncard-timer" hidden></div>
+    </div>
+    <div class="play-chrome-row">
       <button type="button" id="settings-from-turncard" class="settings-icon-btn" aria-label="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       </button>

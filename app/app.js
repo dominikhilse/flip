@@ -54,6 +54,7 @@
   var devTimeChallengeMinusBtn = document.getElementById('dev-time-challenge-minus');
   var devTimeChallengePlusBtn = document.getElementById('dev-time-challenge-plus');
   var devTimeChallengeStatusEl = document.getElementById('dev-time-challenge-status');
+  var devDiceAnimInputEl = document.getElementById('dev-dice-anim-input');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleGroupEl = document.getElementById('theme-toggle-group');
@@ -70,6 +71,8 @@
   var confirmDialogCancelBtn = document.getElementById('confirm-dialog-cancel');
 
   var turncardNameEl = document.getElementById('turncard-name');
+  var turncardMiniAvatarImgEl = document.getElementById('turncard-mini-avatar-img');
+  var turncardMiniNameEl = document.getElementById('turncard-mini-name');
   var turncardScreenEl = screens.turncard;
   var settingsFromTurncardBtn = document.getElementById('settings-from-turncard');
   var turncardTimerEl = document.getElementById('turncard-timer');
@@ -448,6 +451,16 @@
     devTimeChallengeStatusEl.textContent =
       (settings.timeChallengeSeconds > 0 ? 'Currently ' + formatSecondsLabel(settings.timeChallengeSeconds) : 'Currently off') +
       (midGame ? ' - applies next game' : '');
+
+    // M16: mutates CONFIG directly (not settings/localStorage) - purely
+    // cosmetic and explicitly "tune by feel" per config.js's own comment,
+    // not a persisted preference; live for this session only, effective on
+    // the very next roll. Only reflect CONFIG here if the field isn't
+    // currently focused, so a mid-edit keystroke never gets clobbered by a
+    // re-render.
+    if (document.activeElement !== devDiceAnimInputEl) {
+      devDiceAnimInputEl.value = CONFIG.diceAnimationDurationMs;
+    }
   }
 
   function renderPrimaryAction() {
@@ -582,6 +595,15 @@
   }
   devTimeChallengeMinusBtn.addEventListener('click', function () { stepTimeChallenge(-15); });
   devTimeChallengePlusBtn.addEventListener('click', function () { stepTimeChallenge(15); });
+
+  // M16: live dice-roll animation duration - see the comment on CONFIG in
+  // renderSettingsControls. No "Set" button - takes effect immediately,
+  // same "type a number to test" spirit as the harness's own sliders.
+  devDiceAnimInputEl.addEventListener('input', function () {
+    var raw = parseInt(devDiceAnimInputEl.value, 10);
+    if (!Number.isFinite(raw) || raw < 0) return;
+    CONFIG.diceAnimationDurationMs = raw;
+  });
 
   // Guarded (M11, D-51): a match is always live whenever this button is
   // visible (see renderPrimaryAction), so it always needs the confirm.
@@ -859,6 +881,11 @@
     turncardNameEl.textContent = p.name;
     turncardAvatarImgEl.src = 'avatars/' + p.avatar;
     turncardAvatarImgEl.alt = p.name + '’s avatar';
+    // M16: mini avatar+name echo in the top-left corner, matching Play's
+    // header exactly (see index.html's comment on .identity-row) - purely
+    // a consistency cue, not independently interactive.
+    turncardMiniAvatarImgEl.src = 'avatars/' + p.avatar;
+    turncardMiniNameEl.textContent = p.name;
     turncardSeatLabelEl.textContent = 'Player ' + (game.turnIndex + 1) + ' of ' + game.players.length +
       (p.finished ? '' : ' · your turn');
     // Real, existing tap-to-proceed path (D-29) - shown only when tapping

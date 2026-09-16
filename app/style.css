@@ -558,6 +558,23 @@ button.secondary:active { background: var(--bg-subtle); }
   text-align: center;
   display: inline-block;
 }
+/* M16: dev-only free-text ms input (dice roll animation duration) - plain
+   number field, distinct from the switch+stepper pattern above since this
+   one's genuinely "type any number to test", not a bounded on/off knob. */
+.dev-anim-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.dev-anim-input-row input[type="number"] {
+  width: 4.5rem;
+  padding: 0.4em 0.5em;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+}
 .setting-row.disabled {
   opacity: 0.45;
 }
@@ -577,22 +594,18 @@ button.secondary:active { background: var(--bg-subtle); }
   padding: 0;
 }
 
-/* Turn card (M15 brand pass) - a themed dark/light column, matching
-   #screen-play's own structure, rather than the old fixed full-bleed
-   player-colour card (see the :root token block comment and
-   showTurnCardFor in app.js). */
+/* Turn card (M15/M16 brand pass) - a themed dark/light column, matching
+   #screen-play's own structure and padding *exactly* (only padding-bottom
+   overridden, same as #screen-play - left/right/top come from the shared
+   .screen base) rather than the old fixed full-bleed player-colour card
+   (see the :root token block comment and showTurnCardFor in app.js) - so
+   the mini avatar/name/timer/settings row lines up pixel-for-pixel with
+   Play's, not just structurally. */
 .turncard-screen {
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  padding: 1rem 1.25rem calc(1rem + 48px);
-}
-.turncard-toprow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex: 0 0 auto;
-  min-height: 34px;
+  padding-bottom: calc(1rem + 48px);
 }
 /* Paused-timer HUD (M9) - neutral chrome, not the player's colour (see the
    sand-vs-player-hue colour-role split); struck-through reads as "paused"
@@ -838,7 +851,12 @@ button.secondary:active { background: var(--bg-subtle); }
 /* M13/D-55: the avatar sits left of the player's name, tap-to-cycle. Plain
    button reset so it reads as an avatar, not a button, with its own tap
    affordance implied by the image itself rather than button chrome. */
-#play-identity {
+/* M16: .identity-row is the same layout, reused on the turn card's own
+   mini avatar+name (see #screen-turncard below) so both screens' top-left
+   corner is pixel-identical - #play-identity kept as the id selector too,
+   just so nothing else needs to change. */
+#play-identity,
+.identity-row {
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -996,15 +1014,22 @@ button.secondary:active { background: var(--bg-subtle); }
 #play-message.stalled { color: var(--accent-danger); }
 #play-message.notice { color: var(--text-muted); }
 
-/* Issue #5: sits directly above the dice now (was above the rack) -
+/* Issue #5/#16: sits directly above the dice now (was above the rack) -
    min-height measured for its longest real content (the 1-for-2 boost
-   variant wrapping to two lines on a phone-width screen), not guessed. */
+   variant wrapping to two lines on a phone-width screen), not guessed.
+   1.2em was still ~0.7px short of the real rendered line height (Overpass
+   at 0.9rem measures ~18px, not the 17.28px 1.2em implies) - small enough
+   to go unnoticed as a static gap, but it made the rack visibly shrink by
+   that same ~0.7px the instant a roll made this element visible
+   (visibility hidden -> '', see renderPlaySelectionSum), which read as
+   "the grid resizes when the dice start animating" even though the dice
+   themselves were never the cause. Bumped past the measured real value. */
 #play-selection-sum {
   text-align: center;
   font-size: 0.9rem;
   color: var(--text-soft);
   margin: 0.35rem 0;
-  min-height: 1.2em;
+  min-height: 1.3em;
   flex: 0 0 auto;
 }
 
@@ -1037,27 +1062,35 @@ button.secondary:active { background: var(--bg-subtle); }
   flex: 0 0 auto;
 }
 .action-row button.primary { flex: 1; }
-/* Issue #3: within Play's own action-rows specifically (Roll/Confirm and
-   the boost spend-or-stay row), every button - primary or secondary -
+/* Issue #3/#16: within Play's own action-rows specifically (Roll/Confirm
+   and the boost spend-or-stay row), every button - primary or secondary -
    matches size exactly. Scoped to #screen-play rather than broadened
    globally, so Setup/End's primary-vs-secondary buttons and the confirm
    dialog's own sizing (already handled separately, just below) are
-   unaffected - this fixes a real, reported mismatch (button.secondary's
-   smaller padding/font-size than button.primary made "Stay stalled"
-   noticeably taller and wider than "Use boost"), not a cosmetic tweak. */
+   unaffected.
+   An explicit `height` (not just matching padding/font-size + relying on
+   the row's align-items:stretch) is load-bearing here, not decorative:
+   `.secondary`'s 1px border vs `.primary`'s 3px, and each button's own
+   font-metric line-box, made align-items:stretch settle on a real,
+   measured ~8px difference between "Use boost" and "Stay stalled" even
+   with matching padding/font-size - stretch fills the row's cross size,
+   but the row's own natural height was already being set by whichever
+   button happened to be tallest, so a shorter button could still render
+   shorter. A fixed height on every button removes that dependency
+   entirely; the button becomes its own centering flex box (display:flex)
+   so the text still sits centered regardless of the padding/height gap
+   this leaves for a shorter button, and #screen-play .action-row's own
+   min-height below (still 4.3rem) is then just a redundant safety floor
+   for the row itself, not what does the equalizing. */
 #screen-play .action-row button {
   flex: 1;
-  padding: 1em;
+  height: 4.3rem;
+  padding: 0 1em;
   font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-/* Issue #5: this row now swaps between three button sets (boost-offer,
-   roll/confirm, next-player) in place, so its own height must be fixed -
-   otherwise the state swap itself becomes a new source of the same
-   grid-jump bug this whole fix is for. min-height measured against the
-   tallest real button (primary/Vollkorn, ~67px) via getBoundingClientRect,
-   not guessed; align-items:stretch (the row's flex default) makes every
-   button match it exactly, which also fixes a pre-existing few-px height
-   mismatch between primary and secondary buttons in the same row. */
 #screen-play .action-row {
   min-height: 4.3rem;
 }

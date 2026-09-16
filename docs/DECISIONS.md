@@ -1005,3 +1005,67 @@ doc's tokens/mockups.
   banner, ranked rows, Benched note) in both themes; zero console errors throughout; the full
   roster -> setup -> turn card -> roll flow re-verified through real UI clicks after stripping
   the debug hook.
+
+### 2026-09-17 — M16: post-M15 bug reports (grid jump, button heights, turn card layout, dice-anim dev control)
+Real-device bug reports from the M15 pass, root-caused individually rather than patched by
+feel - each one measured before and after via a temporary debug hook, not guessed.
+
+- **The dice-roll grid jump was never about the dice.** Measured `#play-rack`'s height across
+  the whole animation window (50ms samples): the entire ~0.73px shift happens synchronously the
+  instant `onRoll()` runs, then stays flat for the rest of the wobble/flash animation - so the
+  animation itself was innocent. Root cause: `#play-selection-sum`'s `min-height: 1.2em` was
+  ~0.7px short of the real rendered line height (Overpass at 0.9rem measures ~18px, 1.2em only
+  reserves ~17.28px) - the exact same "estimated min-height, not measured" bug class as several
+  earlier issues in this project, just small enough this time to hide behind the dice animation
+  that happened to start at the same moment. Fixed by bumping to `1.3em`, re-verified as an
+  exact 0px rack delta across the full animation window.
+- **The boost-offer button-height mismatch was a real align-items:stretch failure, not a
+  leftover font-metric issue.** Measured `getComputedStyle` on all four action-row buttons:
+  "Use boost" (primary) stretched to the row's 68.8px, "Stay stalled" (secondary) sat at
+  60.8px despite identical padding, font-size, and font-family (both Overpass since the M14
+  pass removed the display face from `button.primary`) - `align-items: stretch` on the row
+  (computed as `normal`, which should behave as stretch) simply wasn't equalizing a
+  border-width-driven or other latent min-content difference between primary/secondary is
+  buttons. Rather than chase the exact CSS engine behaviour further, switched to the more
+  robust fix the report asked for: `#screen-play .action-row button` now gets an **explicit,
+  identical `height: 4.3rem`** (not just padding/font-size matching + hoping stretch equalizes
+  the rest) and becomes its own centering flex box (`display:flex; align-items:center;
+  justify-content:center`) so text stays centered regardless of any remaining content-height
+  slack. Re-verified: Roll/Confirm/Use boost/Stay stalled/Next player all measure exactly
+  68.796875px in every state.
+- **Turn card top area rebuilt to mirror Play's header/chrome-row *exactly*, not just
+  conceptually.** Previously: settings top-right, timer top-left, no avatar/name up top - the
+  reverse of Play's layout (identity left/timer right in `.play-header`, settings alone on the
+  left in `.play-chrome-row` below it) and no anchor for the lone settings icon. Fixed by
+  literally reusing `.play-header`/`.play-chrome-row`/`.identity-row` (a new class alias for
+  `#play-identity`'s rules) and `.turncard-screen`'s padding now matches `#screen-play`'s
+  exactly (only `padding-bottom` overridden, not a separate `1.25rem` side value) - so the
+  avatar/name/timer/settings all land in the pixel-identical spot on both screens, confirmed via
+  side-by-side screenshot comparison. The new mini avatar+name is decorative only (not
+  independently tap-to-cycle - that stays on the big centered avatar, avoiding two ways to do
+  the same thing) and reads `--player-accent-text` like everything else; the settings icon
+  stays neutral, per M15's sand-vs-player-hue split.
+- **New Dev-tab control**: a plain live-editable number input for
+  `CONFIG.diceAnimationDurationMs` (ms), applied on the very next roll, no "Set" button -
+  matches config.js's own "purely cosmetic... tune by feel" framing for this value already.
+  Mutates `CONFIG` directly, not `settings`/localStorage (ephemeral, session-only, consistent
+  with it never having been a persisted preference). `renderSettingsControls()` skips
+  overwriting the field while it has focus, so a re-render mid-keystroke can't clobber typing.
+- **Not built: "Player X had the highest score" on the Timeout screen.** The requested change -
+  compute each player's progress (highest sum of closed tiles) and display that player's name,
+  without showing the number - runs directly into a locked, explicitly "stop and report" rule
+  in the milestone plan (D-02, plan §8): *"Remaining tile values never affect winning, are
+  never displayed as a score, and never rank a player... If you are adding a visible number
+  that represents remaining points, you are violating this rule — stop."* Picking which
+  player's name to surface based on an internal points comparison **is** ranking a player by
+  points, even with the digit itself withheld - the rule's own wording ("never rank a player")
+  covers exactly this, not just the printed number. Flagged back to the user rather than
+  built; the existing "ran out of time" copy (naming whoever's turn was live at the timeout,
+  no ranking involved) is left in place pending their call - amend D-02 deliberately if they
+  want this, or land it once the flagged future scoring iteration actually relaxes D-02.
+- **Verified**: temporary debug hook (removed before commit; dev-server port rotated four times
+  across this pass due to repeated browser HTTP-cache staleness on CSS-only edits, reverted to
+  8123); rack-height and button-height deltas measured precisely via `getBoundingClientRect`
+  before/after each fix; turn card and Play screens screenshot-compared side by side for exact
+  corner alignment; a full automated multi-player game completed with zero console errors after
+  stripping the debug hook.
