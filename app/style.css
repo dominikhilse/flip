@@ -140,6 +140,11 @@ button, input, select, textarea {
 button {
   -webkit-appearance: none;
   appearance: none;
+  /* iOS Safari's default tap-highlight is a translucent blue overlay on
+     any tappable element - every button here already has its own :active
+     state for touch feedback, so this default only risks tinting an
+     icon-only button (like .settings-icon-btn) blue on/just after a tap. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* M15 brand pass: primary buttons are sand (system chrome) everywhere

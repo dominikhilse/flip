@@ -1162,3 +1162,28 @@ project's convention for exactly this kind of drift between sessions.
   via bounding-box centre comparison against the avatar (sub-pixel delta); a full automated
   multi-player game completed with zero console errors; turn card re-screenshotted to confirm
   the shared `.settings-icon-btn` change reads correctly there too.
+
+### 2026-09-17 — GH #6 follow-up: settings icon still blue on real device
+User confirmed the GH #6 position fix landed on the real device, but the settings icon still
+shows blue - in Safari directly, not just the "Add to Home Screen" PWA, and after a full
+close/restart/new-tab. Investigated before touching anything further:
+
+- Confirmed the source (`#settings-from-play` has no `.play-accent-text` class, no inline JS
+  colour, `.settings-icon-btn` sets no `color` of its own) and the *live deployed* file agree -
+  fetched `https://dominikhilse.github.io/flip/app/style.css` directly and it already has the
+  fix. `cache-control: max-age=600`, `age: 0` on that response - the CDN itself is serving
+  fresh content, not a stale cached copy. Confirmed GitHub Pages' own settings deploy from
+  `main` at `/`, matching what was fetched.
+- This rules out "not actually deployed" and "CDN cache" as explanations, and a fresh Safari
+  tab after a full restart makes a lingering client HTTP cache less likely too - none of it is
+  proof positive, since real iOS Safari/WebKit behaviour can't be reproduced in this session's
+  Chromium-based preview tooling at all, only reasoned about from documented behaviour.
+- Added `-webkit-tap-highlight-color: transparent` to the global `button` reset as a defensive
+  fix regardless of whether it's the actual cause here: iOS Safari's default tap highlight is a
+  translucent blue overlay on any tappable element, this project had never reset it, and an
+  icon-only button with a mostly-transparent background (`.settings-icon-btn`) is exactly the
+  shape of element where that default would read as "the icon is blue" rather than a normal
+  highlight. Every button already has its own `:active` state for real touch feedback, so this
+  has no real downside either way.
+- **Not confirmed working** - asked the user for a fresh screenshot before assuming this was
+  the actual root cause, rather than declaring it fixed on a guess a second time.
