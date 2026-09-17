@@ -1221,3 +1221,47 @@ Two adaptations for this project, not a straight copy:
 `manifest.webmanifest` (200, `application/manifest+json`) and all three icon files (200) resolve
 correctly relative to `app/`, and that `document.head` contains the expected tags; zero console
 errors on load.
+
+### 2026-09-19 — M18 clarification: "Confirm" is the existing button, unchanged; flow is additive
+
+Before building M18, flagged to the user that its "Confirm commits the previewed boost" language
+was ambiguous against the shipped code: today, `#play-confirm` is already hidden for the entire
+`boostOfferPending` window, and `onBoostSpend` (bound to "Use boost") never touches tile selection
+- it only resolves the *stall*, after which the player selects tiles and hits the same `#play-confirm`
+as any other move. Also flagged that acceptance criterion 5 ("single-applicable-boost case unchanged
+from today, resolved via Confirm") seemed to contradict a same-tap-commits reading of today's flow.
+
+**User's clarification, settling both:** today's flow already *is* "Use boost → select tiles →
+Confirm" even in the single-applicable-boost case - `onBoostSpend` was never a move-commit, only a
+boost-type commit that unstalls the roll. M18 doesn't change `onConfirm` or that shape at all. It
+only inserts an optional "Change boost" step, cyclable **before tile selection, after it, or
+interleaved with it** ("select tiles, (still a change boost is possible, causing the user to have to
+or being able to select other tiles)") - i.e. `boostSpentType` stays mutable right up until the
+existing Confirm fires, same as it's always been the single source of truth
+`currentSelectionValid`/dice-highlighting/the D-34 overpay theme-flip read every render.
+
+**Implementation, built accordingly:**
+- `selectBoostTypeToOffer` refactored (behaviour-preserving) to be the first element of a new
+  `applicableBoostTypes(p, openVals, dice, total)` - the full ordered list (1-for-2 first) of held
+  types that resolve this stall, computed once per roll and frozen on `game.currentRoll` for that
+  roll's lifetime.
+- `onBoostSpend` (Use boost) is untouched - still spends the default (first) type immediately,
+  exactly as before D-56.
+- New `onBoostChange` (Change boost): cycles `boostSpentType` through that fixed list, refunding the
+  outgoing type's count and charging the incoming one - so the player's held counts are always
+  correct no matter how many times they cycle. It does not touch `game.selected`; a selection that's
+  no longer valid under the new type just fails `currentSelectionValid` (same "adjust and see" UX any
+  other rule-driven invalidation already has), matching "having to select other tiles."
+- `onConfirm` is **not modified at all** - it already only reads `boostSpentType` at the end, exactly
+  as it did before M18.
+- `#play-boost-change` takes `#play-roll`'s visible slot (Roll hidden instead) whenever a boost has
+  been spent and more than one type is still applicable - preserves the existing "exactly one
+  secondary control alongside Confirm" row shape instead of adding a third simultaneous button.
+  Hidden whenever only one type applies, reproducing "unchanged from today" for that case exactly.
+
+**Verified**: real-click walkthrough of both the two-type (cycle to overpay, confirm, inventory ends
+correct: spent type debited, cycled-away type refunded to its original count) and one-type (no
+Change-boost control, behaves identically to pre-M18) paths, zero console errors; a temporary
+`window.__debug` harness then drove 6 full automated games (~280 turns, boost mode on, random
+decline/spend/cycle mix) to completion via the real `onRoll`/`onBoostSpend`/`onBoostChange`/
+`onConfirm`/`onPass` functions with zero errors and no dead-end states, before being stripped.

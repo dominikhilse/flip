@@ -98,6 +98,7 @@
   var playBoostOfferTextEl = document.getElementById('play-boost-offer-text');
   var playBoostSpendBtn = document.getElementById('play-boost-spend');
   var playBoostDeclineBtn = document.getElementById('play-boost-decline');
+  var playBoostChangeBtn = document.getElementById('play-boost-change');
   var playRollBtn = document.getElementById('play-roll');
   var playConfirmBtn = document.getElementById('play-confirm');
   var playPassBtn = document.getElementById('play-pass');
@@ -1178,17 +1179,26 @@
     });
   }
 
-  // Auto-select spend (§3.6b/D-36-D-37): never a which-boost picker. Compute
-  // which held types would actually resolve THIS stall; 1-for-2 is checked
-  // first and preferred when both would, conserving the strictly-more-
-  // versatile overpay for a stall only it can rescue (overpay's reachable
-  // set is a proven superset of 1-for-2's, so this ordering alone is
-  // enough - no need to separately confirm overpay also resolves before
-  // falling back to it). Returns the type to offer, or null for no offer.
+  // Which held types actually resolve THIS stall, 1-for-2 first (conserving
+  // the strictly-more-versatile overpay for a stall only it can rescue -
+  // overpay's reachable set is a proven superset of 1-for-2's, so this
+  // ordering alone is enough, no need to separately confirm overpay also
+  // resolves before falling back to it). D-36/§3.6b's auto-select is just
+  // this list's first entry (below); M18/D-56's cycle-and-preview is this
+  // full list, in the same order, with the player able to step past the
+  // default instead of only ever getting it.
+  function applicableBoostTypes(p, openVals, dice, total) {
+    var types = [];
+    if (p.boosts.oneForTwo >= 1 && RULES.oneForTwoResolvable(openVals, dice)) types.push('oneForTwo');
+    if (p.boosts.overpay >= 1 && RULES.anyLegalMoveExists(openVals, total, 'D')) types.push('overpay');
+    return types;
+  }
+
+  // Auto-select spend (§3.6b/D-36-D-37, default per D-56): the offer never
+  // presents a which-boost picker - it names one type, the first of
+  // applicableBoostTypes(). Returns the type to offer, or null for no offer.
   function selectBoostTypeToOffer(p, openVals, dice, total) {
-    if (p.boosts.oneForTwo >= 1 && RULES.oneForTwoResolvable(openVals, dice)) return 'oneForTwo';
-    if (p.boosts.overpay >= 1 && RULES.anyLegalMoveExists(openVals, total, 'D')) return 'overpay';
-    return null;
+    return applicableBoostTypes(p, openVals, dice, total)[0] || null;
   }
 
   // ---- Dice count (once unlocked) ----
@@ -1233,9 +1243,11 @@
       if (p.rollHistory.length > CONFIG.boostDryStreakWindow) p.rollHistory.shift();
     }
 
-    // Auto-select which type (if any) to offer - never offer one that
-    // wouldn't actually resolve this stall (§3.6b/D-36).
-    var offeredBoostType = (stalled && boostModeActive()) ? selectBoostTypeToOffer(p, openVals, dice, total) : null;
+    // Never offer/allow a type that wouldn't actually resolve this stall
+    // (§3.6b/D-36) - computed once per roll since it depends on the dice
+    // and rack state at roll time, not on anything that changes afterward.
+    var boostTypesThisRoll = (stalled && boostModeActive()) ? applicableBoostTypes(p, openVals, dice, total) : [];
+    var offeredBoostType = boostTypesThisRoll[0] || null;
 
     game.currentRoll = {
       dice: dice,
@@ -1243,6 +1255,10 @@
       stalled: stalled,
       boostOfferPending: !!offeredBoostType,
       offeredBoostType: offeredBoostType,
+      // Fixed for the roll's lifetime (M18/D-56) - onBoostChange cycles
+      // boostSpentType through this list, it never recomputes the list
+      // itself.
+      applicableBoostTypes: boostTypesThisRoll,
       boostSpentType: null // set on spend - null | 'overpay' | 'oneForTwo'
     };
     game.selected = new Set();
@@ -1275,6 +1291,31 @@
     if (!game.currentRoll || !game.currentRoll.boostOfferPending) return;
     game.currentRoll.boostOfferPending = false;
     // Falls back to a normal stall - rack unchanged, boost retained.
+    renderPlay();
+  }
+
+  // M18/D-56: cycles boostSpentType through this roll's fixed
+  // applicableBoostTypes list, refunding the outgoing type and charging the
+  // incoming one so the player's held counts are always exactly right no
+  // matter how many times they cycle before Confirm. Everything downstream
+  // (currentSelectionValid, the whole-rack-block message, dice highlighting,
+  // the D-34 overpay theme flip) already keys off boostSpentType and
+  // re-derives on the renderPlay() below - this never needed its own
+  // parallel logic. Available any time a boost is active and more than one
+  // type applies, including mid-selection - a stale selection just fails
+  // currentSelectionValid under the new type until the player adjusts it,
+  // same as any other rule-driven invalidation.
+  function onBoostChange() {
+    var roll = game.currentRoll;
+    if (!roll || !roll.boostSpentType) return;
+    var types = roll.applicableBoostTypes;
+    if (!types || types.length < 2) return;
+    var p = currentPlayer();
+    var current = roll.boostSpentType;
+    var next = types[(types.indexOf(current) + 1) % types.length];
+    p.boosts[current]++;
+    p.boosts[next]--;
+    roll.boostSpentType = next;
     renderPlay();
   }
 
@@ -1794,10 +1835,17 @@
   function renderPlayButtons() {
     var boostOfferPending = !!(game.currentRoll && game.currentRoll.boostOfferPending);
     var stalled = !!(game.currentRoll && game.currentRoll.stalled) && !boostOfferPending;
+    // M18: only once a boost has actually been spent AND this roll's fixed
+    // applicable set has more than one entry - i.e. there's something to
+    // cycle to. Takes Roll's slot (below) rather than adding a third
+    // visible button; Confirm's own hidden/disabled logic is untouched.
+    var canChangeBoost = !!(game.currentRoll && game.currentRoll.boostSpentType &&
+      game.currentRoll.applicableBoostTypes && game.currentRoll.applicableBoostTypes.length > 1);
 
     playBoostSpendBtn.hidden = !boostOfferPending;
     playBoostDeclineBtn.hidden = !boostOfferPending;
-    playRollBtn.hidden = stalled || boostOfferPending;
+    playBoostChangeBtn.hidden = !canChangeBoost;
+    playRollBtn.hidden = stalled || boostOfferPending || canChangeBoost;
     playPassBtn.hidden = !stalled;
     playConfirmBtn.hidden = stalled || boostOfferPending;
 
@@ -1842,6 +1890,7 @@
   playPassBtn.addEventListener('click', onPass);
   playBoostSpendBtn.addEventListener('click', onBoostSpend);
   playBoostDeclineBtn.addEventListener('click', onBoostDecline);
+  playBoostChangeBtn.addEventListener('click', onBoostChange);
   playAvatarBtn.addEventListener('click', function () { cycleAvatar(currentPlayer()); renderPlay(); });
 
   // ---- End screen ----

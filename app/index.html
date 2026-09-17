@@ -357,12 +357,18 @@
     <div id="play-dice-area"></div>
 
     <!-- Issue #5: boost-offer buttons merged into the single shared
-         .action-row below (renderPlayButtons manages all five buttons'
+         .action-row below (renderPlayButtons manages all six buttons'
          hidden state) instead of a separate wrapper div, so the row's own
-         reserved height never changes based on which state is showing. -->
+         reserved height never changes based on which state is showing.
+         M18: #play-boost-change takes #play-roll's slot (Roll is hidden
+         instead) once a boost has been spent and more than one held type
+         would still resolve this stall - Confirm's own hidden/disabled
+         logic is untouched, it just keeps reading the currently-selected
+         boost type same as before. -->
     <div class="action-row">
       <button id="play-boost-spend" class="primary">Use boost</button>
       <button id="play-boost-decline" class="secondary">Stay stalled</button>
+      <button id="play-boost-change" class="secondary">Change boost</button>
       <button id="play-roll" class="primary">Roll</button>
       <button id="play-confirm" class="primary">Confirm</button>
       <button id="play-pass" class="primary">Next player</button>
