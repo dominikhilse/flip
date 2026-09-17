@@ -1265,3 +1265,37 @@ Change-boost control, behaves identically to pre-M18) paths, zero console errors
 `window.__debug` harness then drove 6 full automated games (~280 turns, boost mode on, random
 decline/spend/cycle mix) to completion via the real `onRoll`/`onBoostSpend`/`onBoostChange`/
 `onConfirm`/`onPass` functions with zero errors and no dead-end states, before being stripped.
+
+### 2026-09-19 — M18 bug: real-device reports traced to premature inventory decrement
+
+Two real-device reports came in together: (1) a single-die stall on a 2-tile rack where the
+confirmed move only made sense under an overpay boost, yet the 1-for-2 chip was what stood out
+next to it; (2) with only one boost type actually resolving a stall, "Change boost" still
+appeared and could seemingly spend a type showing a `0` count.
+
+Root cause, one bug behind both: the initial M18 build decremented `p.boosts[type]` immediately
+in `onBoostSpend`, then refunded/re-charged on every `onBoostChange` cycle. Whichever type wasn't
+the *currently previewed* one always displayed its full original count, and the currently-previewed
+one always displayed already-spent - correct only for the type actually confirmed, misleading for
+everything shown *before* Confirm. Report (1) was never actually a 1-for-2 offer (single die
+always excludes it, confirmed unchanged and correct in code) - the player misread the untouched
+1-for-2 chip sitting next to a boost that had already visibly "spent" its overpay count, before
+the move was even confirmed. Report (2) is the same premature-decrement made visible through
+cycling instead: a real second held boost temporarily shows `0` because it's momentarily the
+non-previewed side of the swap, not because it's actually unavailable.
+
+**Fix:** `p.boosts` is no longer touched by `onBoostSpend` or `onBoostChange` - both now only set
+`game.currentRoll.boostSpentType` (a preview/selection, not a commit). The single real decrement
+moved into `onConfirm`, exactly once, for whichever type is selected at the moment of commit. The
+permanent boost-count chips (M14) now show stable, accurate holdings through the entire Use boost
+/ Change boost / reselect-tiles sequence, dropping only when a move actually lands - matching "Use
+boost previews, Confirm commits" literally, not just in spirit.
+
+Also fixed to match the user's spec: `#play-boost-change` uses the same `.primary` (player-accent)
+styling as `#play-boost-spend`/`#play-confirm`, not the muted `.secondary` treatment used for
+"Stay stalled" - it's an available action alongside Confirm, not a decline.
+
+**Verified:** forced two-boost/one-boost scenarios directly on `game.currentRoll` - inventory
+confirmed stable (unchanged) across Use boost and two Change-boost cycles, then debited by exactly
+1, for the correct type, only at Confirm; single-applicable-boost case re-confirmed to still hide
+Change-boost entirely. Re-ran the 6-game automated regression (~285 turns) with zero errors.

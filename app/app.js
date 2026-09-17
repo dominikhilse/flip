@@ -1275,12 +1275,20 @@
     renderPlay();
   }
 
+  // Only *previews* a type here - does not touch p.boosts. Real-device
+  // report: decrementing on spend and refunding/re-charging on every
+  // onBoostChange cycle made the permanent boost-count chips lie about the
+  // player's actual holdings mid-preview (whichever type wasn't currently
+  // selected always showed as spent-to-0, even when the player held one of
+  // each) - "0 shown, but I could still switch to and use it" read as a
+  // bug because it was one. The chips must show stable, real inventory
+  // throughout Use boost / Change boost; only Confirm (below) may ever
+  // actually spend one, exactly once, for whichever type is selected at
+  // that moment.
   function onBoostSpend() {
     if (!game.currentRoll || !game.currentRoll.boostOfferPending) return;
-    var p = currentPlayer();
     var type = game.currentRoll.offeredBoostType;
-    if (!type || p.boosts[type] < 1) return;
-    p.boosts[type]--;
+    if (!type) return;
     game.currentRoll.boostSpentType = type;
     game.currentRoll.boostOfferPending = false;
     game.currentRoll.stalled = false;
@@ -1294,15 +1302,14 @@
     renderPlay();
   }
 
-  // M18/D-56: cycles boostSpentType through this roll's fixed
-  // applicableBoostTypes list, refunding the outgoing type and charging the
-  // incoming one so the player's held counts are always exactly right no
-  // matter how many times they cycle before Confirm. Everything downstream
-  // (currentSelectionValid, the whole-rack-block message, dice highlighting,
-  // the D-34 overpay theme flip) already keys off boostSpentType and
-  // re-derives on the renderPlay() below - this never needed its own
-  // parallel logic. Available any time a boost is active and more than one
-  // type applies, including mid-selection - a stale selection just fails
+  // M18/D-56: cycles the *previewed* type through this roll's fixed
+  // applicableBoostTypes list - p.boosts is never touched here (see
+  // onBoostSpend's comment). Everything downstream (currentSelectionValid,
+  // the whole-rack-block message, dice highlighting, the D-34 overpay theme
+  // flip) already keys off boostSpentType and re-derives on the
+  // renderPlay() below - this never needed its own parallel logic.
+  // Available any time a boost is active and more than one type applies,
+  // including mid-selection - a stale selection just fails
   // currentSelectionValid under the new type until the player adjusts it,
   // same as any other rule-driven invalidation.
   function onBoostChange() {
@@ -1310,12 +1317,7 @@
     if (!roll || !roll.boostSpentType) return;
     var types = roll.applicableBoostTypes;
     if (!types || types.length < 2) return;
-    var p = currentPlayer();
-    var current = roll.boostSpentType;
-    var next = types[(types.indexOf(current) + 1) % types.length];
-    p.boosts[current]++;
-    p.boosts[next]--;
-    roll.boostSpentType = next;
+    roll.boostSpentType = types[(types.indexOf(roll.boostSpentType) + 1) % types.length];
     renderPlay();
   }
 
@@ -1325,6 +1327,10 @@
     if (!currentSelectionValid(p)) return;
 
     var boostSpentThisTurn = !!game.currentRoll.boostSpentType;
+    // The one place a previewed boost (see onBoostSpend/onBoostChange)
+    // actually leaves inventory - exactly once, for whichever type is
+    // currently selected at the moment of commit.
+    if (boostSpentThisTurn) p.boosts[game.currentRoll.boostSpentType]--;
 
     game.selected.forEach(function (v) {
       var tile = p.rack.find(function (t) { return t.value === v; });
