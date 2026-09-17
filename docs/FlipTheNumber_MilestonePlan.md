@@ -4,7 +4,23 @@
 **Audience:** a Claude Code session with no prior context. Everything needed is in this file.
 **Supersedes:** nothing. This is the first plan for this project.
 
-**Revision note (latest pass — reconciling DECISIONS.md 2026-09-12):** M7, M8, M9 all status-flipped
+**Revision note (latest pass — reconciling DECISIONS.md through 2026-09-19):** large catch-up. M11,
+M12, M13 status-flipped SPECIFIED → **BUILT, VERIFIED**. Four built brand/bug milestones folded in:
+**M14** (brand pass 2 — 2 skins, the `.play-chrome-row` consolidation incl. the boost chips + earned
+toast that M18/M19 operate on; **D-58**), **M15** (brand pass 3 — sand/hue/red colour roles on the
+new screens, time-challenge restyle-only with whole-match semantics kept; **D-59**), **M16** (measured
+bug fixes — another "estimated min-height" recurrence), **M17** (turn card reverted to full-bleed
+player colour, reversing M15; **D-60**). Two new boost features specified: **M18** — player *chooses*
+which boost to spend when both apply, via a one-button cycle-and-preview, a **deliberate, approved
+partial reversal of D-36/D-37** (conservation kept as default, not enforced; **D-56**, D-37 superseded,
+D-36 partially); **M19** — the M14 boost-earned toast refined to **travel into its type's chip** under
+the chip layer, count-bump re-anchored to arrival (**D-57**, refinement not rebuild). §6a updated
+(avatar/Flip question resolved; Honey-colour contrast fail and per-turn-shot-clock-as-future-mode now
+the live design items). Avatar count corrected to **19 as shipped** (D-55). Two font swaps
+(Bagel Fat One → Vollkorn Black; Figtree → Overpass) are noted but the plan does not pin a font name
+(§7) — the current family lives in code, not here.
+
+**Prior pass (reconciling DECISIONS.md 2026-09-12):** M7, M8, M9 all status-flipped
 from SPECIFIED to **BUILT, VERIFIED**; M7's die-choice-on-differing-faces interpretation confirmed
 correct (exact match to either die, no forced choice). A stricter whole-rack rule added (**D-48**):
 a boost-spent move may never close the whole rack, not even on an exact match — corrects M6's
@@ -1050,9 +1066,11 @@ and animation decoupled or report why it can't be done.
 
 ---
 
-### M11 — Navigation & escape-hatch fixes — SPECIFIED
+### M11 — Navigation & escape-hatch fixes — BUILT, VERIFIED
 
-**Status: fully resolved (2026-09-12) — this is the direct answer to the URGENT flag in
+**Status: BUILT and verified (2026-09-13), matches the spec below.** Pause button on Play (reuses the
+tabbed menu), Restart (resets boosts, distinct from New Game), and confirm guards on destructive
+exits all shipped; per-move undo confirmed out. The direct answer to the URGENT flag in
 DECISIONS.md** ("no recovery/undo path when a player is stuck," raised after a report where the only
 way out of a confusing state was End game, discarding the whole match). All three open points from
 the prior draft are now settled.
@@ -1131,9 +1149,15 @@ motion or tap already work.
 
 ---
 
-### M12 — Tabbed settings/menu redesign — SPECIFIED (structural), skin lands tomorrow
+### M12 — Tabbed settings/menu redesign — BUILT, VERIFIED (structural)
 
-**Status:** all four tabs are now wireframed (2a Rules, 3a Players, 3b App, 3c Dev) — the
+**Status: BUILT and verified (2026-09-13), structural pass.** All four tabs (Players/Rules/App/Dev)
+shipped with the segmented/switch controls, next-game/next-lap chips (D-30 tiers), mid-game banner,
+and mid-game footer. Skin was still placeholder at build time; the real skin arrived across M13–M15.
+Drag-to-reorder and the full colour count were kept per the prototype-wins rule. Original structural
+spec below.
+
+**Status (original):** all four tabs are now wireframed (2a Rules, 3a Players, 3b App, 3c Dev) — the
 "extrapolate the pattern" approach from the previous draft is **no longer needed**; every tab has a
 real spec below. **Brand specs (palette, final type application) land tomorrow, not today** — this
 milestone is written to the wireframe's *structure*, with the skin still explicitly deferred one
@@ -1243,9 +1267,16 @@ does not invent.
 
 ---
 
-### M13 — Brand / skin application + avatars — SPECIFIED
+### M13 — Brand / skin application + avatars — BUILT, VERIFIED
 
-**Status:** the design session delivered a grounded developer handoff (`DevHandoff_BrandSpec_dc.html`,
+**Status: BUILT and verified (2026-09-13), then extended by M14–M15.** The first brand handoff was
+applied (palette, `{fill,edge,ink}` tiles, closed-tile redundancy, fonts, 19 avatars with
+random-assign + cycle). Subsequent brand passes (M14, M15) revised type, skins, and screen chrome on
+top of this — so the *specific* fonts and some tokens below were later superseded; see M14/M15. The
+structural achievements (avatar system, per-tile colour model, closed-tile redundancy, overpay XOR
+untouched) hold. Original spec below.
+
+**Status (original):** the design session delivered a grounded developer handoff (`DevHandoff_BrandSpec_dc.html`,
 built against `flip@main` — `app/style.css`, `theme.js`, `config.js`, `index.html`) with the settled
 brand spec, a full mockup of all six screens in the new look, and drop-in CSS + `theme.js` tokens.
 This milestone applies that skin across the app. It **depends on M11 and M12** (the Pause button and
@@ -1327,6 +1358,186 @@ ink}` risks breaking the M10 wobble or `cqh` sizing, **stop and report** rather 
 
 ---
 
+### M14 — Brand pass 2: type, skins, player-accent chrome — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-09-15), from `DevHandoff_BrandSpec_v2` + `PlayScreen_Redesign`.**
+A second brand handoff, applied after resolving conflicts with the user rather than guessing.
+
+**What shipped:**
+- **Two skins, not three.** Colorful (default) and Monochrome; the doc's third "Brand" skin was
+  dropped per user confirmation. `activeSkin` is `settings.skin` (cosmetic-only, like `settings.theme`),
+  not a `theme.js` field. Mono skin uses a computed HSL lightness ramp (`monoRampTiles()`), starting
+  values reverse-engineered, flagged "revisit after a real readability pass" (unmeasured).
+- **Play chrome consolidated into one `.play-chrome-row`** below identity: icon-only settings cog +
+  two permanent boost chips + the boost-earned toast, all in one row (replacing the old `.play-toprow`
+  and separate boost-count text row). **This is the row M18/M19 below operate on.**
+- **The boost-earned toast** (M14's build) shows the awarded boost type name, holds, then shrinks and
+  merges into its chip, at which point the chip count bumps. Held-back count via `boostToastState`
+  (transient, never persisted); timings `BOOST_TOAST_DISPLAY_MS` (1200ms) / `BOOST_TOAST_COLLAPSE_MS`
+  (280ms), unmeasured tune-by-feel starting values. **M19 refines this into a travelling animation.**
+- Type: Crimson Pro (tile digits) + Overpass (UI) at this stage — later superseded (subsequent
+  font-swap entries note Vollkorn Black then further swaps; the plan does not pin the font name, §7).
+- Player identity colours stayed a flat hex array (not `{fill,edge,ink}` triples) to avoid breaking
+  the persisted roster shape; `playerEdge()` looks up the edge partner from the skin's tiles by fill.
+
+**Flagged, not fixed (carried forward):** player colour #3 "Honey" (`#E4BE2F`) measures 3.59:1 on the
+light theme, failing the 4.5:1 target — a shared identity/tile colour, so re-picking its edge is a
+**design-track decision, not a code call.** Open for the design session.
+
+**Verified:** fonts loaded at correct weights, promoted/muted button swap, boost-toast
+hold→collapse→bump sequence (millisecond-gated), mono skin colour-match (after fixing a real
+`rgbToHsl` saturation-scale bug found during verification), light theme + overpay XOR flip, full
+automated game, zero console errors.
+
+---
+
+### M15 — Brand pass 3: launch / handoff / timeout / setup / dialog / results — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-09-16), from `GameScreens_Redesign`.** The rest of the flow
+skinned; structural/rules questions confirmed with the user, not guessed.
+
+**What shipped:**
+- New **"sand = system chrome, player hue = identity only, red = destructive only"** colour-role
+  rule, scoped to **these new screens only** — Play keeps its player-tinted chrome as shipped in M14
+  (confirmed with the user; not retroactive). New tokens: `--accent-sand*`, `--accent-amber*`
+  (informational badges), `--accent-danger-fill` (destructive button fill).
+- **Turn card moved onto the themed surface** (player colour carried by avatar ring/glow + name only)
+  — **later reverted by M17** back to full-bleed player colour. Note the round-trip.
+- **Time challenge: visual redesign only, semantics unchanged** — it remains a single whole-match
+  countdown that ends the match with no winner (not the per-turn shot-clock the mockup's copy
+  implied). Timeout copy rewritten to match-over framing; both Rematch/New-game buttons kept. **The
+  per-turn shot-clock is explicitly flagged as a possible FUTURE game mode** (see §6a), not built.
+- **Results screen has no score column** — "Benched" is shown as real user-facing UI, because the
+  rules engine has no scoring model (only finish order). Consistent with D-02.
+- Confirm dialog OK button shows the real action ("End match"/"Restart match"); Setup gained a real
+  title; taken colour swatches dim (hint only, no enforced uniqueness); skin picker upgraded to
+  preview cards; Remove became an icon; tab icons swapped.
+- **Not built (flagged):** the mockup's elaborate dev tools ("Roll d6", "Force a value", "Jump to
+  Results") — underspecified; the existing 1/2/ask dice-choice control was restyled instead.
+
+**Verified:** full flow screenshotted both themes, live time-challenge expiry into the redesigned
+Timeout, confirm dialog, Results — zero console errors, real-click re-verification after debug strip.
+
+---
+
+### M16 — Post-M15 bug fixes — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-09-17).** Real-device bug reports, each root-caused and measured,
+not patched by feel. Headline: the recurring **"estimated min-height, not measured"** bug class struck
+again — `#play-selection-sum`'s `min-height: 1.2em` was ~0.7px short of Overpass's real line height,
+causing a rack jump on roll (the dice animation was innocent; fixed to `1.3em`, re-verified 0px
+delta). Also: explicit button heights on the play action row (an `align-items: stretch` failure),
+turn-card layout, and a dice-animation dev control. **Reinforces the §7 rule — measure, never
+estimate, box heights.**
+
+---
+
+### M17 — Turn card reverts to full-bleed player colour — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-09-18).** Explicit user request and a **direct reversal of M15's**
+turn-card change: the turn card is once again a full-bleed player-colour background, fully
+theme-independent. Chrome that the turn card shares with Play (settings icon, avatar, name) is handled
+by scoping custom-property overrides (`--fg`, `--player-accent`, etc.) once on `#screen-turncard`, so
+Play (same classes, different scope) is provably unaffected. Recorded as intentional drift-reversal.
+
+---
+
+### M18 — Player choice of boost at spend (reverses D-36/D-37) — SPECIFIED
+
+**Goal.** When a player stalls and holds **both** boost types, each of which would resolve the stall,
+let the player **choose** which to spend — via a one-button cycle-and-preview, not a picker.
+
+**This is an approved, deliberate reversal of the auto-select rule (D-36/D-37 → D-56).** Those rules
+made the spend auto-selected (1-for-2 preferred, to conserve overpay), with the player having no
+choice — and explicitly accepted that a player who could score better with overpay didn't get to. That
+is now reversed: the player gets the choice. **But the reversal is partial by design** — conservation
+survives as the *default* (see below), so a player who doesn't actively choose still gets the
+conservation-optimal outcome. D-37's conservation is demoted from *enforced* to *default*, not deleted.
+
+**Interaction (one button at a time — honours the "no dropdown / no multi-select" constraint):**
+1. Stall; **both** boost types resolve it; player holds both → the action button reads **"Use boost."**
+2. Tap **"Use boost"** → the game previews the **lower-value 1-for-2** first (the conservation
+   default). On-screen text shows what that boost would do / how it plays out *for this roll*. The
+   action button relabels to **"Change boost."** Confirm is available.
+3. Tap **"Change boost"** → cycles to the overpay boost; the preview updates. Tapping again cycles
+   back. Written to cycle through **the applicable-and-held boost set generally** (so a future third
+   type doesn't break it), not hardcoded to two.
+4. **Confirm** commits whichever boost is currently previewed.
+5. **Only one boost resolves the stall** → no cycle: button stays "Use boost," no "Change boost"
+   appears, Confirm commits the single option (unchanged from today).
+
+**Key property — the default preserves conservation.** A player who taps Use boost → Confirm without
+cycling spends the 1-for-2, i.e. **exactly what auto-select does today.** Only a deliberate "Change
+boost" spends the overpay. So the common path is unchanged; agency is added on top.
+
+**Out of scope.** A dropdown, radio list, or simultaneous multi-boost picker (explicitly rejected).
+Changing which boosts are *offered* (the applicable-set logic from M7 is unchanged — this only changes
+selection *among* applicable boosts). Any change to the whole-rack-block (D-48) or last-tile rules.
+
+**Do-not-touch on entry.** The M7 offer/applicability logic (`selectBoostTypeToOffer` becomes the
+*default* selection, not the *only* one); the boost-spent whole-rack guard (D-48); the earned/granted
+timing (D-44).
+
+**Acceptance criteria:**
+1. Stalling with both boosts held and both resolving the stall, tapping "Use boost" previews the
+   1-for-2 and shows a "Change boost" control.
+2. Tapping "Change boost" cycles to overpay with an updated preview; tapping again returns to 1-for-2.
+3. Confirm commits the previewed boost; the *other* boost's count is unchanged.
+4. Use boost → Confirm with no cycling spends the 1-for-2 (default = today's auto-select outcome),
+   leaving overpay untouched.
+5. With only one applicable boost, there is no "Change boost" control and Confirm commits the one.
+6. The preview text accurately describes what the currently-selected boost does for the current roll.
+
+**Stop conditions.** If exposing the choice would let a player spend a boost that does **not** resolve
+the current stall (i.e. the cycle includes an inapplicable boost), **stop** — only applicable boosts
+are cyclable, same filter as the offer.
+
+---
+
+### M19 — Boost-earned toast travels into its chip — SPECIFIED (refines M14)
+
+**Goal.** Refine the **existing** M14 boost-earned toast so it visibly **travels into the correct
+boost chip** rather than shrinking in place — making "where the boost came from and went" legible.
+
+**This is a refinement of shipped behaviour, not a new build.** M14 already built the toast, the
+held-back count (`boostToastState`), the timings (`BOOST_TOAST_DISPLAY_MS` / `BOOST_TOAST_COLLAPSE_MS`),
+and the count-bump-on-merge. The state machinery and the fact that the count bumps *at merge* are
+correct and stay. **Only the visual motion changes.** Do not rebuild the toast system.
+
+**The desired animation (per the user):**
+1. The toast pill appears (right-aligned, as today), showing the awarded boost's name.
+2. After its hold period, it **slides left while shrinking** (width + opacity).
+3. It slides on a layer **beneath** the boost chips (chips sit on a higher z-layer, so the pill passes
+   *under* them).
+4. Its travel target is the **specific chip for the awarded type** (the overpay chip vs the 1-for-2
+   chip — different positions in `.play-chrome-row`), not a generic spot.
+5. **At the moment the pill reaches that chip's position**, the chip **"pops"** and its count
+   increments — the arrival *is* the bump. (Re-anchor M14's existing bump from collapse-finish to
+   travel-arrival if they differ.)
+
+**Out of scope.** The toast's content/text, the held-back-count logic, the earn/grant timing, and
+which chip corresponds to which type (all unchanged from M14). This is motion + z-layering + retiming
+the bump to arrival.
+
+**Do-not-touch on entry.** `boostToastState` and the delivery logic (`deliverPendingBoost`); the boost
+counts themselves; M18's spend UI (M18 and M19 both touch `.play-chrome-row` but are independent — one
+is spend, one is award).
+
+**Acceptance criteria — checkable by watching an award:**
+1. On a boost award, a named pill appears right-aligned, then slides left and shrinks.
+2. The pill passes **under** the boost chips (occluded by them), not over.
+3. The pill's destination is the chip of the **awarded type** — an overpay award travels to the
+   overpay chip, a 1-for-2 award to the 1-for-2 chip.
+4. The target chip pops and its count increments **at the moment the pill arrives**, not before.
+5. A rare same-type double-award still bumps the count by the correct amount at arrival (M14's exact
+   held-back amount, not a hardcoded step).
+
+**Stop conditions.** If making the pill travel under the chips requires restructuring `.play-chrome-row`
+in a way that disturbs M18's spend controls or the settings cog, **stop and report** — this is an
+animation layer over the existing row, not a re-layout.
+
+---
+
 ## 6. Explicitly out of scope for this prototype
 
 - **Single-player mode.** Playable in principle but the design has not been worked out.
@@ -1386,13 +1597,15 @@ executor to resolve.
 - **Final orientation and layout.** Portrait plays fine; landscape or portrait is a design
   call. Constraint: whatever is chosen must not disturb the verified shove/lift handoff feel
   (§4.3, D-26).
-- **Avatars, and the Flip-vs-Spudling character question.** There is a potential collision: Flip
-  is the game's intended carrying character, while the Spudling project could supply player
-  avatars. Two mascot systems in one product competes for the same identity role. The likely
-  resolution to explore is a **hierarchy** — Flip as the game's host/character, Spudlings (or
-  other avatars) as the *players'* avatars, a clean host-vs-guests split — but this is a design
-  decision, not decided here. Spudling's known standalone weakness (content-production cost) may
-  be acceptable at this finite scope; that too is for the design track to weigh.
+- **~~Avatars / Flip-vs-Spudling~~ — RESOLVED** (M13/M14/M15, D-53/54/55): Flip cut, Spudlings in as
+  a 19-PNG avatar set (random-assign + cycle), name kept. No longer open.
+- **Player colour #3 "Honey" (`#E4BE2F`) fails light-theme contrast** (3.59:1 vs a 4.5:1 target) —
+  the only one of the 12 that fails. It is a shared identity/tile colour, so re-picking its edge or
+  hue is a **design decision, not a code call** (flagged from M14). Needs a design ruling.
+- **Per-turn shot-clock as a future game mode.** The current time challenge is a single whole-match
+  countdown (anti-drag, no winner on timeout). A M15 mockup implied a *per-turn* shot clock instead —
+  not built (semantics were kept whole-match), but flagged as a **plausible future alternative mode**
+  worth designing deliberately if pursued. Not a bug; a mode idea parked for the design track.
 
 ---
 
@@ -1451,8 +1664,8 @@ though it were known:
 | D-33 | Lap boundary is anchored to the earliest active seat (P1 or earliest unfinished), not the requesting player's seat | Locked |
 | D-34 | Theme flip is the overpay signal — inverted **exactly when an overpay move is currently legal** for the current player. Predicate: (mode D active AND current player has >1 tile open) OR a boost overpay move in progress. The >1-tile carve-out (commit `077dc7d`) prevents a false "you can overpay" signal at the whole-rack/last-tile exact-match point. Turn card / launch / boost banner stay theme-independent | Locked (rev per DECISIONS.md 2026-09-11) |
 | D-35 | **(M7, not built)** Two boost types — overpay (voids some pips, subset ≤ total) and 1-for-2 (voids one whole die); typed inventory capped at 3 total across types; both self-affecting stall-rescues. Live build is single-type overpay only (M6) | Locked (M7) |
-| D-36 | **(M7, not built)** Spend is offered (spend-or-stay) with the type **auto-selected**, never a which-boost picker; offer names the type; only boosts that resolve *this* stall are offered | Locked (M7) |
-| D-37 | **(M7, not built)** Auto-select prefers 1-for-2 when both resolve (conserve overpay); overpay strictly dominates 1-for-2, so branches are: both→1-for-2, only-overpay→overpay, neither→no offer; the "could-score-higher" case is by-design | Locked (M7) |
+| D-36 | Built in M7. Spend is offered (spend-or-stay); type auto-selected, only boosts that resolve *this* stall are offered. **Partially superseded by D-56 (M18):** when both resolve, the player can now cycle to choose; auto-select becomes the *default*, not the only path. The applicable-set filter (only stall-resolving boosts) still holds | Locked; spend-choice part superseded by D-56 |
+| D-37 | Built in M7. Auto-select prefers 1-for-2 when both resolve (conserve overpay); overpay strictly dominates 1-for-2 (both→1-for-2, only-overpay→overpay, neither→no offer). **Superseded by D-56 (M18):** conservation is now the *default* (1-for-2 shown first) but overridable by the player, not enforced | Superseded by D-56 |
 | D-38 | **(M7, not built)** Reward model: each type owns a criteria pool (may overlap); shared-criterion awards pick a type by a configurable distribution variable (default 50/50); MVP both types share the D-24 criteria | Locked (M7) |
 | D-39 | Block-dice and any targeted / inter-player / duration boost is benched; if revived it is its own milestone with targeting/duration state and the parked open questions answered first | Locked |
 | D-40 | M4 (continuous-rotation handoff) CUT — never attempted, no open problem it solves; M3 tap/motion handoff feels fine; do not revisit without a new decision (per DECISIONS.md 2026-09-11) | Locked |
@@ -1470,4 +1683,9 @@ though it were known:
 | D-52 | M12 implements all four wireframed tabs (2a Rules, 3a Players, 3b App, 3c Dev) structurally now; skin lands the next day. Resolution rule: where the wireframe is silent on or conflicts with existing prototype functionality, the prototype wins and the mismatch is recorded for the design session — applied to keep drag-to-reorder (wireframe doesn't show it) and the full player-colour count (wireframe shows only 6 swatches). Time-challenge `0 seconds = off` adopted as a new clarifying detail. Dev-tab banner's "not shown in shipped build" claim flagged as undeliverable (no build step exists) and to be reworded. Supersedes M8's `<details>` container | Locked (structure); skin deferred |
 | D-53 | Brand track resolved (M13). Flip the character is **cut**; name **"Flip the Number" kept** (flip = tile verb, no mascot dependency, zero repo/URL churn). Spudlings are **in as sidekicks + chosen avatars**, never as tile art (tiles stay plain numerals, D-13). Feel: warm handmade burlap storybook. Type: Bagel Fat One (display) + Figtree (UI) via network `<link>` — the §3.1 offline caveat is knowingly accepted | Locked |
 | D-54 | Player palette (replaces the ad-hoc `theme.js` set): 8 CVD-safe hues + 4 graceful 9–12, each as `{fill, edge, ink}` (edge = dark partner = border + non-hue identity channel surviving the theme flip). Assign safe-8-first. Closed tiles use 3 individually-sufficient non-hue cues (desaturate + pressed inset + hollow numeral). Overpay XOR flips chrome only; player hues live outside the chrome-token system and never flip | Locked |
-| D-55 | Avatars: a fixed set of **20 pre-made Spudling PNGs** in `app/avatars/`, static, provisional/swappable (players hold an id/filename reference). **Randomly assigned without replacement at game start** (unique per player, 20 ≥ 12 max), **cycle-through to change**. Avatar shows on the player screen (**gameplay chrome — supersedes the handoff's "never gameplay chrome" line**) and is the **primary 9–12 distinguisher** (avatar → name → colour past 8). The avatar creator itself is out of scope, not referenced | Locked |
+| D-55 | Avatars: a fixed set of Spudling PNGs in `app/avatars/` (**19 as shipped**, `config.js avatarCount`; the 20th was left ungenerated — no source asset and character art is barred), static, provisional/swappable (players hold an id/filename reference; a colour+monogram fallback `renderIdentityCircle` covers the pre-`assignAvatars` state). **Randomly assigned without replacement at game start** (unique per player, 19 ≥ 12 max), **cycle-through to change**. Avatar shows on the player screen (**gameplay chrome — supersedes the handoff's "never gameplay chrome" line**) and is the **primary 9–12 distinguisher** (avatar → name → colour past 8). The avatar creator itself is out of scope | Locked |
+| D-56 | **Reverses D-36/D-37 (partially).** When a player holds both boost types and both resolve the stall, the player **chooses** which to spend via a one-button cycle-and-preview (Use boost → previews 1-for-2 → "Change boost" cycles → Confirm). Conservation is preserved as the **default** (1-for-2 shown first; tap-through = today's auto-select outcome), not enforced — so D-37's conservation is demoted from enforced to default, not deleted. No dropdown/multi-select. Only-one-applicable case unchanged. (M18) | Locked |
+| D-57 | Boost-earned toast (M14, shipped) refined to **travel into its type's chip**: appears right-aligned, slides left + shrinks on a layer *under* the chips, arrives at the awarded type's specific chip, which pops and increments its count at arrival. Refinement of existing machinery, not a rebuild (M19) | Locked |
+| D-58 | Two skins ship — Colorful (default) + Monochrome (`settings.skin`, cosmetic-only). Mono uses a computed HSL lightness ramp with reverse-engineered (unmeasured) starting values, flagged to revisit after a readability pass (M14) | Locked |
+| D-59 | Time challenge is a **single whole-match countdown** ending the match with no winner (not a per-turn shot clock, despite an M15 mockup's copy implying otherwise). M15 restyled it; semantics unchanged. Per-turn shot clock parked as a future mode (§6a) (M15) | Locked |
+| D-60 | Turn-card background history: full-bleed player colour (original) → themed surface (M15) → **reverted to full-bleed player colour (M17)**, theme-independent, chrome handled by scoped custom-property overrides on `#screen-turncard`. Current state = full-bleed | Locked |
