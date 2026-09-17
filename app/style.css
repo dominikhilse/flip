@@ -877,11 +877,11 @@ button.secondary:active { background: var(--bg-subtle); }
   justify-content: center;
   gap: 0.5rem;
   min-width: 0;
-  /* M19/D-57: an explicit z-index on a flex item establishes its stacking
-     order even at position:static (no need to also set `position` here) -
-     this is what puts the chips above the travelling toast pill (below),
-     not DOM order. */
-  z-index: 2;
+  /* M19/D-57 (revised): an explicit z-index on a flex item establishes its
+     stacking order even at position:static (no need to also set `position`
+     here). The travelling toast pill flies OVER the chips - z-index below
+     it, not above - see .boost-toast's own z-index. */
+  z-index: 1;
 }
 .boost-chip {
   display: inline-flex;
@@ -912,11 +912,11 @@ button.secondary:active { background: var(--bg-subtle); }
    the chip's own count actually jumps to the new total (see
    renderPlayBoostAnnouncement's BOOST_TOAST_DISPLAY_MS/BOOST_TOAST_COLLAPSE_MS -
    durations are a judgement call, not measured; see DECISIONS.md).
-   M19/D-57: for a single-type award, `.traveling` (added alongside
-   `.collapsing`, same duration) also slides it left via `transform`,
-   toward the specific chip triggerBoostToast computed --travel-dx for -
-   it passes underneath the chips (z-index above), not over them, since
-   z-index puts them on a higher layer regardless of this transform. */
+   M19/D-57 (revised): for a single-type award, `.traveling` (added
+   alongside `.collapsing`, same duration) also slides it left via
+   `transform`, toward the specific chip triggerBoostToast computed
+   --travel-dx for - it flies OVER the chips (z-index above them), not
+   underneath. */
 .boost-toast {
   flex: 0 1 auto;
   min-width: 0;
@@ -931,7 +931,7 @@ button.secondary:active { background: var(--bg-subtle); }
     margin 0.28s ease, transform 0.28s ease;
   max-width: 160px;
   transform: translateX(0) scale(1);
-  z-index: 1;
+  z-index: 2;
 }
 .boost-toast.collapsing {
   max-width: 0;

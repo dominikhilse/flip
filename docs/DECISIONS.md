@@ -1333,3 +1333,10 @@ non-identity `transform`/reduced opacity, chip still held), and post-arrival (cl
 count bumped exactly at that timer boundary, not before); confirmed `z-index` computed values (chips:2,
 toast:1); confirmed the double-type case takes the shrink-in-place fallback (no `.traveling`, both
 counts bumped correctly) - zero console errors throughout, hook stripped before commit.
+
+### 2026-09-18 — M19 revision: toast flies over the chips, not under
+
+Direct user request, reversing the "beneath the chips" part of M19's own spec: swapped the two
+z-index values (`.play-boost-chips` 2→1, `.boost-toast` 1→2), nothing else - the travel distance
+calculation, timing, and arrival/bump logic are untouched. Confirmed via computed `zIndex` on both
+elements post-change.
