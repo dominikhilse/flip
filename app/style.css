@@ -877,6 +877,11 @@ button.secondary:active { background: var(--bg-subtle); }
   justify-content: center;
   gap: 0.5rem;
   min-width: 0;
+  /* M19/D-57: an explicit z-index on a flex item establishes its stacking
+     order even at position:static (no need to also set `position` here) -
+     this is what puts the chips above the travelling toast pill (below),
+     not DOM order. */
+  z-index: 2;
 }
 .boost-chip {
   display: inline-flex;
@@ -892,12 +897,26 @@ button.secondary:active { background: var(--bg-subtle); }
 .boost-chip.dim { color: var(--text-dim); }
 .boost-chip svg { width: 17px; height: 17px; flex: none; }
 .boost-chip-count { font-weight: 700; font-size: 0.75rem; color: var(--fg); }
+/* M19/D-57: the target chip "pops" at the exact moment the travelling
+   toast arrives (see triggerBoostToast) - the arrival IS the count bump,
+   this is just its visual accent. */
+@keyframes boost-chip-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+.boost-chip.pop { animation: boost-chip-pop 0.32s ease; }
 
 /* Boost-earned toast: right-aligned name pill that, after a beat, shrinks
    (width/opacity/padding) to "merge" into its counter chip, which is when
    the chip's own count actually jumps to the new total (see
    renderPlayBoostAnnouncement's BOOST_TOAST_DISPLAY_MS/BOOST_TOAST_COLLAPSE_MS -
-   durations are a judgement call, not measured; see DECISIONS.md). */
+   durations are a judgement call, not measured; see DECISIONS.md).
+   M19/D-57: for a single-type award, `.traveling` (added alongside
+   `.collapsing`, same duration) also slides it left via `transform`,
+   toward the specific chip triggerBoostToast computed --travel-dx for -
+   it passes underneath the chips (z-index above), not over them, since
+   z-index puts them on a higher layer regardless of this transform. */
 .boost-toast {
   flex: 0 1 auto;
   min-width: 0;
@@ -908,14 +927,20 @@ button.secondary:active { background: var(--bg-subtle); }
   padding: 5px 11px;
   border-radius: 999px;
   background: var(--bg-subtle);
-  transition: max-width 0.28s ease, opacity 0.28s ease, padding 0.28s ease, margin 0.28s ease;
+  transition: max-width 0.28s ease, opacity 0.28s ease, padding 0.28s ease,
+    margin 0.28s ease, transform 0.28s ease;
   max-width: 160px;
+  transform: translateX(0) scale(1);
+  z-index: 1;
 }
 .boost-toast.collapsing {
   max-width: 0;
   padding-left: 0;
   padding-right: 0;
   opacity: 0;
+}
+.boost-toast.traveling {
+  transform: translateX(var(--travel-dx, 0)) scale(0.4);
 }
 /* M13/D-55: the avatar sits left of the player's name, tap-to-cycle. Plain
    button reset so it reads as an avatar, not a button, with its own tap

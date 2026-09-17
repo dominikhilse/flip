@@ -1745,22 +1745,46 @@
   var BOOST_TOAST_DISPLAY_MS = 1200;
   var BOOST_TOAST_COLLAPSE_MS = 280;
 
+  // M19/D-57: for a single delivered type, the pill travels into that
+  // type's specific chip - computed once, right before the travel starts,
+  // from the two elements' real on-screen positions, so it's correct
+  // regardless of which chip is dimmed/positioned where. A rare
+  // simultaneous double-type award (both types delivered at once) has no
+  // single destination chip - the plan doesn't resolve that edge case, so
+  // it keeps M14's original shrink-in-place with no travel.
   function triggerBoostToast(delivery) {
     boostToastState = { amounts: delivery.amounts, merged: false };
     renderPlayBoostCount();
-    playBoostAnnouncementEl.classList.remove('collapsing');
-    playBoostAnnouncementEl.style.visibility = '';
-    playBoostAnnouncementEl.textContent = delivery.types.map(function (t) { return BOOST_TYPE_LABELS[t]; }).join(' + ');
+    var toastEl = playBoostAnnouncementEl;
+    toastEl.classList.remove('collapsing', 'traveling');
+    toastEl.style.removeProperty('--travel-dx');
+    toastEl.style.visibility = '';
+    toastEl.textContent = delivery.types.map(function (t) { return BOOST_TYPE_LABELS[t]; }).join(' + ');
+    var travelTarget = delivery.types.length === 1 ? playBoostChipEls[delivery.types[0]] : null;
     setTimeout(function () {
       if (!boostToastState) return; // a fresh game/turn started; abandon this toast
+      if (travelTarget) {
+        var toastRect = toastEl.getBoundingClientRect();
+        var chipRect = travelTarget.getBoundingClientRect();
+        var dx = (chipRect.left + chipRect.width / 2) - (toastRect.left + toastRect.width / 2);
+        toastEl.style.setProperty('--travel-dx', dx + 'px');
+        toastEl.classList.add('traveling');
+      }
       playBoostAnnouncementEl.classList.add('collapsing');
       setTimeout(function () {
         if (!boostToastState) return;
         boostToastState.merged = true;
         playBoostAnnouncementEl.style.visibility = 'hidden';
-        playBoostAnnouncementEl.classList.remove('collapsing');
+        playBoostAnnouncementEl.classList.remove('collapsing', 'traveling');
+        playBoostAnnouncementEl.style.removeProperty('--travel-dx');
         playBoostAnnouncementEl.textContent = '';
+        // The arrival IS the bump (D-57) - renderPlayBoostCount now sees
+        // merged:true and reads the true post-award count.
         renderPlayBoostCount();
+        if (travelTarget) {
+          travelTarget.classList.add('pop');
+          setTimeout(function () { travelTarget.classList.remove('pop'); }, 320);
+        }
         boostToastState = null;
       }, BOOST_TOAST_COLLAPSE_MS);
     }, BOOST_TOAST_DISPLAY_MS);

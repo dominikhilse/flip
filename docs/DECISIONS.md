@@ -1299,3 +1299,37 @@ styling as `#play-boost-spend`/`#play-confirm`, not the muted `.secondary` treat
 confirmed stable (unchanged) across Use boost and two Change-boost cycles, then debited by exactly
 1, for the correct type, only at Confirm; single-applicable-boost case re-confirmed to still hide
 Change-boost entirely. Re-ran the 6-game automated regression (~285 turns) with zero errors.
+
+### 2026-09-19 — M19: boost-earned toast travels into its chip
+
+**Built per spec, motion + z-layering only, no rebuild of M14's toast machinery.** `boostToastState`,
+`BOOST_TOAST_DISPLAY_MS`/`BOOST_TOAST_COLLAPSE_MS`, and the held-back-count logic in
+`renderPlayBoostCount` are untouched - `triggerBoostToast` is the only function that changed.
+
+- **Travel distance is computed live**, not hardcoded: right before the collapse/travel begins,
+  `getBoundingClientRect()` on the toast and the awarded type's specific chip (`playBoostChipEls[type]`)
+  gives the exact center-to-center delta, applied as `transform: translateX(var(--travel-dx)) scale(0.4)`
+  via a new `.traveling` class (added alongside the existing `.collapsing`, same
+  `BOOST_TOAST_COLLAPSE_MS` duration, so both finish together).
+- **z-layering** is `z-index: 2` on `.play-boost-chips`, `z-index: 1` on `.boost-toast` - both flex
+  items of `.play-chrome-row`, so per spec a flex item's explicit z-index establishes stacking even
+  at `position: static`; no layout/position change needed, satisfying M19's stop condition
+  (animation layer only, not a re-layout of the row M18 also uses).
+- **Arrival is the bump**, unchanged in spirit from M14: `boostToastState.merged = true` is still set
+  at the same moment (end of the COLLAPSE_MS timer) that `renderPlayBoostCount()` re-reads the true
+  count - only now that moment is also visually the pill's arrival, not just its in-place vanish.
+  A `.boost-chip.pop` scale-bounce (320ms, `@keyframes boost-chip-pop`) is added/removed on the
+  target chip at that exact instant.
+- **Simultaneous double-type award (both types delivered together) has no single destination chip** -
+  the plan explicitly leaves this unresolved (only "which chip corresponds to which type... unchanged
+  from M14" is specified, for the single-type case). Judgement call: falls back to M14's original
+  shrink-in-place with no travel, rather than inventing a split-animation the plan doesn't ask for.
+  Rare in practice (`deliverPendingBoost`'s own comment already calls simultaneous double-award an
+  edge case).
+
+**Verified:** triggered single-type awards for both boost types via a temporary debug hook, snapshotting
+computed style at t=0 (plain pill, chip held at pre-award count), mid-travel (`.traveling.collapsing`,
+non-identity `transform`/reduced opacity, chip still held), and post-arrival (classes cleared, chip
+count bumped exactly at that timer boundary, not before); confirmed `z-index` computed values (chips:2,
+toast:1); confirmed the double-type case takes the shrink-in-place fallback (no `.traveling`, both
+counts bumped correctly) - zero console errors throughout, hook stripped before commit.
