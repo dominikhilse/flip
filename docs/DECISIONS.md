@@ -1340,3 +1340,15 @@ Direct user request, reversing the "beneath the chips" part of M19's own spec: s
 z-index values (`.play-boost-chips` 2→1, `.boost-toast` 1→2), nothing else - the travel distance
 calculation, timing, and arrival/bump logic are untouched. Confirmed via computed `zIndex` on both
 elements post-change.
+
+### 2026-09-20 — Avatar set grows from 19 to 36
+
+User replaced six existing avatars (`01, 06, 09, 15, 18, 19`) and added 17 more, 23 new images
+in total (raw `IMG_9844–9866.PNG`, 1024×1024, matching the existing set). Renamed to the
+zero-padded `NN.png` convention with no gaps: the first six new files (in filename order) fill
+the six vacated slots, the remaining 17 continue as `20.png`–`36.png`. `CONFIG.avatarCount`
+19 → 36; `app/avatars/README.md` refreshed. Supersedes D-55's "20" figure (already noted there
+as 19 as shipped) - the pool is still assigned randomly without replacement, so the larger set
+only reduces repeat-avatar odds across games; nothing else reads the count. Note the filled
+slots mean those six filenames now show different art than before - avatars aren't persisted
+across games (assigned fresh each game start), so no stored reference goes stale.
