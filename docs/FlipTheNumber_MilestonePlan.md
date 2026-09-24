@@ -4,7 +4,19 @@
 **Audience:** a Claude Code session with no prior context. Everything needed is in this file.
 **Supersedes:** nothing. This is the first plan for this project.
 
-**Revision note (latest pass — reconciling DECISIONS.md through 2026-09-19):** large catch-up. M11,
+**Revision note (latest pass — reconciling DECISIONS.md through 2026-09-20):** M18 and M19
+status-flipped SPECIFIED → **BUILT, VERIFIED**, each with a shipped-reality note: M18's flow was
+already "Use boost → select tiles → Confirm" (the change is an additive, cyclable "Change boost"; a
+premature-inventory-decrement bug was found and fixed so counts only change at Confirm); M19 was
+**reversed to fly OVER the chips, not under** (D-61), and falls back to shrink-in-place for the rare
+double-award. Added **M-Maint** (GH issues #1–#6, two font swaps → Vollkorn Black / Overpass, PWA
+install wiring — all chrome/packaging, no mechanics). Avatar set grew **19 → 36** (D-62). New
+**M20 — avatar grid picker** specified: tap = cycle (unchanged), tap-and-hold = large modal grid,
+own avatar = equipped checkmark, no dimming, **soft uniqueness** (sharing allowed), random-assign
+stays default (D-63). The §6b parked mode-cleanup thought (launch-screen Timer/Boosts toggles,
+overpay-D → Dev) remains parked, not built.
+
+**Prior pass (reconciling DECISIONS.md through 2026-09-19):** large catch-up. M11,
 M12, M13 status-flipped SPECIFIED → **BUILT, VERIFIED**. Four built brand/bug milestones folded in:
 **M14** (brand pass 2 — 2 skins, the `.play-chrome-row` consolidation incl. the boost chips + earned
 toast that M18/M19 operate on; **D-58**), **M15** (brand pass 3 — sand/hue/red colour roles on the
@@ -1442,7 +1454,27 @@ Play (same classes, different scope) is provably unaffected. Recorded as intenti
 
 ---
 
-### M18 — Player choice of boost at spend (reverses D-36/D-37) — SPECIFIED
+### M18 — Player choice of boost at spend (reverses D-36/D-37) — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-09-19), with a cleaner shipped architecture than the original spec
+below described, and one real bug found + fixed during build.** The interaction goal is unchanged;
+what shipped clarified the mechanics:
+- The flow was *already* "Use boost → select tiles → Confirm" even pre-M18 — `onBoostSpend` never
+  committed a move, only committed the *boost type* that unstalls the roll; the existing `#play-confirm`
+  commits the move as for any turn. M18 did **not** change `onConfirm` or that shape.
+- M18 adds an optional **"Change boost"** step, cyclable **before, after, or interleaved with tile
+  selection** — `boostSpentType` stays mutable right up until the existing Confirm fires. Built via a
+  new `applicableBoostTypes()` (the ordered held-and-resolving list, 1-for-2 first, frozen per roll),
+  `onBoostChange` cycling through it, and `#play-boost-change` taking `#play-roll`'s slot only when a
+  boost is spent and >1 type still applies (preserving the "one secondary control beside Confirm" row).
+- **Bug found + fixed (real-device):** the first build decremented the boost count in `onBoostSpend`
+  and refunded/recharged on each cycle, so pre-Confirm chip counts were misleading. Fixed: `p.boosts`
+  is touched **only in `onConfirm`, once, for the selected type** — Use boost / Change boost are pure
+  preview/selection, counts stay stable until a move lands. "Use boost previews, Confirm commits,"
+  literally. `#play-boost-change` uses `.primary` (an action beside Confirm), not muted `.secondary`.
+
+**Original spec (as written before build — interaction still accurate; the "Confirm commits the
+previewed boost" language is realised as: Confirm reads `boostSpentType` at commit, as it always did):**
 
 **Goal.** When a player stalls and holds **both** boost types, each of which would resolve the stall,
 let the player **choose** which to spend — via a one-button cycle-and-preview, not a picker.
@@ -1494,7 +1526,24 @@ are cyclable, same filter as the offer.
 
 ---
 
-### M19 — Boost-earned toast travels into its chip — SPECIFIED (refines M14)
+### M19 — Boost-earned toast travels into its chip — BUILT, VERIFIED (refines M14)
+
+**Status: BUILT and verified (2026-09-19), motion + z-layering only, M14's toast machinery untouched
+(only `triggerBoostToast` changed). Then revised once (2026-09-18) — see the reversal below.**
+- Travel distance computed live via `getBoundingClientRect()` on the toast and the awarded type's
+  chip (`playBoostChipEls[type]`), applied as a `transform` on a new `.traveling` class sharing
+  `BOOST_TOAST_COLLAPSE_MS`. Arrival = the bump (chip `.pop` scale-bounce at the same instant M14
+  already re-read the true count). Held-back-count logic unchanged.
+- **REVERSAL (D-61): the toast flies OVER the chips, not under.** M19's own spec (and the earlier
+  conversation) said the pill should pass *beneath* the chips. Per direct user request this was
+  reversed — z-index swapped so `.boost-toast` (2) sits above `.play-boost-chips` (1). Nothing else
+  changed. **The "under" wording in the desired-animation list below is superseded; current behaviour
+  is over-the-chips.**
+- **Simultaneous double-type award** (both types delivered at once) has no single destination chip —
+  the spec only covered the single-type case, so the build falls back to M14's shrink-in-place (no
+  travel) rather than inventing a split animation. Rare edge case; counts still bump correctly.
+
+**Original spec below — accurate except the "beneath the chips" point (item 3), now reversed to over.**
 
 **Goal.** Refine the **existing** M14 boost-earned toast so it visibly **travels into the correct
 boost chip** rather than shrinking in place — making "where the boost came from and went" legible.
@@ -1532,9 +1581,92 @@ is spend, one is award).
 5. A rare same-type double-award still bumps the count by the correct amount at arrival (M14's exact
    held-back amount, not a hardcoded step).
 
-**Stop conditions.** If making the pill travel under the chips requires restructuring `.play-chrome-row`
-in a way that disturbs M18's spend controls or the settings cog, **stop and report** — this is an
-animation layer over the existing row, not a re-layout.
+**Stop conditions.** If making the pill travel across/over the chips requires restructuring
+`.play-chrome-row` in a way that disturbs M18's spend controls or the settings cog, **stop and
+report** — this is an animation layer over the existing row, not a re-layout.
+
+---
+
+### M-Maint — accumulated maintenance / GH issues / PWA / fonts — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-09-13 → 2026-09-19), a running series of small fixes and additions
+logged in DECISIONS.md rather than as numbered milestones. Recorded here so the plan reflects reality.**
+- **GH issues #1–#6:** rack-grid pre-roll resize (extension of the total-line min-height fix — same
+  "measured, not estimated box height" class as §7), avatar Play-crop + turn-card avatar iteration,
+  Play/turn-card UI fixes, "Selected: X/X" repositioning, Play screen made uniformly fixed-height, and
+  a real-device settings-icon-still-blue fix.
+- **Two font swaps:** Bagel Fat One → **Vollkorn Black** (display), Figtree → **Overpass** (UI). The
+  plan does not pin a font name (§7 / earlier notes) — current family lives in `index.html`/CSS.
+- **PWA install wiring:** manifest + head tags, adapted from the Spudling project — the app is
+  installable to a home screen. (Note: does not change the offline story materially; fonts still load
+  via network `<link>` per D-53's accepted caveat.)
+
+No rules/engine/mechanics changes in any of these; all are chrome, layout-measurement, or packaging.
+
+---
+
+### M20 — Avatar grid picker — SPECIFIED
+
+**Goal.** Give players a fast way to reach a *specific* avatar out of the (now ~36) set, without
+cycling past it — while keeping cycling for the casual "just give me a different one" case.
+
+**Why (from real play).** Cycling is well-accepted and is **not** being replaced — the only pain is
+the targeting case: a player knows which avatar they want, or has just overshot it. At ~36 avatars,
+linear cycling can't serve that case. A grid gives random access. Avatar-changing is understood as a
+**gimmick, not a gate** — most players keep their random-assigned one; the grid is opt-in for the few
+who care.
+
+**Interaction:**
+- **Tap avatar → cycle** (unchanged — keep exactly as shipped).
+- **Tap-and-hold avatar → open the grid.**
+- **A visible hint label** near the avatar signposts both (e.g. "Tap to change · hold to choose" —
+  final wording at build). This is deliberately **not** a hidden gesture: the label plus social
+  discovery (kids copy kids, parents explain once) makes it a signposted affordance.
+
+**The grid:**
+- A **large floating modal above the player screen**, built in the **existing dialog/overlay idiom**
+  (reuse `.dialog`/sheet, not a bespoke surface). Obvious dismiss (tap-outside and/or an X).
+- Shows **all avatars** as thumbnails, scrollable, sized for comfortable kid tap targets.
+- **Tap a thumbnail = select and close** in one action (no separate pick-then-confirm step — that
+  friction is the thing being removed).
+- **Grid states: the player's own current avatar shows the equipped yellow checkmark; all others are
+  normal and all tappable.** No dimming of any avatar.
+- **No uniqueness enforcement (soft).** Multiple players may share an avatar; there is no rule against
+  it and none should be added. Player identity is carried by colour + name + turn context, so avatar
+  collision is never ambiguous. (Note this **deliberately differs** from the taken-*colour* swatch
+  behaviour, which dims-as-hint — avatars and colours have different uniqueness stances on purpose; do
+  not "fix" the inconsistency by adding dimming to the avatar grid.)
+
+**Preserve fast-start.** Random-assign-at-game-start stays the default (D-55); nobody must touch
+avatars for the game to be playable. The grid is purely opt-in. Do not turn avatar selection into a
+pre-game step every player sits through — that is the exact time-sink the random-assign default exists
+to prevent.
+
+**Out of scope.** Any change to cycling (kept as-is). Uniqueness enforcement. Dimming/blocking taken
+avatars. Any in-app avatar *creation* (the creator stays out of scope; only the fixed PNG set is used).
+Changing the random-assign default.
+
+**Do-not-touch on entry.** The cycle interaction; the random-assign logic (`assignAvatars`); the
+colour-swatch taken-dimming (a separate, deliberately different pattern); the avatar reference model
+(players hold an id/filename — grid selection sets that same reference).
+
+**Acceptance criteria — checkable by using the app:**
+1. Tapping the avatar still cycles (unchanged).
+2. Tap-and-hold opens a large modal grid above the player screen; a visible hint label near the avatar
+   tells the player both gestures exist.
+3. The grid shows all avatars scrollably; tapping one sets it and closes the modal in a single action.
+4. My own current avatar shows the yellow (equipped) checkmark in the grid; no avatar is dimmed.
+5. I can select an avatar another player already holds (no block, no warning) and the game proceeds
+   with no ambiguity (colour + name still distinguish us).
+6. Starting a game without opening the grid still assigns everyone a random avatar and is immediately
+   playable — the grid is never forced.
+7. The modal has an obvious way to dismiss without selecting (tap-outside or X), leaving the current
+   avatar unchanged.
+
+**Stop conditions.** If the grid modal can't reuse the existing dialog/overlay pattern without a
+bespoke surface, **stop and report** rather than building a one-off. If tap-and-hold conflicts with the
+existing roster drag-to-reorder (D-50) Pointer-Events handling on the same avatar element, **stop and
+report** the gesture clash rather than working around it silently.
 
 ---
 
@@ -1606,6 +1738,42 @@ executor to resolve.
   countdown (anti-drag, no winner on timeout). A M15 mockup implied a *per-turn* shot clock instead —
   not built (semantics were kept whole-match), but flagged as a **plausible future alternative mode**
   worth designing deliberately if pursued. Not a bug; a mode idea parked for the design track.
+
+---
+
+## 6b. Parked — next milestone (NOT specified, do not build yet)
+
+Captured so it survives; two open points and two knock-ons to settle before it becomes a milestone.
+
+**Idea — mode cleanup + move mode choice to the launch screen.**
+- **Overpay mode D moves out of Rules into the Dev menu.** D is effectively unused in play; it stops
+  being a player-facing rules setting and becomes a dev/experimental toggle. Player-facing rules
+  simplify to strict-A only.
+- **The launch screen becomes the mode picker.** Rename "Tap to start" → **"Play"** (or "Normal
+  play" — decide at build). Layout: **Play / + / [Timer toggle] [Boosts toggle]**, where the **"+"
+  is a separator** (Play is the base game; the two are optional additive modifiers), **not** a reveal
+  — both toggles are always visible.
+- **Two independent toggles, both allowed on together** — giving all four states naturally: neither
+  (plain A), timer-only, boosts-only, both. (Supersedes the earlier at-most-one three-button sketch,
+  which had no clean path to plain-A.)
+- **Play is the single commit action; the toggles are pure pre-selects** (flip them, then tap Play
+  to start with those settings) — avoid any design where a toggle also starts the game.
+
+**Open UX point to test (not decided):** whether putting mode choice on launch, while rack
+size / placement / motion / theme stay in the tabbed menu, creates a confusing **two settings
+locations** split — the launch screen must not read as "all the settings there are." Advice on
+record: keep toggles always-visible (reads as options, not steps); one clear Play button. Build and
+playtest before locking.
+
+**Knock-on 1 — theme inversion.** With D gone, the theme flip stops being the overpay-D signal.
+Repurpose it as the **boost signal**, kept **momentary** (flips during the overpay move a boost pays
+for, reverts after — the existing D-34 boost-spend behaviour), NOT sustained-while-holding (which
+would leave the screen inverted through most of the endgame). **The actual small gap to close: verify
+the 1-for-2 boost triggers the flip, not just the overpay boost** — today the flip may be overpay-only.
+
+**Knock-on 2 — reconciliation debt.** Building this rewrites **D-34** (its "mode D active" sustained
+branch becomes dead code; only the boost-move branch survives) and re-frames **D-59**/the theme-flip
+description from "overpay signal" to "boost-active signal." A supersession to write, not a silent edit.
 
 ---
 
@@ -1689,3 +1857,6 @@ though it were known:
 | D-58 | Two skins ship — Colorful (default) + Monochrome (`settings.skin`, cosmetic-only). Mono uses a computed HSL lightness ramp with reverse-engineered (unmeasured) starting values, flagged to revisit after a readability pass (M14) | Locked |
 | D-59 | Time challenge is a **single whole-match countdown** ending the match with no winner (not a per-turn shot clock, despite an M15 mockup's copy implying otherwise). M15 restyled it; semantics unchanged. Per-turn shot clock parked as a future mode (§6a) (M15) | Locked |
 | D-60 | Turn-card background history: full-bleed player colour (original) → themed surface (M15) → **reverted to full-bleed player colour (M17)**, theme-independent, chrome handled by scoped custom-property overrides on `#screen-turncard`. Current state = full-bleed | Locked |
+| D-61 | Boost-earned toast (M19) flies **OVER** the chips, not under — reverses M19's own "beneath the chips" spec and the earlier conversation, per direct user request. z-index: toast 2, chips 1. Everything else in M19 (live-computed travel, arrival=bump, double-award shrink-in-place fallback) stands | Locked |
+| D-62 | Avatar set grew 19 → **36** (`CONFIG.avatarCount`); six existing files replaced + 23 new 1024×1024 PNGs, zero-padded `NN.png`, no gaps. Assigned randomly without replacement (36 ≥ 12 max); larger set only lowers repeat-avatar odds across games. Avatars not persisted across games, so replaced filenames going to new art breaks no stored reference. Supersedes D-55's count | Locked |
+| D-63 | Avatar grid picker (M20): tap = cycle (unchanged), **tap-and-hold = large modal grid** above the player screen (existing dialog idiom); visible hint label signposts both (not a hidden gesture). Tap-thumbnail = select-and-close. Grid states: own avatar = equipped yellow checkmark, all others normal + tappable, **no dimming**. **No uniqueness enforcement (soft)** — multiple players may share an avatar; colour + name + turn context carry identity. Random-assign stays the default; grid is opt-in. Deliberately differs from the dim-as-hint taken-*colour* behaviour | Locked |
