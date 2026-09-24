@@ -1540,3 +1540,106 @@ button.secondary:active { background: var(--bg-subtle); }
 #setup-footer {
   margin-top: 1rem;
 }
+
+/* ---- M20 (D-63): avatar grid picker ---- */
+.avatar-btn, .turncard-avatar-btn {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+.avatar-btn img, .turncard-avatar-btn img { -webkit-user-drag: none; }
+/* Fixed-height line (always rendered) so it can never shift the layout. */
+.avatar-hint {
+  font-size: 0.68rem;
+  line-height: 1rem;
+  height: 1rem;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+}
+.avatar-hint-play { flex: 0 0 auto; margin: 0.1rem 0 0 0.2rem; }
+.avatar-hint-turncard { margin-top: 1.1rem; }
+.avatar-hint-turncard + .turncard-seat-label { margin-top: 0.6rem; }
+/* Same native-dialog idiom as #confirm-dialog; [open] scoped so the
+   closed dialog still hides. */
+#avatar-dialog {
+  width: min(calc(100% - 1.5rem), 26rem);
+  max-height: 82vh;
+  padding: 0;
+  border: none;
+  border-radius: 18px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+}
+#avatar-dialog[open] { display: flex; flex-direction: column; }
+#avatar-dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+.avatar-dialog-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1rem 0.6rem 1.25rem;
+}
+#avatar-dialog-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.4rem;
+}
+.avatar-dialog-close {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--fg);
+}
+.avatar-dialog-close svg { width: 1rem; height: 1rem; }
+.avatar-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.7rem;
+  padding: 0.4rem 1.1rem 1.2rem;
+}
+.avatar-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 3px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  overflow: visible;
+}
+.avatar-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.avatar-thumb.equipped { border-color: var(--accent-sand); }
+.avatar-thumb .avatar-check {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--accent-sand);
+  color: #241C10;
+  border: 2px solid var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-thumb .avatar-check svg { width: 0.8rem; height: 0.8rem; }

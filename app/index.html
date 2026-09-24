@@ -291,9 +291,10 @@
       </button>
     </div>
     <div class="turncard-center">
-      <button type="button" id="turncard-avatar-btn" class="turncard-avatar-btn" title="Tap to change your avatar">
+      <button type="button" id="turncard-avatar-btn" class="turncard-avatar-btn" title="Tap to change · hold to choose">
         <img id="turncard-avatar-img" alt="">
       </button>
+      <div class="avatar-hint avatar-hint-turncard">Tap to change · hold to choose</div>
       <div id="turncard-seat-label" class="turncard-seat-label"></div>
       <div id="turncard-name"></div>
       <div class="turncard-flat-hint">
@@ -317,13 +318,16 @@
          zones 1/2. -->
     <div class="play-header">
       <div id="play-identity">
-        <button type="button" id="play-avatar-btn" class="avatar-btn" title="Tap to change your avatar">
+        <button type="button" id="play-avatar-btn" class="avatar-btn" title="Tap to change · hold to choose">
           <img id="play-avatar-img" alt="">
         </button>
         <h1 id="play-player-name" class="play-accent-text"></h1>
       </div>
       <div id="play-timer" class="play-accent-text" hidden></div>
     </div>
+    <!-- M20 (D-63): a permanent, fixed-height signpost for both avatar
+         gestures - deliberately not a hidden gesture. -->
+    <div class="avatar-hint avatar-hint-play">Tap to change · hold to choose</div>
 
     <!-- Settings (icon-only cog now, was a text button) - two permanent
          boost chips (icon + count, always present, dimmed at 0) - a
@@ -454,6 +458,19 @@
       <button id="confirm-dialog-cancel" class="secondary">Keep playing</button>
       <button id="confirm-dialog-ok" class="primary danger"></button>
     </div>
+  </dialog>
+
+  <!-- M20 (D-63): avatar grid picker - same native <dialog> + themed
+       ::backdrop idiom as #confirm-dialog above, not a bespoke surface.
+       Opened by tap-and-hold on either avatar (see bindAvatarGestures). -->
+  <dialog id="avatar-dialog">
+    <div class="avatar-dialog-head">
+      <p id="avatar-dialog-title">Choose your avatar</p>
+      <button type="button" id="avatar-dialog-close" class="avatar-dialog-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+      </button>
+    </div>
+    <div id="avatar-grid" class="avatar-grid"></div>
   </dialog>
 
   <script src="theme.js"></script>

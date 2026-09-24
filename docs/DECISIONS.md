@@ -1352,3 +1352,33 @@ as 19 as shipped) - the pool is still assigned randomly without replacement, so 
 only reduces repeat-avatar odds across games; nothing else reads the count. Note the filled
 slots mean those six filenames now show different art than before - avatars aren't persisted
 across games (assigned fresh each game start), so no stored reference goes stale.
+
+### 2026-09-25 — M20: avatar grid picker (D-63)
+
+Built per spec: tap = cycle (unchanged), tap-and-hold (500ms, 10px movement slop) = grid modal, on
+both tappable avatars (Play header, turn-card big avatar). Judgement calls the plan leaves open:
+
+- **Dialog idiom:** a second native `<dialog id="avatar-dialog">` with the same shape as
+  `#confirm-dialog` (native dialog, `showModal`, themed `::backdrop`, same radius/elevated surface). The
+  confirm dialog itself is text-only/generic so it can't host a grid; no bespoke overlay was built, so
+  the "stop and report" condition did not trigger. Dismiss: X button, backdrop tap, or Esc.
+- **No D-50 clash:** roster drag-to-reorder uses Pointer Events on the *setup roster's drag handle*, not
+  on either avatar button, so long-press there doesn't conflict - checked before building.
+- **"Yellow" equipped checkmark = the sand accent** (`--accent-sand`, the app's existing selected-state
+  colour, same as the skin picker's active card) rather than a new yellow, so it follows the light/dark
+  theme. Own avatar gets a sand ring + check badge; nothing is dimmed.
+- **Soft uniqueness:** the grid offers all 36 including ones other players hold. Cycling was left exactly
+  as shipped - `cycleAvatar` still skips avatars other players hold - so the two paths intentionally
+  differ, and a grid-picked duplicate can only be un-duplicated by that player, not by another's cycle.
+- **Hint label:** "Tap to change · hold to choose", permanent and fixed-height (always rendered, so it
+  can't shift layout) on Play (under the identity row) and on the turn card (under the big avatar).
+- Grid pick updates the turn card's big *and* mini avatar; the pre-existing tap-cycle path there still
+  only updates the big one (left untouched, per "keep cycling exactly as shipped").
+- The trailing click a touch long-press emits is swallowed once; native image callout/context menu is
+  suppressed on the avatar buttons.
+
+**Verified** (mobile viewport, real pointer events dispatched): tap cycles and doesn't open the grid;
+long-press opens 36 thumbs with exactly one equipped check and does not also cycle; drag past slop
+cancels; X and backdrop dismiss leave the avatar unchanged; pick closes the modal in one action and
+updates turn card / Play; zero console errors. Not verifiable here: real-finger long-press feel and
+iOS callout suppression - needs a device pass.

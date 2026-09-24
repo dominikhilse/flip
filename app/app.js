@@ -65,6 +65,9 @@
   var endGameBtn = document.getElementById('end-game');
 
   var confirmDialogEl = document.getElementById('confirm-dialog');
+  var avatarDialogEl = document.getElementById('avatar-dialog');
+  var avatarGridEl = document.getElementById('avatar-grid');
+  var avatarDialogCloseBtn = document.getElementById('avatar-dialog-close');
   var confirmDialogTitleEl = document.getElementById('confirm-dialog-title');
   var confirmDialogTextEl = document.getElementById('confirm-dialog-text');
   var confirmDialogOkBtn = document.getElementById('confirm-dialog-ok');
@@ -957,6 +960,94 @@
     return isTapPreferenceOn() || !motionCurrentlyWorking();
   }
 
+  // ---- M20 (D-63): avatar grid picker ----
+  // Tap = cycle (unchanged, passed in as onTap); tap-and-hold = open the
+  // grid. A completed long-press still produces a trailing click on touch
+  // devices - longFired swallows exactly that one. Movement past the slop
+  // (a scroll/drag) or leaving/cancelling the press cancels the timer.
+  // Native long-press image callout/context menu is suppressed so it can't
+  // compete. Not the D-50 roster drag: that lives on the setup roster's own
+  // handle, never on these two avatar buttons.
+  var AVATAR_LONG_PRESS_MS = 500;
+  var AVATAR_LONG_PRESS_SLOP_PX = 10;
+
+  function bindAvatarGestures(btn, onTap) {
+    var timer = null, longFired = false, startX = 0, startY = 0;
+    function cancel() { if (timer !== null) { clearTimeout(timer); timer = null; } }
+    btn.addEventListener('pointerdown', function (e) {
+      longFired = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      cancel();
+      timer = setTimeout(function () {
+        timer = null;
+        longFired = true;
+        openAvatarGrid();
+      }, AVATAR_LONG_PRESS_MS);
+    });
+    btn.addEventListener('pointermove', function (e) {
+      if (timer === null) return;
+      if (Math.abs(e.clientX - startX) > AVATAR_LONG_PRESS_SLOP_PX ||
+          Math.abs(e.clientY - startY) > AVATAR_LONG_PRESS_SLOP_PX) cancel();
+    });
+    btn.addEventListener('pointerup', cancel);
+    btn.addEventListener('pointercancel', cancel);
+    btn.addEventListener('pointerleave', cancel);
+    btn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (longFired) { longFired = false; return; }
+      onTap();
+    });
+  }
+
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12.5 10 17.5 19 7"></polyline></svg>';
+
+  // Sets whichever screen is showing back in sync after a grid pick - the
+  // grid can be opened from the turn card or Play.
+  function refreshAvatarViews() {
+    var p = currentPlayer();
+    if (activeScreen === 'play') {
+      renderPlay();
+    } else {
+      turncardAvatarImgEl.src = 'avatars/' + p.avatar;
+      turncardAvatarImgEl.alt = p.name + '\u2019s avatar';
+      turncardMiniAvatarImgEl.src = 'avatars/' + p.avatar;
+    }
+  }
+
+  // Soft uniqueness (D-63): every avatar is offered and selectable,
+  // including ones other players hold - no dimming, no warning. Only the
+  // opening player's own current avatar is marked (equipped check).
+  function openAvatarGrid() {
+    if (!game || avatarDialogEl.open) return;
+    var p = currentPlayer();
+    avatarGridEl.innerHTML = '';
+    avatarPool().forEach(function (file) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'avatar-thumb' + (file === p.avatar ? ' equipped' : '');
+      btn.innerHTML = '<img alt="" src="avatars/' + file + '">' +
+        (file === p.avatar ? '<span class="avatar-check">' + CHECK_SVG + '</span>' : '');
+      btn.setAttribute('aria-label', 'Avatar ' + file.replace('.png', '') + (file === p.avatar ? ' (current)' : ''));
+      btn.addEventListener('click', function () {
+        p.avatar = file;
+        avatarDialogEl.close();
+        refreshAvatarViews();
+      });
+      avatarGridEl.appendChild(btn);
+    });
+    avatarDialogEl.showModal();
+    avatarGridEl.scrollTop = 0;
+  }
+
+  avatarDialogCloseBtn.addEventListener('click', function () { avatarDialogEl.close(); });
+  // Backdrop tap: the dialog has no padding, so a click whose target is the
+  // <dialog> itself can only be the ::backdrop.
+  avatarDialogEl.addEventListener('click', function (e) {
+    if (e.target === avatarDialogEl) avatarDialogEl.close();
+  });
+
   turncardScreenEl.addEventListener('click', function (e) {
     if (e.target === settingsFromTurncardBtn) return;
     // Issue #2: the turn card's own avatar is now tap-to-cycle, so "tap
@@ -971,8 +1062,7 @@
   // Issue #2: cycling here is independent of effectiveTap()/tap-to-proceed
   // - it's not a turn-advance gesture, so it always works regardless of the
   // motion/tap settings that gate goToRack() above.
-  turncardAvatarBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
+  bindAvatarGestures(turncardAvatarBtn, function () {
     var p = currentPlayer();
     cycleAvatar(p);
     turncardAvatarImgEl.src = 'avatars/' + p.avatar;
@@ -1921,7 +2011,7 @@
   playBoostSpendBtn.addEventListener('click', onBoostSpend);
   playBoostDeclineBtn.addEventListener('click', onBoostDecline);
   playBoostChangeBtn.addEventListener('click', onBoostChange);
-  playAvatarBtn.addEventListener('click', function () { cycleAvatar(currentPlayer()); renderPlay(); });
+  bindAvatarGestures(playAvatarBtn, function () { cycleAvatar(currentPlayer()); renderPlay(); });
 
   // ---- End screen ----
 
