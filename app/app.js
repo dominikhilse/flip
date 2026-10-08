@@ -1207,7 +1207,7 @@
   }
 
   function onTileClick(tile) {
-    if (!game.currentRoll || game.currentRoll.stalled) return;
+    if (!rollRevealed() || game.currentRoll.stalled) return;
     if (!tile.open) return;
     if (game.selected.has(tile.value)) {
       game.selected.delete(tile.value);
@@ -1365,6 +1365,16 @@
     return p.diceCount; // devDiceChoice === 'ask' - the live per-turn choice
   }
 
+  // GH #8: the roll result is decided here, immediately (D-47 unchanged -
+  // animateDiceRoll is still purely cosmetic) - but every player-facing
+  // move option (tile clickability, Confirm, the boost offer, stall/
+  // whole-rack messages) now waits for `revealed` to flip true before it
+  // can show at all. Showing them while the dice were still visibly
+  // rolling read as the game knowing the answer before the player did.
+  function rollRevealed() {
+    return !!(game.currentRoll && game.currentRoll.revealed);
+  }
+
   function onRoll() {
     var p = currentPlayer();
     var dice = RULES.rollDice(effectiveDiceCount(p));
@@ -1394,13 +1404,18 @@
       // boostSpentType through this list, it never recomputes the list
       // itself.
       applicableBoostTypes: boostTypesThisRoll,
-      boostSpentType: null // set on spend - null | 'overpay' | 'oneForTwo'
+      boostSpentType: null, // set on spend - null | 'overpay' | 'oneForTwo'
+      revealed: false // GH #8 - flips true when animateDiceRoll settles
     };
     game.selected = new Set();
     renderPlay();
     // Cosmetic only (M10) - `dice` above is already the final, decided
-    // result; this just flashes the display before settling on it.
-    animateDiceRoll(dice);
+    // result; this just flashes the display before settling on it. Passes
+    // the roll object itself (not just the dice) so the completion
+    // callback can confirm it's still the live roll before touching game
+    // state - onConfirm/onPass null currentRoll out well before a slow
+    // animation could finish.
+    animateDiceRoll(dice, game.currentRoll);
   }
 
   // §3.3's "changeable with a single tap" - a per-turn, per-player
@@ -1654,7 +1669,7 @@
       var btn = document.createElement('button');
       btn.className = 'tile' + (tile.open ? '' : ' closed') + (game.selected.has(tile.value) ? ' selected' : '');
       btn.textContent = tile.value;
-      btn.disabled = !tile.open || !game.currentRoll || game.currentRoll.stalled;
+      btn.disabled = !tile.open || !rollRevealed() || game.currentRoll.stalled;
       // M13/D-53-55: fill/edge/ink per tile, not a flat colour - edge is the
       // tile's border (a non-hue identity channel), ink the numeral. Closed
       // tiles use THEME.closedTile regardless of value - the desaturated
@@ -1775,7 +1790,7 @@
   // influence the outcome even in principle.
   var diceAnimationIntervalId = null;
 
-  function animateDiceRoll(finalDice) {
+  function animateDiceRoll(finalDice, roll) {
     var dieEls = Array.prototype.slice.call(playDiceAreaEl.querySelectorAll('.die'));
     var totalEl = document.getElementById('total');
     if (!dieEls.length) return;
@@ -1805,13 +1820,26 @@
           el.innerHTML = dieFaceSVG(finalDice[i]); // settle on the predetermined result
         });
         if (totalEl) totalEl.style.visibility = '';
+        // GH #8: reveal move options only now the dice have visibly
+        // settled. Guarded against the roll having already ended (Confirm/
+        // Pass/a new turn all null game.currentRoll well before a slow
+        // animation could finish) - `roll` is the exact object `onRoll`
+        // passed in, not just "whatever currentRoll is now".
+        if (game.currentRoll === roll) {
+          roll.revealed = true;
+          renderPlay();
+        }
       }
     }, CONFIG.diceAnimationFrameMs);
   }
 
   function renderPlayMessage() {
     playMessageEl.className = '';
-    if (game.currentRoll && game.currentRoll.stalled && !game.currentRoll.boostOfferPending) {
+    if (!rollRevealed()) {
+      playMessageEl.textContent = '';
+      return;
+    }
+    if (game.currentRoll.stalled && !game.currentRoll.boostOfferPending) {
       playMessageEl.textContent = 'Stalled — no legal move for this roll.';
       playMessageEl.className = 'stalled';
     } else if (boostWholeRackBlocked()) {
@@ -1945,7 +1973,7 @@
   // #screen-play .action-row (see renderPlayButtons) instead of a separate
   // hidden wrapper - only the explanatory text is this function's job now.
   function renderPlayBoostOffer() {
-    var show = !!(game.currentRoll && game.currentRoll.boostOfferPending);
+    var show = rollRevealed() && game.currentRoll.boostOfferPending;
     if (!show) {
       playBoostOfferTextEl.textContent = '';
       return;
@@ -1964,7 +1992,7 @@
   }
 
   function renderPlaySelectionSum() {
-    if (!game.currentRoll || game.currentRoll.stalled) {
+    if (!rollRevealed() || game.currentRoll.stalled) {
       playSelectionSumEl.style.visibility = 'hidden';
       playSelectionSumEl.textContent = '';
       return;
@@ -1998,14 +2026,37 @@
   // function is the single place that decides which subset is visible, so
   // the row's own reserved height (fixed via CSS) never has to change.
   function renderPlayButtons() {
-    var boostOfferPending = !!(game.currentRoll && game.currentRoll.boostOfferPending);
-    var stalled = !!(game.currentRoll && game.currentRoll.stalled) && !boostOfferPending;
+    // GH #8: every one of these gates on rollRevealed() now, not just
+    // game.currentRoll existing - see onRoll/animateDiceRoll. Roll's own
+    // disabled state is the one exception (below): that has to flip the
+    // instant you tap it, immediately, to block a double-roll - it was
+    // never a "move option" being revealed.
+    var revealed = rollRevealed();
+    var boostOfferPending = revealed && game.currentRoll.boostOfferPending;
+    var stalled = revealed && game.currentRoll.stalled && !boostOfferPending;
     // M18: only once a boost has actually been spent AND this roll's fixed
     // applicable set has more than one entry - i.e. there's something to
     // cycle to. Takes Roll's slot (below) rather than adding a third
     // visible button; Confirm's own hidden/disabled logic is untouched.
-    var canChangeBoost = !!(game.currentRoll && game.currentRoll.boostSpentType &&
+    var canChangeBoost = revealed && !!(game.currentRoll.boostSpentType &&
       game.currentRoll.applicableBoostTypes && game.currentRoll.applicableBoostTypes.length > 1);
+
+    // GH #8: "Use Boost"/"Change Boost" retired - the button always names
+    // the specific type tapping it would apply. Pre-spend, that's
+    // offeredBoostType (the default - 1-for-2 first when both apply, per
+    // D-37/D-56). Once spent, the *other* button text is still "Use
+    // Boost"'s replacement, but now it names whichever type cycling would
+    // switch TO (the one most tapped type isn't currently previewing) -
+    // reuses onBoostChange's own next-in-list logic so the label can never
+    // drift from what tapping it actually does.
+    if (boostOfferPending) {
+      playBoostSpendBtn.textContent = 'Use ' + BOOST_TYPE_LABELS[game.currentRoll.offeredBoostType];
+    }
+    if (canChangeBoost) {
+      var types = game.currentRoll.applicableBoostTypes;
+      var nextType = types[(types.indexOf(game.currentRoll.boostSpentType) + 1) % types.length];
+      playBoostChangeBtn.textContent = 'Use ' + BOOST_TYPE_LABELS[nextType];
+    }
 
     playBoostSpendBtn.hidden = !boostOfferPending;
     playBoostDeclineBtn.hidden = !boostOfferPending;
@@ -2014,9 +2065,11 @@
     playPassBtn.hidden = !stalled;
     playConfirmBtn.hidden = stalled || boostOfferPending;
 
+    // Immediate, not gated on reveal - this has to disable the instant you
+    // tap it, or a second tap mid-animation could trigger a second roll.
     playRollBtn.disabled = game.currentRoll !== null;
 
-    if (!game.currentRoll || game.currentRoll.stalled || boostOfferPending) {
+    if (!revealed || game.currentRoll.stalled || boostOfferPending) {
       playConfirmBtn.disabled = true;
     } else {
       playConfirmBtn.disabled = !currentSelectionValid(currentPlayer());

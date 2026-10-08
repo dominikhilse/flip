@@ -1622,3 +1622,39 @@ centre/wide, Timer right, picker above-right when active); mid-game row confirme
 App tab's Mono box and the "2–12 players" copy checked visually against the mocks; a full real game
 (45 turns, both Timer and Boosts enabled through the redesigned row) completed with zero console
 errors.
+
+### 2026-10-10 — GH #8: delay move-option reveal until the dice settle; boost buttons name their type
+
+Both items were clear enough to implement without a round-trip - no open questions, no locked
+decisions touched.
+
+- **Move options now wait for the dice animation.** The roll result is still decided immediately
+  (D-47/M10 unchanged - `animateDiceRoll` stays purely cosmetic), but `game.currentRoll.revealed`
+  starts `false` on every roll and only flips `true` (triggering a re-render) once the animation's
+  own `setInterval` settles on the real faces - guarded against the roll having already ended
+  (Confirm/Pass/a new turn null `game.currentRoll` well before a slow animation could finish) by
+  comparing against the exact roll object instance, not just "whatever currentRoll is now".
+  `rollRevealed()` is a single new helper; every consumer that renders a "move option" (tile
+  clickability in `onTileClick`/`renderPlayRack`, Confirm's enabled state, the boost offer, the
+  stalled/whole-rack messages, the selection-sum line) now gates on it instead of just
+  `game.currentRoll` existing. The one deliberate exception: Roll's own `disabled` state stays tied
+  to the *real* `game.currentRoll`, not the reveal gate - it has to flip the instant you tap it to
+  block a double-roll, which was never a "move option" being revealed.
+- **"Use Boost"/"Change Boost" retired.** Both buttons now always name the specific type tapping
+  them would apply - "Use Overpay" or "Use 1-for-2". Pre-spend, that's `offeredBoostType` (the
+  default - 1-for-2 first when both apply, D-37/D-56 unchanged). Once spent, the second button -
+  previously a generic "Change Boost" - now names whichever type cycling would switch *to* (reuses
+  `onBoostChange`'s own next-in-list computation for the label, so it can never drift from what
+  tapping it actually does): spend 1-for-2 → button reads "Use Overpay"; tap it → spent flips to
+  overpay, button now reads "Use 1-for-2". The single-applicable-type case (no cycling) simply
+  shows "Use Overpay" or "Use 1-for-2" directly, same flow as before.
+
+**Verified:** a forced single roll confirmed the exact before/after animation states (immediately
+after tapping Roll: tiles disabled, Confirm disabled, no message text, `revealed:false`; ~650ms
+later: tiles clickable, `revealed:true`) and that Roll itself stays disabled throughout, immediately,
+as intended; the two-type offer/cycle sequence confirmed button text flips "Use 1-for-2" → "Use
+Overpay" → "Use 1-for-2" across spend/change/change; the single-type case confirmed to show the
+correct specific label with no Change button; 5 consecutive real-paced rolls (real ~600ms waits, not
+sped up) completed across genuine turn transitions with zero errors; a full automated game (59 turns,
+boosts enabled) completed with zero errors. Debug harness stripped before commit; dev-server port
+reverted to 8123.

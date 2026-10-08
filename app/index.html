@@ -402,11 +402,17 @@
          instead) once a boost has been spent and more than one held type
          would still resolve this stall - Confirm's own hidden/disabled
          logic is untouched, it just keeps reading the currently-selected
-         boost type same as before. -->
+         boost type same as before.
+         GH #8: both buttons' text is fully JS-driven now (renderPlayButtons
+         sets it every time either becomes visible) - "Use Boost"/"Change
+         Boost" are gone, replaced by the specific type tapping the button
+         applies ("Use Overpay"/"Use 1-for-2"). The text below is never
+         actually seen, just a reasonable placeholder for anyone reading
+         source. -->
     <div class="action-row">
-      <button id="play-boost-spend" class="primary">Use boost</button>
+      <button id="play-boost-spend" class="primary">Use 1-for-2</button>
       <button id="play-boost-decline" class="secondary">Stay stalled</button>
-      <button id="play-boost-change" class="primary">Change boost</button>
+      <button id="play-boost-change" class="primary">Use Overpay</button>
       <button id="play-roll" class="primary">Roll</button>
       <button id="play-confirm" class="primary">Confirm</button>
       <button id="play-pass" class="primary">Next player</button>
