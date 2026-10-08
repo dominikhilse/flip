@@ -1558,3 +1558,28 @@ element, confirmed, not a per-tab copy); a full real game (83 turns) started wit
 via the new footer toggle and completed with zero errors; mid-game footer state checked directly
 (Timer disabled, Boosts still toggles); Dev tab (flag flipped live) confirmed to coexist with the
 new footer correctly. Debug harness stripped before commit; dev-server port reverted to 8123.
+
+### 2026-10-09 — M23 follow-up: dynamic footer height, picker moved above the toggles
+
+User request: let the footer's height vary with Timer's picker instead of always reserving its
+space, without Start Game ever moving. Resolved by moving the picker to sit *above* `.mode-toggles`
+(previously below it) and swapping which side Timer is on:
+
+- **Picker moved above the toggle row**, Boosts/Timer swapped so Timer is now the right-hand
+  button. The footer is bottom-anchored (`#setup-scroll` is `flex:1`, the footer `flex:0 0 auto`,
+  the whole `#screen-setup` a fixed-height column) - growing the footer only pushes its own *top*
+  edge further up into the scroll area. Since the picker is now the topmost child, showing/hiding
+  it can never move anything below it (toggle row, Start Game, mid-game buttons) - the old
+  reserved-space/`visibility` technique is no longer needed; switched to a genuine `hidden`
+  attribute toggle.
+- **Picker right-aligned** (`justify-content: flex-end`, no longer full-width with a text label) so
+  it sits directly above the Timer button specifically, reading as a flyout from that button rather
+  than a generic row - "Timer" + the clock icon right below it already say what it controls, so the
+  "Countdown length" label became redundant (kept as an `aria-label` on the row for screen readers).
+
+**Verified:** `getBoundingClientRect()` before/after toggling Timer confirms Start Game's `top` and
+the footer's own `bottom` are pixel-identical either way, while the footer's `top` moves up when the
+picker appears (height genuinely grows, not reserved); the picker's right edge measured equal to
+the Timer button's right edge (true alignment, not approximate); stepper still adjusts the value and
+toggling Timer off correctly collapses the picker back to zero height; a full real game (51 turns,
+both Timer and Boosts enabled via the relocated toggles) completed with zero console errors.

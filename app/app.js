@@ -471,12 +471,13 @@
     // still blocked-until-next-game (same class as rack size - a live
     // game already has its countdown running or not); Boosts is still
     // lap-anchored via queueSettingChange, same A-only gating as before.
-    // The picker row is always rendered (reserves Start Game's position -
-    // see .setup-timer-picker in style.css) - .style.visibility toggles
-    // it, never `hidden`/display, exactly like #play-selection-sum.
+    // The picker row is genuinely shown/hidden now (sits above the toggle
+    // row, not below - see .setup-timer-picker in style.css for why that
+    // makes a real hide safe here, unlike #play-selection-sum's reserved-
+    // space case).
     modeToggleTimerBtn.classList.toggle('active', settings.timeChallengeSeconds > 0);
     modeToggleTimerBtn.disabled = midGame;
-    footerTimerPickerEl.style.visibility = settings.timeChallengeSeconds > 0 ? '' : 'hidden';
+    footerTimerPickerEl.hidden = settings.timeChallengeSeconds === 0;
     footerTimerValueEl.textContent = formatSecondsLabel(settings.timeChallengeSeconds || lastTimeChallengeSeconds);
     footerTimerMinusBtn.disabled = midGame;
     footerTimerPlusBtn.disabled = midGame;

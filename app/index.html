@@ -246,29 +246,37 @@
          fixed and identical on every tab - Timer/Boosts (the match's
          optional modes, now their only home anywhere - see Rules/Dev
          tabs above) above the existing Start Game/mid-game action
-         buttons, unchanged and reused as-is (see renderPrimaryAction). -->
+         buttons, unchanged and reused as-is (see renderPrimaryAction).
+         Follow-up revision: the footer's height is now dynamic (genuinely
+         shown/hidden via the `hidden` attribute, not reserved space) -
+         safe to do because the picker sits ABOVE the toggle row, which is
+         itself always the same height directly above Start Game. The
+         footer is bottom-anchored (#setup-scroll takes the remaining
+         flex:1 space above it), so growing/shrinking the footer only
+         moves its own top edge into/out of the scroll area - Start Game
+         and the toggle row never move. -->
     <div id="setup-footer">
-      <div class="mode-toggles">
-        <button type="button" id="mode-toggle-timer" class="mode-toggle-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
-          <span>Timer</span>
-        </button>
-        <button type="button" id="mode-toggle-boosts" class="mode-toggle-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-          <span>Boosts</span>
-        </button>
-      </div>
-      <!-- Always rendered, space reserved via CSS min-height - toggled by
-           JS setting .style.visibility (never `hidden`/display), same
-           reserved-space technique as #play-selection-sum, so turning
-           Timer on/off never moves the Start Game button below it. -->
-      <div id="footer-timer-picker" class="setup-timer-picker">
-        <span>Countdown length</span>
+      <!-- Right-aligned so it sits directly above the Timer button below
+           it (Timer is now the right-hand toggle) - reads as a flyout
+           from that specific button, no separate label needed since
+           "Timer" + the clock icon right below it already say what this
+           controls. -->
+      <div id="footer-timer-picker" class="setup-timer-picker" hidden aria-label="Countdown length">
         <div class="stepper">
           <button type="button" id="footer-timer-minus" class="stepper-btn">−</button>
           <span id="footer-timer-value" class="stepper-value">60</span>
           <button type="button" id="footer-timer-plus" class="stepper-btn">+</button>
         </div>
+      </div>
+      <div class="mode-toggles">
+        <button type="button" id="mode-toggle-boosts" class="mode-toggle-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <span>Boosts</span>
+        </button>
+        <button type="button" id="mode-toggle-timer" class="mode-toggle-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
+          <span>Timer</span>
+        </button>
       </div>
       <button id="start-game" class="primary" disabled>Start game</button>
       <button id="back-to-game" class="primary" hidden>Back to game</button>

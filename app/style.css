@@ -1622,15 +1622,16 @@ button.secondary:active { background: var(--bg-subtle); }
   color: var(--accent-sand-ink);
 }
 .mode-toggle-btn:disabled { opacity: 0.5; }
-/* Always rendered (see index.html's comment on #footer-timer-picker) -
-   fixed min-height reserves Start Game's position whether or not this is
-   visible; toggled via .style.visibility in JS, never `hidden`/display,
-   so the reservation holds even while invisible. */
+/* Genuinely shown/hidden now (the `hidden` attribute, toggled in JS) -
+   safe because it sits ABOVE .mode-toggles, not below it: growing the
+   footer by this row's height only pushes its own top edge further into
+   the scrollable area above (#setup-scroll is flex:1, the footer is
+   bottom-anchored) - Start Game and the toggle row beneath this never
+   move. Right-aligned to sit directly above the Timer button (the
+   right-hand toggle - see index.html) rather than spanning full width. */
 .setup-timer-picker {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 2.6rem;
+  justify-content: flex-end;
   margin-bottom: 0.6rem;
 }
 
