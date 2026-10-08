@@ -50,6 +50,11 @@
       </div>
       <h1 class="launch-title">Flip the<br>Number</h1>
       <div class="launch-tagline">Pass-and-play · 2–8 players</div>
+      <!-- M23: the permission prompt itself is unchanged (still requested
+           from the New Game menu's own motion-gated flow, see
+           beginMotionListening/screens.launch's click handler) - this is
+           only a heads-up so it doesn't arrive unexplained. -->
+      <div class="launch-permission-hint">We'll ask to use motion sensing, for flipping tiles by tilting your phone.</div>
       <button type="button" id="launch-hint" class="primary">Tap to start</button>
     </div>
   </section>
@@ -58,8 +63,13 @@
        (colours, fonts, real icon art) lands with M13's brand drop. Tab
        content below is a straight reorganisation of M1-M9's existing
        controls into 2a/3a/3b/3c's structure; no setting, default, or
-       mid-game-mutability tier changes anywhere in this section. -->
-  <section id="screen-setup" class="screen" hidden>
+       mid-game-mutability tier changes anywhere in this section.
+       M23: #screen-setup is now a fixed-header/scrolling-middle/fixed-
+       footer flex column (.setup-screen, style.css) - title/banner/tabbar
+       stay put, #setup-scroll (wrapping the four tab panels below) is the
+       only part that scrolls, #setup-footer (Timer/Boosts + Start Game)
+       stays pinned at the bottom on every tab. -->
+  <section id="screen-setup" class="screen setup-screen" hidden>
     <!-- M15 brand pass: a real page title (there wasn't one before) -
          "New Game" pre-match, "Settings" once a match is live, per
          GameScreens_Redesign's Frames 4-7 - see renderSetup in app.js. -->
@@ -91,6 +101,8 @@
         Dev
       </button>
     </div>
+
+    <div id="setup-scroll">
 
     <!-- 3a Players -->
     <div id="setup-tab-players" class="setup-tab" hidden>
@@ -129,14 +141,6 @@
         </select>
       </div>
 
-      <!-- M22/D-65: Boost mode's own home is still open - Timer/Boost
-           *placement* is explicitly out of scope for M22 (that's M23's
-           shared footer); left exactly where it's always been rather than
-           stripped out with nowhere else to go in the meantime. -->
-      <div class="setting-row">
-        <span>Boost mode (A only) <span class="chip">next lap</span></span>
-        <label class="switch"><input type="checkbox" id="boost-checkbox"><span class="switch-track"></span></label>
-      </div>
     </div>
 
     <!-- 3b App -->
@@ -223,24 +227,6 @@
       </div>
       <div class="setting-note">Off = always one die, no prompt (production default). On: "?" shows the normal per-turn 1/2 choice (§3.3) for exercising both paths by hand; 1 or 2 hard-forces that count, no prompt. Switch back to 1 (or untick) at any time - the last-tile-is-1 safety rule always wins regardless.</div>
 
-      <!-- M15: restyled as a switch + stepper (was a number input + "Set"
-           button) - same underlying settings.timeChallengeSeconds, still a
-           single whole-match countdown (see DECISIONS.md re: the mockup's
-           differently-worded "per-turn" framing, not built). -->
-      <div class="setting-row">
-        <span>Time challenge <span class="chip">next game</span></span>
-        <label class="switch"><input type="checkbox" id="dev-time-challenge-toggle"><span class="switch-track"></span></label>
-      </div>
-      <div class="setting-row" id="dev-time-challenge-stepper-row" hidden>
-        <span>Countdown length</span>
-        <div class="stepper">
-          <button type="button" id="dev-time-challenge-minus" class="stepper-btn">−</button>
-          <span id="dev-time-challenge-value" class="stepper-value">60</span>
-          <button type="button" id="dev-time-challenge-plus" class="stepper-btn">+</button>
-        </div>
-      </div>
-      <div class="setting-note" id="dev-time-challenge-status">Currently off</div>
-
       <!-- M16: live-tunable dice-roll animation duration (config.js's own
            comment already calls this "purely cosmetic... tune by feel",
            not a measured threshold like the motion values) - takes effect
@@ -254,8 +240,36 @@
       </div>
       <div class="setting-note">Purely cosmetic wobble/flash duration before the dice settle on the real (already-decided) result - applies to the very next roll.</div>
     </div>
+    </div><!-- /#setup-scroll -->
 
+    <!-- M23/D-67: the one shared footer, outside #setup-scroll so it's
+         fixed and identical on every tab - Timer/Boosts (the match's
+         optional modes, now their only home anywhere - see Rules/Dev
+         tabs above) above the existing Start Game/mid-game action
+         buttons, unchanged and reused as-is (see renderPrimaryAction). -->
     <div id="setup-footer">
+      <div class="mode-toggles">
+        <button type="button" id="mode-toggle-timer" class="mode-toggle-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
+          <span>Timer</span>
+        </button>
+        <button type="button" id="mode-toggle-boosts" class="mode-toggle-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <span>Boosts</span>
+        </button>
+      </div>
+      <!-- Always rendered, space reserved via CSS min-height - toggled by
+           JS setting .style.visibility (never `hidden`/display), same
+           reserved-space technique as #play-selection-sum, so turning
+           Timer on/off never moves the Start Game button below it. -->
+      <div id="footer-timer-picker" class="setup-timer-picker">
+        <span>Countdown length</span>
+        <div class="stepper">
+          <button type="button" id="footer-timer-minus" class="stepper-btn">−</button>
+          <span id="footer-timer-value" class="stepper-value">60</span>
+          <button type="button" id="footer-timer-plus" class="stepper-btn">+</button>
+        </div>
+      </div>
       <button id="start-game" class="primary" disabled>Start game</button>
       <button id="back-to-game" class="primary" hidden>Back to game</button>
       <button id="restart-match" class="secondary" hidden>Restart match</button>

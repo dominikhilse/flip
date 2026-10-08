@@ -67,21 +67,22 @@
   var rackSizeToggleEl = document.getElementById('rack-size-toggle');
   var placementModeEl = document.getElementById('placement-mode');
   var overpayToggleEl = document.getElementById('overpay-toggle');
-  var boostCheckboxEl = document.getElementById('boost-checkbox');
   var devDiceTestEnabledEl = document.getElementById('dev-dice-test-enabled');
   var devDiceChoiceRowEl = document.getElementById('dev-dice-choice-row');
   var devDiceChoiceToggleEl = document.getElementById('dev-dice-choice-toggle');
-  var devTimeChallengeToggleEl = document.getElementById('dev-time-challenge-toggle');
-  var devTimeChallengeStepperRowEl = document.getElementById('dev-time-challenge-stepper-row');
-  var devTimeChallengeValueEl = document.getElementById('dev-time-challenge-value');
-  var devTimeChallengeMinusBtn = document.getElementById('dev-time-challenge-minus');
-  var devTimeChallengePlusBtn = document.getElementById('dev-time-challenge-plus');
-  var devTimeChallengeStatusEl = document.getElementById('dev-time-challenge-status');
   var devDiceAnimInputEl = document.getElementById('dev-dice-anim-input');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleGroupEl = document.getElementById('theme-toggle-group');
   var skinToggleGroupEl = document.getElementById('skin-toggle-group');
+  // M23/D-67: Timer and Boosts now live only in the shared setup footer -
+  // see renderSettingsControls and the handlers below.
+  var modeToggleTimerBtn = document.getElementById('mode-toggle-timer');
+  var modeToggleBoostsBtn = document.getElementById('mode-toggle-boosts');
+  var footerTimerPickerEl = document.getElementById('footer-timer-picker');
+  var footerTimerValueEl = document.getElementById('footer-timer-value');
+  var footerTimerMinusBtn = document.getElementById('footer-timer-minus');
+  var footerTimerPlusBtn = document.getElementById('footer-timer-plus');
   var startGameBtn = document.getElementById('start-game');
   var backToGameBtn = document.getElementById('back-to-game');
   var restartMatchBtn = document.getElementById('restart-match');
@@ -439,10 +440,6 @@
       btn.classList.toggle('active', settings.overpayMode === btn.getAttribute('data-overpay'));
     });
 
-    boostCheckboxEl.checked = settings.boostEnabled;
-    boostCheckboxEl.disabled = settings.overpayMode !== 'A';
-    boostCheckboxEl.closest('.setting-row').classList.toggle('disabled', boostCheckboxEl.disabled);
-
     // Motion, tap-to-proceed, and theme are input/cosmetic preferences, not
     // rules - they apply immediately (see queueSettingChange), so unlike
     // the settings above they carry no next-game/next-lap chip.
@@ -469,22 +466,23 @@
       btn.classList.toggle('active', settings.devDiceChoice === btn.getAttribute('data-dice-choice'));
     });
 
-    // Time challenge (M9) - blocked-until-next-game, same class as rack
-    // size: retrofitting a countdown onto a game already in progress isn't
-    // worth the edge cases for a dev instrument. M15: switch + stepper
-    // (was a number input + "Set" button) over the same
-    // settings.timeChallengeSeconds - the stepper row only shows once the
-    // switch is on, and remembers the last non-zero value across an
-    // off/on toggle via lastTimeChallengeSeconds (see the toggle handler).
-    devTimeChallengeToggleEl.checked = settings.timeChallengeSeconds > 0;
-    devTimeChallengeToggleEl.disabled = midGame;
-    devTimeChallengeStepperRowEl.hidden = settings.timeChallengeSeconds === 0;
-    devTimeChallengeValueEl.textContent = formatSecondsLabel(settings.timeChallengeSeconds || lastTimeChallengeSeconds);
-    devTimeChallengeMinusBtn.disabled = midGame;
-    devTimeChallengePlusBtn.disabled = midGame;
-    devTimeChallengeStatusEl.textContent =
-      (settings.timeChallengeSeconds > 0 ? 'Currently ' + formatSecondsLabel(settings.timeChallengeSeconds) : 'Currently off') +
-      (midGame ? ' - applies next game' : '');
+    // M23/D-67: Timer + Boosts, the shared setup-footer's one home for
+    // both (no longer anywhere else - see Rules/Dev tabs above). Timer is
+    // still blocked-until-next-game (same class as rack size - a live
+    // game already has its countdown running or not); Boosts is still
+    // lap-anchored via queueSettingChange, same A-only gating as before.
+    // The picker row is always rendered (reserves Start Game's position -
+    // see .setup-timer-picker in style.css) - .style.visibility toggles
+    // it, never `hidden`/display, exactly like #play-selection-sum.
+    modeToggleTimerBtn.classList.toggle('active', settings.timeChallengeSeconds > 0);
+    modeToggleTimerBtn.disabled = midGame;
+    footerTimerPickerEl.style.visibility = settings.timeChallengeSeconds > 0 ? '' : 'hidden';
+    footerTimerValueEl.textContent = formatSecondsLabel(settings.timeChallengeSeconds || lastTimeChallengeSeconds);
+    footerTimerMinusBtn.disabled = midGame;
+    footerTimerPlusBtn.disabled = midGame;
+
+    modeToggleBoostsBtn.classList.toggle('active', settings.boostEnabled);
+    modeToggleBoostsBtn.disabled = settings.overpayMode !== 'A';
 
     // M16: mutates CONFIG directly (not settings/localStorage) - purely
     // cosmetic and explicitly "tune by feel" per config.js's own comment,
@@ -591,8 +589,13 @@
     renderSettingsControls();
   });
 
-  boostCheckboxEl.addEventListener('change', function () {
-    queueSettingChange('boostEnabled', boostCheckboxEl.checked);
+  // M23/D-67: a single on/off button now (was a Rules-tab checkbox) - same
+  // lap-anchored setting, same A-only gating (see renderSettingsControls),
+  // just relocated to the shared footer alongside Timer.
+  modeToggleBoostsBtn.addEventListener('click', function () {
+    if (modeToggleBoostsBtn.disabled) return;
+    queueSettingChange('boostEnabled', !settings.boostEnabled);
+    renderSettingsControls();
   });
 
   // Resets to 'ask' every time the checkbox is (re-)ticked, per the
@@ -612,19 +615,21 @@
     renderSettingsControls();
   });
 
-  // Time challenge (M9): blocked-until-next-game, so this writes straight
-  // to settings like rackSize does - never through queueSettingChange/game.
-  // M15: a switch + stepper replaces the old number input + "Set" button.
-  // lastTimeChallengeSeconds remembers the last non-zero duration across an
-  // off/on toggle (not persisted - a fresh page load has no "last" value
-  // beyond whatever settings.timeChallengeSeconds already was) - 60s is the
-  // starting default the first time it's ever switched on, a judgement
-  // call like config.js's other tunable-by-feel starting values.
+  // Time challenge (M9/M23): blocked-until-next-game, so this writes
+  // straight to settings like rackSize does - never through
+  // queueSettingChange/game. A single on/off button + stepper now (was a
+  // Dev-tab switch + stepper), relocated to the shared footer alongside
+  // Boosts. lastTimeChallengeSeconds remembers the last non-zero duration
+  // across an off/on toggle (not persisted - a fresh page load has no
+  // "last" value beyond whatever settings.timeChallengeSeconds already
+  // was) - 60s is the starting default the first time it's ever switched
+  // on, a judgement call like config.js's other tunable-by-feel starting
+  // values.
   var lastTimeChallengeSeconds = settings.timeChallengeSeconds || 60;
 
-  devTimeChallengeToggleEl.addEventListener('change', function () {
+  modeToggleTimerBtn.addEventListener('click', function () {
     if (game !== null) return; // blocked-until-next-game
-    settings.timeChallengeSeconds = devTimeChallengeToggleEl.checked ? lastTimeChallengeSeconds : 0;
+    settings.timeChallengeSeconds = settings.timeChallengeSeconds > 0 ? 0 : lastTimeChallengeSeconds;
     STORAGE.saveSettings(settings);
     renderSettingsControls();
   });
@@ -636,8 +641,8 @@
     STORAGE.saveSettings(settings);
     renderSettingsControls();
   }
-  devTimeChallengeMinusBtn.addEventListener('click', function () { stepTimeChallenge(-15); });
-  devTimeChallengePlusBtn.addEventListener('click', function () { stepTimeChallenge(15); });
+  footerTimerMinusBtn.addEventListener('click', function () { stepTimeChallenge(-15); });
+  footerTimerPlusBtn.addEventListener('click', function () { stepTimeChallenge(15); });
 
   // M16: live dice-roll animation duration - see the comment on CONFIG in
   // renderSettingsControls. No "Set" button - takes effect immediately,

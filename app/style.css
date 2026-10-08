@@ -797,7 +797,18 @@ button.secondary:active { background: var(--bg-subtle); }
 .launch-tagline {
   font-size: 0.85rem;
   color: #8a8a8a;
-  margin: 0.75rem 0 2rem;
+  margin: 0.75rem 0 1rem;
+}
+/* M23: one line setting expectations for the motion-permission prompt
+   that's part of the very next screen's flow (screens.launch's click
+   handler) - this is the only change to the launch screen, still a plain
+   splash + CTA otherwise. */
+.launch-permission-hint {
+  font-size: 0.75rem;
+  color: #6e6e6e;
+  max-width: 26ch;
+  margin: 0 auto 1.5rem;
+  line-height: 1.4;
 }
 
 /* Play screen */
@@ -1556,8 +1567,71 @@ button.secondary:active { background: var(--bg-subtle); }
   vertical-align: middle;
 }
 
+/* M23: fixed header (title/banner/tabbar) + scrolling middle (the active
+   tab's content) + fixed footer (Timer/Boosts + Start Game), identical on
+   every tab since the footer lives outside #setup-scroll entirely - see
+   index.html's structure comment on #screen-setup. Overrides .screen's
+   plain block layout for this one screen only; every other screen using
+   .screen is untouched. */
+.setup-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding-bottom: 0;
+}
+#setup-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 #setup-footer {
-  margin-top: 1rem;
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 0.75rem 0 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* M23/D-67: two big, clearly-on-or-off mode toggles (Timer, Boosts) -
+   same sand-when-active language as .toggle-btn.active, sized and framed
+   like a real button rather than a checkbox since there's no segmented
+   "other option" here, just on vs. off. */
+.mode-toggles {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+.mode-toggle-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.65em 0.5em;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text-soft);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.mode-toggle-btn svg { width: 1.3rem; height: 1.3rem; }
+.mode-toggle-btn.active {
+  background: var(--accent-sand);
+  border-color: var(--accent-sand);
+  color: var(--accent-sand-ink);
+}
+.mode-toggle-btn:disabled { opacity: 0.5; }
+/* Always rendered (see index.html's comment on #footer-timer-picker) -
+   fixed min-height reserves Start Game's position whether or not this is
+   visible; toggled via .style.visibility in JS, never `hidden`/display,
+   so the reservation holds even while invisible. */
+.setup-timer-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.6rem;
+  margin-bottom: 0.6rem;
 }
 
 /* ---- M20 (D-63): avatar grid picker ---- */

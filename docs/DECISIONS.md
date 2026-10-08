@@ -1512,3 +1512,49 @@ shipped default) - 4 tabs render, Dev shows Overpay/Test dice/Time challenge/Dic
 `onRoll`/`onConfirm`/`onPass`/`onBoostDecline`) completed with zero console errors and Overpay
 confirmed locked to `A` throughout. Debug harness stripped before commit; dev-server port (bumped
 to defeat HTTP caching while testing config.js changes) reverted to 8123.
+
+### 2026-10-09 — M23: mode toggles in a fixed settings-menu footer (D-67)
+
+Built per the locked (already-revised) spec - the launch screen stays a splash + CTA (one new
+line mentioning the upcoming motion-permission prompt), and Timer/Boosts + Start Game now live in
+a single shared footer, pinned at the bottom of every settings tab.
+
+- **`#screen-setup` restructured into a three-region flex column**: fixed header (title/subtitle/
+  banner/tabbar) - scrollable `#setup-scroll` (wraps all four tab panels, unchanged internally) -
+  fixed `#setup-footer`. The footer lives *outside* `#setup-scroll`, so it's one DOM element, not
+  duplicated per tab - "every tab shows the same footer" falls out of the structure for free, no
+  per-tab-switch logic needed. New `.setup-screen` class scopes this to `#screen-setup` only;
+  every other screen using the shared `.screen` class is untouched.
+- **Boost mode and Timer actually relocated now** (M22 deliberately left them in place - see that
+  entry above - specifically because this milestone is where they get a real new home). Boost
+  mode's Rules-tab row and Timer's Dev-tab switch+stepper are both gone; both settings now live
+  only in the footer. Same underlying settings (`boostEnabled`, `timeChallengeSeconds`), same
+  mutability tier each already had (Boosts still lap-anchored via `queueSettingChange`, still
+  gated on `overpayMode === 'A'`; Timer still blocked-until-next-game, writes straight to
+  `settings` like `rackSize` does) - only the control's location and shape changed, not its
+  behaviour, per the "relocates, does not re-architect" stop condition.
+- **Two big on/off buttons** (`.mode-toggle-btn`), not checkboxes - reuses the existing sand-
+  when-active language (`.toggle-btn.active`'s fill/border/ink) so it still reads as "this app's
+  selected-state colour," just sized and framed as a real button since there's no segmented
+  second option, only on vs. off.
+- **Timer's picker row is always rendered**, `.setup-timer-picker` carries a fixed `min-height`,
+  and its on/off state is driven by `.style.visibility` (never `hidden`/display) - the exact same
+  reserved-space technique `#play-selection-sum` already established for this project. Verified:
+  Start Game's `getBoundingClientRect().top` is pixel-identical before and after toggling Timer.
+- **Start Game, Back-to-game/Restart/End are untouched** - same elements, same ids, same
+  `renderPrimaryAction`/click handlers, just nested inside the new footer markup. No new launch
+  path, no Setup-skip, per the stop condition.
+- **Mid-game, Timer is disabled (same "next game" tier Rack size already has) while Boosts stays
+  interactive (lap-anchored, no game-active restriction)** - the spec's own "toggles remain
+  interactive regardless" line is about the ≥2-player Start-gate case; mid-game disabling for
+  Timer specifically was already this setting's existing rule, carried over unchanged, not a new
+  restriction invented for this milestone.
+
+**Verified:** a long (8-player) roster forced genuine overflow in a mobile-width viewport -
+confirmed via `scrollTop` that `#setup-scroll` actually scrolled while `#setup-tabbar` and
+`#setup-footer`'s `getBoundingClientRect().top` stayed pixel-identical before/after; all four
+Timer/Boosts combinations toggled and reflected correctly on Rules/App/Dev tabs alike (one shared
+element, confirmed, not a per-tab copy); a full real game (83 turns) started with Boosts enabled
+via the new footer toggle and completed with zero errors; mid-game footer state checked directly
+(Timer disabled, Boosts still toggles); Dev tab (flag flipped live) confirmed to coexist with the
+new footer correctly. Debug harness stripped before commit; dev-server port reverted to 8123.
