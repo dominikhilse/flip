@@ -391,10 +391,11 @@
   </section>
 
   <!-- M15 brand pass (GameScreens_Redesign Frame 9): trophy banner + ranked
-       rows. Per-player numeric scores are explicitly "Benched" in the doc -
-       the rules engine has no scoring model at all (only finish order), so
-       the score column is left out entirely rather than inventing one;
-       the note below says so plainly instead of silently omitting it. -->
+       rows. M21/D-64: a real Score column is back (sum of each player's own
+       flipped tile values, rendered quiet/secondary - see .results-score) -
+       finishers first in shut-order, then anyone who didn't shut ranked by
+       Score, continuous numbering top to bottom. Every row (including the
+       winner) shows a Score now; see renderEnd/buildRanking in app.js. -->
   <section id="screen-end" class="screen screen-banner" hidden>
     <div class="banner-center">
       <div class="results-kicker">Final scores</div>
@@ -403,7 +404,6 @@
         <span id="results-winner-name" class="play-accent-text"></span>
       </div>
       <ol id="finish-list" class="results-list"></ol>
-      <div class="benched-note"><span class="dev-badge">Benched</span>Per-player scores aren't computed in the current build — this list shows finish order only.</div>
     </div>
     <div class="banner-actions">
       <button id="end-rematch" class="primary">Play again</button>
@@ -411,8 +411,17 @@
     </div>
   </section>
 
-  <!-- Time challenge timeout (M9): deliberately no ranking table - nobody
-       shut their box, so there is no winner. Do not add one here.
+  <!-- Time challenge timeout (M9). M21/D-64 (D-59 updated): deliberately
+       PODIUM-LESS - a timeout leader is a progress leader, not a crowned
+       shut-the-box winner, so unlike #screen-end there is no trophy/"wins"
+       line here. #timeout-ranking-list reuses .results-list but its rows
+       carry no rank number for anyone who didn't shut (renderTimeoutRanking
+       in app.js) - the clock icon above stands in for the podium's winner
+       avatar. Any player who DID already shut (possible under top-two/
+       all-places if the clock runs out before the next threshold is
+       reached) still keeps their real rank number - "every finisher is
+       framed as a finisher regardless of table position" holds on both
+       screens; see DECISIONS.md for this edge case.
        M15 brand pass (GameScreens_Redesign Frame 3): visual redesign only
        - the mockup's own copy/Dev-tab label describe a per-turn shot clock
        ("the turn passes... Pass to next player"), but the actual mechanic
@@ -432,7 +441,8 @@
         </span>
         <span id="timeout-player-phrase"></span>
       </div>
-      <p id="timeout-message">Nobody finished in time — the match ends without a winner.</p>
+      <p id="timeout-message">No one shut their box before time ran out — here's how everyone did.</p>
+      <ol id="timeout-ranking-list" class="results-list"></ol>
     </div>
     <div class="banner-actions">
       <button id="timeout-new-game" class="primary">New game</button>

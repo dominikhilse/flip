@@ -1382,3 +1382,40 @@ long-press opens 36 thumbs with exactly one equipped check and does not also cyc
 cancels; X and backdrop dismiss leave the avatar unchanged; pick closes the modal in one action and
 updates turn card / Play; zero console errors. Not verifiable here: real-finger long-press feel and
 iOS callout suppression - needs a device pass.
+
+### 2026-10-08 — M21: scoring & ranking (D-64)
+
+Built per the final (executor-cross-checked) spec: Score = sum of flipped tile values, result screen
+only, two variants (normal = podium + table, timeout = podium-less table with no rank numbers for
+non-finishers). One open point the spec's own reasoning didn't cover, resolved and documented here:
+
+- **A timeout isn't always finisher-free.** The plan's stated premise ("`checkGameEnd()` always
+  re-checks finish state first, so `finishedOrder` is empty at timeout") only holds under the default
+  `winner-only` placement mode (any single finish ends the match before a timeout could occur). Under
+  `top-two`/`all-places`, the clock can run out with 1+ players already genuinely shut - `tickChallenge`
+  fires `timeoutGame()` purely off the countdown, independent of `checkGameEnd`.
+  - **Resolution:** any genuine finisher (in `game.finishedOrder`) keeps their real rank number and
+    sorts above the rest, on *both* result screens - honouring the plan's own explicit softener
+    ("every player who shut their box is framed as a finisher regardless of table position," stated
+    for both variants). Only the remaining, never-shut players get the podium-less/no-rank-number
+    treatment at timeout. The plan's blanket "timeout = podium-less" stop condition is still honoured
+    literally - there is never a podium or a "wins" crowning at timeout, even when a real finisher is
+    present; they just aren't demoted to look like a Score-ranked non-finisher either.
+  - This only ever triggers under `top-two`/`all-places` *and* a timer *and* the clock expiring in that
+    specific gap - rare, flagged rather than silently decided, no code elsewhere depends on it.
+- **Ranking is keyed off `finishedOrder` membership, not the `.finished` flag.** `checkGameEnd()`'s
+  `all-places` auto-place branch pushes the forced-last player into `finishedOrder` without ever
+  setting `.finished` - a pre-existing gap, untouched (do-not-touch: placement-mode logic). Filtering
+  non-finishers by `!finishedIds.has(p.id)` instead of `!p.finished` avoids double-counting that player
+  in both groups; found and fixed before it could ship as a real bug.
+- Both result screens share one `buildRanking()` + `renderRankingRows()` pair - no separate ranking
+  logic per screen, `entry.rank = null` is the only thing that suppresses a row's rank number.
+- `.benched-note` (M15's "scores aren't computed" placeholder) removed from `#screen-end`; a real,
+  quiet/muted `.results-score` column replaces it on every row, both screens.
+
+**Verified:** forced-state checks for normal end (3 players, mixed finisher/Score rows, correct sort
+and continuous numbering), timeout with zero finishers (no ranks, no podium), and the top-two-timeout
+edge case (finisher keeps rank 1, others blank) - all via a temporary debug harness; the
+`all-places`-gap double-count was reproduced and confirmed fixed; a full real-gameplay game (82 turns,
+real `onRoll`/`onConfirm`/`onPass`, no forced state) completed and rendered the results screen
+correctly with zero console errors throughout. Debug harness stripped before commit.

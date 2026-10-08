@@ -113,6 +113,7 @@
   var endRematchBtn = document.getElementById('end-rematch');
   var timeoutPlayerAvatarEl = document.getElementById('timeout-player-avatar');
   var timeoutPlayerPhraseEl = document.getElementById('timeout-player-phrase');
+  var timeoutRankingListEl = document.getElementById('timeout-ranking-list');
   var timeoutNewGameBtn = document.getElementById('timeout-new-game');
   var timeoutRematchBtn = document.getElementById('timeout-rematch');
 
@@ -2013,30 +2014,53 @@
   playBoostChangeBtn.addEventListener('click', onBoostChange);
   bindAvatarGestures(playAvatarBtn, function () { cycleAvatar(currentPlayer()); renderPlay(); });
 
-  // ---- End screen ----
+  // ---- End screen (M21/D-64: scoring & ranking for non-finishers) ----
 
-  // M15 brand pass: ranked rows (rank + avatar + name), the winner's name
-  // repeated in the banner above. No per-player score column - the rules
-  // engine has no scoring model, only finish order (see index.html's
-  // comment on #screen-end and DECISIONS.md) - showing an invented number
-  // would be worse than not showing one.
-  function renderEnd() {
-    var winner = game.players.find(function (pl) { return pl.id === game.finishedOrder[0]; });
-    resultsWinnerNameEl.textContent = winner.name + ' wins!';
-    applyTheme(winner);
-    // Same fill-on-dark/edge-on-light contrast rule as --player-accent-text
-    // (which only tracks the winner) - every row's name needs it, not just
-    // the winner's, so it's computed per row here instead.
-    var showLight = document.body.classList.contains('theme-light');
-    finishListEl.innerHTML = '';
-    game.finishedOrder.forEach(function (id, index) {
+  // Score = sum of the face values of the tiles this player has flipped
+  // (closed) - the positive, kid-legible framing D-64 chose over a
+  // remaining-sum deficit (they're the same ordering, inverted, since both
+  // sum to the fixed rack total). Computed fresh from final rack state at
+  // match-end only - never during play, never persisted (D-02's narrowed
+  // form: see the no-score-during-play rule, unchanged).
+  function flippedScore(p) {
+    return p.rack.reduce(function (sum, t) { return t.open ? sum : sum + t.value; }, 0);
+  }
+
+  // Single source for both result screens: finishers (game.finishedOrder,
+  // already in shut-order - a real, earned placement) and everyone else
+  // (ranked by Score, highest first). Keyed off finishedOrder membership,
+  // not the `.finished` flag directly - the all-places auto-placed last
+  // player (checkGameEnd) is pushed into finishedOrder without `.finished`
+  // ever being set, so filtering on the flag would double-count them.
+  function buildRanking() {
+    var finishedIds = new Set(game.finishedOrder);
+    var finishers = game.finishedOrder.map(function (id) {
       var p = game.players.find(function (pl) { return pl.id === id; });
+      return { player: p, score: flippedScore(p), finisher: true };
+    });
+    var nonFinishers = game.players
+      .filter(function (p) { return !finishedIds.has(p.id); })
+      .map(function (p) { return { player: p, score: flippedScore(p), finisher: false }; })
+      .sort(function (a, b) { return b.score - a.score; });
+    return { finishers: finishers, nonFinishers: nonFinishers };
+  }
+
+  // Shared row-builder for both #finish-list (normal end) and
+  // #timeout-ranking-list (timeout) - same markup/classes either way.
+  // `entry.rank` null renders a blank rank cell (timeout's non-finisher
+  // rows - D-64 explicitly shows no rank number there); `entry.podium`
+  // tints row 1 to match the trophy banner above it (normal end only).
+  function renderRankingRows(listEl, entries) {
+    var showLight = document.body.classList.contains('theme-light');
+    listEl.innerHTML = '';
+    entries.forEach(function (entry) {
+      var p = entry.player;
       var li = document.createElement('li');
-      if (index === 0) li.classList.add('first');
+      if (entry.podium) li.classList.add('first');
 
       var rank = document.createElement('span');
       rank.className = 'results-rank';
-      rank.textContent = index + 1;
+      rank.textContent = entry.rank != null ? entry.rank : '';
       li.appendChild(rank);
 
       var avatar = document.createElement('span');
@@ -2053,8 +2077,30 @@
       name.style.color = showLight ? playerEdge(p.color) : p.color;
       li.appendChild(name);
 
-      finishListEl.appendChild(li);
+      var score = document.createElement('span');
+      score.className = 'results-score';
+      score.textContent = entry.score;
+      li.appendChild(score);
+
+      listEl.appendChild(li);
     });
+  }
+
+  // Normal end (checkGameEnd guarantees finishedOrder.length >= 1 by the
+  // time this is reached - see its own `if (finishedCount === 0) return
+  // false` gate) - a real, earned winner, continuous rank numbering
+  // through the whole table (finishers, then Score-ranked non-finishers).
+  function renderEnd() {
+    var ranking = buildRanking();
+    var winner = ranking.finishers[0].player;
+    resultsWinnerNameEl.textContent = winner.name + ' wins!';
+    applyTheme(winner);
+    var entries = ranking.finishers.concat(ranking.nonFinishers);
+    entries.forEach(function (entry, index) {
+      entry.rank = index + 1;
+      entry.podium = index === 0;
+    });
+    renderRankingRows(finishListEl, entries);
   }
 
   function endGame() {
@@ -2125,6 +2171,18 @@
   // Deliberately no ranking (§5/M9) - nobody shut their box, so there is no
   // winner, and a placeholder table would undercut the very tension being
   // tested. Do not add one here.
+  // M21/D-64: podium-less by design - a timeout leader is a progress
+  // leader, not a crowned shut-the-box winner (keeps D-02's spirit). Any
+  // genuine finisher (rare: top-two/all-places, clock runs out before the
+  // next threshold) still keeps a real rank number and sorts above the
+  // Score-ranked rest, who get none - see buildRanking/renderRankingRows.
+  function renderTimeoutRanking() {
+    var ranking = buildRanking();
+    ranking.finishers.forEach(function (entry, index) { entry.rank = index + 1; });
+    ranking.nonFinishers.forEach(function (entry) { entry.rank = null; });
+    renderRankingRows(timeoutRankingListEl, ranking.finishers.concat(ranking.nonFinishers));
+  }
+
   function timeoutGame() {
     // M15: name whoever's turn was active when the clock ran out, in their
     // colour - turnIndex hasn't moved (the countdown only ticks while a
@@ -2134,6 +2192,7 @@
     timeoutPlayerAvatarEl.alt = '';
     timeoutPlayerPhraseEl.textContent = p.name + ' ran out of time';
     applyTheme(p);
+    renderTimeoutRanking();
     showScreen('timeout');
   }
 

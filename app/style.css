@@ -1366,20 +1366,16 @@ button.secondary:active { background: var(--bg-subtle); }
   font-size: 1.05rem;
   text-align: left;
 }
-.benched-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  text-align: left;
-  font-size: 0.75rem;
+/* M21/D-64: Score is information, not a scoreboard-of-shame - quiet/
+   secondary by design (softener a), same muted tone regardless of rank or
+   screen. */
+.results-score {
+  flex: none;
+  font-weight: 600;
+  font-size: 0.85rem;
   color: var(--text-dim);
-  background: var(--bg-subtle);
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-  padding: 0.6em 0.8em;
-  max-width: 22rem;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
 }
-.benched-note .dev-badge { flex: none; margin-top: 0.1em; }
 
 /* Confirm dialog (M11, D-51) - one generic native <dialog>, reused for
    every destructive mid-game exit rather than a bespoke dialog per action.
