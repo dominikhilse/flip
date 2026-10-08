@@ -4,7 +4,22 @@
 **Audience:** a Claude Code session with no prior context. Everything needed is in this file.
 **Supersedes:** nothing. This is the first plan for this project.
 
-**Revision note (latest pass — reconciling DECISIONS.md through 2026-09-20):** M18 and M19
+**Revision note (latest pass — MVP-finishing, 2026-10-08):** three new milestones specified (build
+order M21 → M22 → M23). **M21 — scoring & ranking:** a **deliberate, approved reversal of D-02** — a
+result-screen-only Score (= sum of flipped tile values, highest-wins, kid-legible) ranks players who
+didn't shut; winner on a podium *and* as row 1 of a full ranking table; two anti-frustration softeners;
+timer timeouts now show this scoreboard (**D-64**; cascades: D-02 narrowed, D-06 extended, D-59 end
+screen updated, M15 "Benched" replaced). **M22 — menu lockdown:** final Rules/App/Dev split (Overpay &
+Tap-sounds → Dev, Timer → Rules); Dev tab hidden by a visible boolean flag with the tab bar reflowing;
+**hiding Dev forces its settings to production defaults**; code retained (no build step to strip);
+M10's dice value locked as a production constant (**D-65/D-66**). **M23 — prematch toggles:** Timer &
+Boosts as big on/off buttons above "Tap to start," four states, Timer reveals a picker in
+permanently-reserved space (button never jumps), same settings as Rules (one source, two views)
+(**D-67**). Also: **M10 (dice animation) confirmed BUILT, VERIFIED** — the last previously-uncertain
+status; every milestone now has a verified status except the three new specs. §7 reframed as a
+standing principle (its values are all measured/resolved).
+
+**Prior pass (reconciling DECISIONS.md through 2026-09-20):** M18 and M19
 status-flipped SPECIFIED → **BUILT, VERIFIED**, each with a shipped-reality note: M18's flow was
 already "Use boost → select tiles → Confirm" (the change is an additive, cyclable "Change boost"; a
 premature-inventory-decrement bug was found and fixed so counts only change at Confirm); M19 was
@@ -1034,7 +1049,11 @@ it.
 
 ---
 
-### M10 — Dice roll animation — SPECIFIED
+### M10 — Dice roll animation — BUILT, VERIFIED
+
+**Status: BUILT and verified.** The face-cycle animation shipped and was tuned via a dev control; the
+value was tested and confirmed good. **That value is locked as a production constant in M22** (its
+dev tuning knob goes behind M22's Dev-hide flag; the animation itself stays). Original spec below.
 
 **Goal.** The dice visibly *roll* before settling, so a roll reads as a roll rather than a value
 appearing. Cheap, cosmetic, replaceable.
@@ -1670,6 +1689,171 @@ report** the gesture clash rather than working around it silently.
 
 ---
 
+### M21 — Scoring & ranking for non-finishers (reverses D-02) — SPECIFIED
+
+**Build first of the three MVP-finishing milestones — M22 and M23 both consume it.**
+
+**Goal.** Give every match a complete ranking, not just a winner — so larger matches and (especially)
+**timer matches** end with a real scoreboard instead of "no winner." A result screen with a podium
+and a full ranking table.
+
+**This is a deliberate, approved reversal of D-02** — the project's longest-standing rule ("remainders
+never shown as score, never rank a player"). The reversal is **narrow and additive:** finish-order is
+still primary; a score is computed and shown **only on the result screen**, only to rank players who
+did not shut their box. No score appears during play.
+
+**The rules (locked):**
+- **Finish-order remains primary.** Placements are decided by shut-order per the placement setting
+  (D-06), exactly as today, for as many places as the setting determines.
+- **Players who never shut their box are ranked by Score**, where **Score = the sum of the face values
+  of the tiles that player flipped (closed).** Higher Score = better (more progress). This is the
+  kid-legible framing — "you scored X" reads as achievement, not deficit. (Note: flipped-sum and
+  remaining-sum rank identically-but-inverted, since they sum to the full rack total; flipped-sum is
+  chosen for the positive framing.)
+- **Score is shown on the result screen only.** Never during play, never on the rack, never on the
+  turn card. (This is the exact and only scope of the D-02 reversal.)
+
+**Result screen (locked):**
+- **Winner on a podium** (rank 1), decorated — avatar, name.
+- **A full ranking table below, including the winner as row 1**, so a 2-player match is never a lone
+  podium + empty space. Table rows: rank, small circle avatar, name, Score.
+- **Table and podium are one ranking, two presentations** — the podium is a decorated view of row 1
+  (expandable to 1–3 later if ever wanted); the table is the complete order. One source of truth.
+- **Two anti-frustration softeners (locked):** (a) Score renders **visually quiet/muted** in the table
+  — information, not a scoreboard-of-shame; (b) every player who shut their box is framed as a
+  **finisher** regardless of table position.
+
+**Cascade (supersessions this milestone carries — write them, don't leave the old rows standing):**
+- **D-02** → reversed to the narrow form above (score on result screen only).
+- **D-06** → extended: finish-order for placements, then Score for the remaining (non-finisher) players.
+- **D-59** → the timer-timeout screen **now shows this scoreboard** instead of ending with no winner.
+  (The time challenge remains a whole-match countdown; only its *ending* changes — timeout → ranked
+  result.)
+- **M15's "Benched" no-score results UI** → replaced by this podium + table.
+
+**Out of scope.** Any in-play score display. Changing finish-order placement logic (unchanged, D-06).
+Changing how the timer works (only its end screen changes). Expanding the podium beyond rank 1 (table
+carries everyone; podium-of-3 is a possible later polish, not now).
+
+**Do-not-touch on entry.** The rules engine's win/finish detection; the placement-mode logic (D-06
+unchanged); the no-score-during-play rule (this milestone adds score **only** to the result screen).
+
+**Acceptance criteria:**
+1. A match with players who don't all shut ends on a result screen showing a podium (winner) and a
+   table of all players ranked rank / avatar / name / Score.
+2. Non-finishers are ordered by Score, highest first; finishers are placed by shut-order above them.
+3. A 2-player match shows the winner on the podium and both players in the table (winner = row 1).
+4. A timer match that times out shows this scoreboard (not "no winner").
+5. No Score value appears anywhere during play — only on the result screen.
+6. Score in the table reads as quiet/secondary, not a dominant number.
+
+**Stop conditions.** If producing the ranking requires surfacing a score *during* play to compute it,
+**stop** — Score is computed at match-end from the final rack state, shown only then.
+
+---
+
+### M22 — Menu lockdown + hideable Dev tab — SPECIFIED (build second)
+
+**Goal.** Lock the production settings to the real, shipping set; move everything experimental to the
+Dev tab; make the Dev tab **hideable via a visible flag** so the shipped product shows only production
+settings. The app is MVP-close; this is the "decide what's product vs. scaffolding" pass.
+
+**Tab-by-tab split (locked):**
+- **Players tab — unchanged.**
+- **Rules tab:** rack size (**in**), placement (**in**), **boost mode (in** — same setting as the M23
+  prematch toggle, two views one value), **timer mode (in** — moved from Dev; same setting as the M23
+  prematch toggle). **Overpay A/D → moves to Dev.**
+- **App tab:** motion (**in**), tap-to-proceed (**in**), theme (**in**), tile skin (**in**). **Change
+  the motion/tap invariant text to exactly: "Turning both off isn't allowed."** **Tap sounds → moves
+  to Dev.**
+- **Dev tab:** Overpay A/D, Tap sounds, Test Dice #, **Dice roll animation** (the M10 tuning control).
+
+**The hide mechanism (locked, and honest about the no-build constraint):**
+- A **single visible boolean flag** (true/false) controls whether the Dev tab renders. Default for the
+  shipped product: **hidden (false).**
+- **"Hidden" = not rendered in the UI. The code and the settings still exist and still function** — it
+  is concealment, not removal. **Do not strip the Dev code** (that would need a build step this project
+  doesn't have, and the whole point is to re-enable it by flipping the flag). Anyone viewing source
+  still sees it; that is acceptable for this product.
+- **The tab bar reflows to the number of visible tabs** — 3 tabs (Players/Rules/App) when Dev is
+  hidden, 4 when shown. The layout adjusts to tab count, not a fixed 4.
+- **Hiding Dev forces every Dev-controlled setting to its production default** (Overpay → A, Test Dice
+  off, tap sounds → production default, dice-animation value → the locked M10 constant). This
+  guarantees a hidden Dev can **never** strand the game in an experimental state (e.g. stuck in
+  Overpay-D with no visible control to change it). Re-showing Dev restores the controls, not
+  necessarily the prior experimental values.
+- **M10's dice-animation value is locked to its tested-good constant here**; the dev control remains
+  as a tuning knob behind the flag, but production uses the fixed value. (Updates §7: this value moves
+  from "unmeasured" to measured-and-locked.)
+
+**Out of scope.** Removing/compiling-out Dev code (not possible, not wanted). Any new setting. Changing
+what the production settings *do* — this milestone relocates and gates, it does not alter behaviour
+(except forcing Dev defaults when hidden).
+
+**Do-not-touch on entry.** The behaviour of any retained production setting; the rules engine; M21's
+scoring.
+
+**Acceptance criteria:**
+1. With the Dev flag false, the settings menu shows exactly three tabs (Players/Rules/App); no Dev tab,
+   no Dev controls anywhere.
+2. With the flag true, a fourth Dev tab appears and the tab bar reflows to four.
+3. Overpay and Tap sounds appear only under Dev; Timer appears under Rules; the App tab's invariant text
+   reads exactly "Turning both off isn't allowed."
+4. Setting the flag false forces Overpay to A, Test Dice off, and all Dev-controlled values to
+   production defaults — verified the game is never left in an experimental state with no visible
+   control.
+5. Boost mode and Timer mode in Rules reflect and control the *same* values as the M23 prematch toggles
+   (change one, the other shows it).
+6. The dice animation runs at its locked production value with Dev hidden.
+
+**Stop conditions.** If hiding Dev would require build-time exclusion or leaves any Dev-only setting
+active with no production control, **stop and report** — the flag conceals and defaults, it does not
+compile out.
+
+---
+
+### M23 — Prematch mode toggles on the launch screen — SPECIFIED (build third)
+
+**Goal.** Let players choose the match's optional modes — **Timer** and **Boosts** — right on the
+launch screen before "Tap to start," instead of digging into settings. (This is the §6b parked idea,
+now concrete. Note overpay-D is *not* among these — it moved to Dev in M22.)
+
+**Interaction (locked):**
+- **Two big, button-like visual toggles — Timer and Boosts — above the "Tap to start" button.**
+- **Independent, four states:** neither (plain game), Timer only, Boosts only, both. Each toggle has a
+  clear, understandable **on/off** state (not a subtle checkbox — a clearly on-or-off button).
+- **Timer's "on" state reveals its time picker.** The **space for the picker is reserved at all times**
+  — "Tap to start" sits pushed down by default so the picker fills the reserved gap when Timer is on;
+  **the layout never jumps** when toggling Timer (the button does not move).
+- **"Tap to start" starts the match** with the chosen modes. Pure pre-selects; the button is the single
+  commit.
+
+**Sync with settings (locked):**
+- The prematch Timer and Boosts toggles and the Rules-tab Timer/Boost settings (M22) are the **same
+  settings — one source of truth, two views.** Set at launch → shows in settings; change in settings →
+  next launch reflects it. They read/write the same value, not two parallel ones.
+
+**Out of scope.** Overpay (now Dev-only, M22). Any mode not already in the game. A separate mode-select
+*screen* (it's on the launch screen, not a new step). Revealing settings beyond Timer/Boosts on launch
+(rack size, placement, theme etc. stay in the menu — accept the deliberate two-location split, quick
+modes up front, full config in settings).
+
+**Do-not-touch on entry.** The rules/engine; M21's scoring; M22's setting values (M23 is a second view
+onto two of them, not new settings).
+
+**Acceptance criteria:**
+1. The launch screen shows two clear on/off button-toggles (Timer, Boosts) above "Tap to start."
+2. All four on/off combinations are selectable and start a match in that configuration.
+3. Turning Timer on reveals a time picker in the reserved space; "Tap to start" does not move when
+   Timer is toggled (space reserved at all times).
+4. A mode set at launch is reflected in the Rules tab, and vice versa (same setting, two views).
+5. "Tap to start" launches with exactly the selected modes.
+
+**Stop conditions.** If the prematch toggles and the settings toggles end up as two separate stored
+values that can disagree, **stop** — they must be one setting with two views.
+
+---
+
 ## 6. Explicitly out of scope for this prototype
 
 - **Single-player mode.** Playable in principle but the design has not been worked out.
@@ -1779,9 +1963,13 @@ description from "overpay signal" to "boost-active signal." A supersession to wr
 
 ## 7. Unmeasured values — do not estimate
 
-The following must be measured in M0 and recorded in `config.js` with the measuring device
-and date. Until then, no number for any of these may appear in code or in any document as
-though it were known:
+**Status note:** the motion/flat/rest-to-flip values below were measured during M0 and the dice-roll
+animation value was tuned and locked in M10/M22 (D-66). This section is retained as the **standing
+principle** — the "measure, don't estimate, box/timing values" rule that kept recurring (e.g. the
+min-height bugs in M16) — not as a list of still-open items. New timing/size constants still follow it.
+
+The following were to be measured in M0 and recorded in `config.js` with the measuring device
+and date (all since resolved); no number for any of these should appear as though guessed:
 
 - gravity z-component threshold for "flat"
 - x/y magnitude tolerance for "flat"
@@ -1798,11 +1986,11 @@ though it were known:
 | # | Decision | Status |
 |---|---|---|
 | D-01 | One roll per turn, round-robin, no re-rolling within a turn | Locked |
-| D-02 | Win = shutting the box; remainders never affect winning, never shown as score, never rank a player. Remaining sum may be computed **internally, for boost eligibility only** (§3.4) | Locked |
+| D-02 | Win = shutting the box; finish-order is primary. **Reversed/narrowed by D-64 (M21):** a Score (= sum of flipped tile values) is now shown **on the result screen only**, to rank players who didn't shut. Still never shown during play, never on rack/turn-card; still not used for boost eligibility mid-play (§3.4 internal use unchanged). The blanket "never shown as score" is lifted *only* for the end-of-match result screen | Partially superseded by D-64 |
 | D-03 | Single-die endgame is mandatory, unlocking when all open tiles ≤ 6 | Locked |
 | D-04 | Full-subset flips; no cap on tiles per flip | Locked |
 | D-05 | Stalling passes the turn; it never eliminates a player | Locked |
-| D-06 | Placement is finishing order; default `winner-only`; `all-places` ends at second-to-last shut | Locked |
+| D-06 | Placement is finishing order; default `winner-only`; `all-places` ends at second-to-last shut. **Extended by D-64 (M21):** players who never shut are then ranked below the finishers by Score (flipped-sum, highest first) | Locked (extended by D-64) |
 | D-07 | n players, 2 or more, no upper cap | Locked |
 | D-08 | ~~Always landscape~~ **Superseded by D-26:** no orientation lock; portrait tested fine; final orientation is a design-session call | Superseded |
 | D-09 | Rack size 9 or 12, settings-selectable, default 9 (blocked mid-game) | Locked |
@@ -1855,8 +2043,12 @@ though it were known:
 | D-56 | **Reverses D-36/D-37 (partially).** When a player holds both boost types and both resolve the stall, the player **chooses** which to spend via a one-button cycle-and-preview (Use boost → previews 1-for-2 → "Change boost" cycles → Confirm). Conservation is preserved as the **default** (1-for-2 shown first; tap-through = today's auto-select outcome), not enforced — so D-37's conservation is demoted from enforced to default, not deleted. No dropdown/multi-select. Only-one-applicable case unchanged. (M18) | Locked |
 | D-57 | Boost-earned toast (M14, shipped) refined to **travel into its type's chip**: appears right-aligned, slides left + shrinks on a layer *under* the chips, arrives at the awarded type's specific chip, which pops and increments its count at arrival. Refinement of existing machinery, not a rebuild (M19) | Locked |
 | D-58 | Two skins ship — Colorful (default) + Monochrome (`settings.skin`, cosmetic-only). Mono uses a computed HSL lightness ramp with reverse-engineered (unmeasured) starting values, flagged to revisit after a readability pass (M14) | Locked |
-| D-59 | Time challenge is a **single whole-match countdown** ending the match with no winner (not a per-turn shot clock, despite an M15 mockup's copy implying otherwise). M15 restyled it; semantics unchanged. Per-turn shot clock parked as a future mode (§6a) (M15) | Locked |
+| D-59 | Time challenge is a **single whole-match countdown**. **Updated by D-64 (M21):** on timeout it now shows the ranked scoreboard (podium + Score table) instead of ending with no winner — the countdown and whole-match semantics are unchanged, only the end screen. Per-turn shot clock still parked as a future mode (§6a) | Locked (end-screen updated by D-64) |
 | D-60 | Turn-card background history: full-bleed player colour (original) → themed surface (M15) → **reverted to full-bleed player colour (M17)**, theme-independent, chrome handled by scoped custom-property overrides on `#screen-turncard`. Current state = full-bleed | Locked |
 | D-61 | Boost-earned toast (M19) flies **OVER** the chips, not under — reverses M19's own "beneath the chips" spec and the earlier conversation, per direct user request. z-index: toast 2, chips 1. Everything else in M19 (live-computed travel, arrival=bump, double-award shrink-in-place fallback) stands | Locked |
 | D-62 | Avatar set grew 19 → **36** (`CONFIG.avatarCount`); six existing files replaced + 23 new 1024×1024 PNGs, zero-padded `NN.png`, no gaps. Assigned randomly without replacement (36 ≥ 12 max); larger set only lowers repeat-avatar odds across games. Avatars not persisted across games, so replaced filenames going to new art breaks no stored reference. Supersedes D-55's count | Locked |
 | D-63 | Avatar grid picker (M20): tap = cycle (unchanged), **tap-and-hold = large modal grid** above the player screen (existing dialog idiom); visible hint label signposts both (not a hidden gesture). Tap-thumbnail = select-and-close. Grid states: own avatar = equipped yellow checkmark, all others normal + tappable, **no dimming**. **No uniqueness enforcement (soft)** — multiple players may share an avatar; colour + name + turn context carry identity. Random-assign stays the default; grid is opt-in. Deliberately differs from the dim-as-hint taken-*colour* behaviour | Locked |
+| D-64 | **Reverses/narrows D-02 (M21).** Scoring added: finish-order primary; non-finishers ranked by **Score = sum of flipped tile face values, highest first** (kid-legible positive framing). Score shown **on the result screen only**, never during play. Result = winner on podium **and** as row 1 of a full ranking table (rank/circle avatar/name/Score); Score rendered quiet; finishers framed as finishers. Timer timeout now shows this scoreboard (updates D-59) | Locked |
+| D-65 | Menu lockdown (M22): Rules = rack size, placement, boost mode, timer mode; App = motion, tap-to-proceed, theme, tile skin (invariant text → "Turning both off isn't allowed"); **Dev = Overpay A/D, Tap sounds, Test Dice #, Dice roll animation**. Dev tab hidden via a visible boolean flag (default hidden); tab bar reflows to visible count; **hiding Dev forces all Dev settings to production defaults**; code retained (no build step to strip it). Supersedes §6b's overpay→Dev intent as built | Locked |
+| D-66 | M10 dice-animation value **locked to its tested-good constant** (M22); the dev tuning control stays behind the Dev-hide flag, production uses the fixed value. Moves this value from §7 "unmeasured" to measured-and-locked. (M10 itself now BUILT, VERIFIED) | Locked |
+| D-67 | Prematch mode toggles (M23): two big on/off button-toggles — **Timer, Boosts** — above "Tap to start" on the launch screen; independent, four states; Timer-on reveals a time picker in **permanently-reserved space** (button never jumps). Same settings as the Rules-tab Timer/Boost (one source, two views, synced). Overpay is NOT here (Dev-only, D-65) | Locked |
