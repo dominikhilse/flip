@@ -49,7 +49,7 @@
         <span class="launch-tile" style="background:#6A5AC8; border-color:#3E3583; transform:rotate(-3deg);">1</span>
       </div>
       <h1 class="launch-title">Flip the<br>Number</h1>
-      <div class="launch-tagline">Pass-and-play · 2–8 players</div>
+      <div class="launch-tagline">Pass-and-play · 2–12 players</div>
       <!-- M23: the permission prompt itself is unchanged (still requested
            from the New Game menu's own motion-gated flow, see
            beginMotionListening/screens.launch's click handler) - this is
@@ -195,7 +195,9 @@
           </span>
         </button>
       </div>
-      <div class="setting-note">Mono derives a 12-step ramp on each player's hue — whose turn it is reads at a glance.</div>
+      <!-- GH #7: same dashed info-box treatment as "Turning both off isn't
+           allowed" above - was plain .setting-note text. -->
+      <div class="menu-banner">Mono derives a 12-step ramp on each player's hue — whose turn it is reads at a glance at all times.</div>
     </div>
 
     <!-- 3c Dev -->
@@ -254,13 +256,20 @@
          footer is bottom-anchored (#setup-scroll takes the remaining
          flex:1 space above it), so growing/shrinking the footer only
          moves its own top edge into/out of the scroll area - Start Game
-         and the toggle row never move. -->
+         and the toggle row never move.
+         GH #7: Boosts/Timer are no longer their own full-width row above
+         Start Game - they flank it in one row (.setup-action-row), sized
+         like compact square buttons either side of the wide primary
+         action, per the issue's mocks. Mid-game swaps in #back-to-game
+         for #start-game in the exact same slot (same row, same flanking
+         toggles) - #restart-match/#end-game stay as their own stacked
+         buttons below, unchanged (the mocks only show the pre-game
+         state). -->
     <div id="setup-footer">
       <!-- Right-aligned so it sits directly above the Timer button below
-           it (Timer is now the right-hand toggle) - reads as a flyout
-           from that specific button, no separate label needed since
-           "Timer" + the clock icon right below it already say what this
-           controls. -->
+           it (Timer is the right-hand button) - reads as a flyout from
+           that specific button, no separate label needed since "Timer" +
+           the clock icon right below it already say what this controls. -->
       <div id="footer-timer-picker" class="setup-timer-picker" hidden aria-label="Countdown length">
         <div class="stepper">
           <button type="button" id="footer-timer-minus" class="stepper-btn">−</button>
@@ -268,18 +277,18 @@
           <button type="button" id="footer-timer-plus" class="stepper-btn">+</button>
         </div>
       </div>
-      <div class="mode-toggles">
+      <div class="setup-action-row">
         <button type="button" id="mode-toggle-boosts" class="mode-toggle-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
           <span>Boosts</span>
         </button>
+        <button id="start-game" class="primary" disabled>Start game</button>
+        <button id="back-to-game" class="primary" hidden>Back to game</button>
         <button type="button" id="mode-toggle-timer" class="mode-toggle-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
           <span>Timer</span>
         </button>
       </div>
-      <button id="start-game" class="primary" disabled>Start game</button>
-      <button id="back-to-game" class="primary" hidden>Back to game</button>
       <button id="restart-match" class="secondary" hidden>Restart match</button>
       <button id="end-game" class="secondary" hidden>End game</button>
     </div>

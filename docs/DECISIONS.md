@@ -1583,3 +1583,42 @@ picker appears (height genuinely grows, not reserved); the picker's right edge m
 the Timer button's right edge (true alignment, not approximate); stepper still adjusts the value and
 toggling Timer off correctly collapses the picker back to zero height; a full real game (51 turns,
 both Timer and Boosts enabled via the relocated toggles) completed with zero console errors.
+
+### 2026-10-09 — GH #7: footer row redesign, Mono dashed box, player-count copy fix
+
+Four changes from the user's screenshots + description, no open questions:
+
+- **Boosts/Start Game(-or-Back-to-game)/Timer now share one row** (`.setup-action-row`) instead of
+  the toggles living in their own full-width row above Start Game - compact square toggles flank
+  the wide primary action, matching the mocks exactly. `button.primary`'s own `width: 100%` would
+  otherwise win as the flex item's basis, so `.setup-action-row button.primary { flex: 1 1 0%;
+  width: auto; }` overrides it. The timer picker still sits above this row, right-aligned over the
+  Timer button (unchanged from the prior follow-up).
+- **A real regression caught before it shipped**: the existing `.screen button.primary + button {
+  margin-top: 0.5rem }` rule (meant for vertically-stacked groups, already known to leak into flex
+  rows - see the GH #5 postmortem elsewhere in this file) would have pushed `#back-to-game` and
+  `#mode-toggle-timer` down out of alignment with their row-mates, since CSS sibling selectors match
+  regardless of an element's `hidden` state. Added `.setup-action-row button.primary + button` to
+  the existing override list (`.action-row`/`.banner-actions`) before it could ever render visibly
+  wrong - confirmed via `getBoundingClientRect()` that all three row items share the same `top` in
+  both the pre-game and mid-game states.
+- **Mono's description moved from plain `.setting-note` text into a `.menu-banner` dashed box**,
+  matching "Turning both off isn't allowed" immediately above it, per the issue's explicit ask.
+  Adopted the mock screenshot's exact wording ("...reads at a glance **at all times**") over the
+  issue body's silence on copy - the screenshot is the more specific source for exact text, and the
+  addition is a harmless clarity bump, not a behaviour change.
+- **"2–8 players" → "2–12 players"** in both places it appears (the launch tagline and the Setup
+  subtitle, `app.js`). This was always just stale copy, never a locked constraint - D-07 ("n
+  players, 2 or more, no upper cap") confirms the game never capped at 8, and 12 matches the actual
+  UI limit elsewhere (12 colour swatches, `theme.js`'s `playerColors`).
+
+**No flags found before starting** - the row redesign is a pure layout/CSS change reusing every
+existing element id and all existing JS logic untouched; the copy fixes correct accuracy, not
+scope; nothing here touches a locked decision.
+
+**Verified:** pre-game row matches the mocks pixel-for-pixel in structure (Boosts left, Start Game
+centre/wide, Timer right, picker above-right when active); mid-game row confirmed aligned via
+`getBoundingClientRect()` (`back-to-game`, both toggles share one `top`) after the margin-leak fix;
+App tab's Mono box and the "2–12 players" copy checked visually against the mocks; a full real game
+(45 turns, both Timer and Boosts enabled through the redesigned row) completed with zero console
+errors.

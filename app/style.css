@@ -247,7 +247,8 @@ button.secondary:active { background: var(--bg-subtle); }
 .action-row button.primary + button,
 .action-row button.secondary + button,
 .banner-actions button.primary + button,
-.banner-actions button.secondary + button {
+.banner-actions button.secondary + button,
+.setup-action-row button.primary + button {
   margin-top: 0;
 }
 
@@ -1592,28 +1593,44 @@ button.secondary:active { background: var(--bg-subtle); }
   border-top: 1px solid var(--border-subtle);
 }
 
-/* M23/D-67: two big, clearly-on-or-off mode toggles (Timer, Boosts) -
-   same sand-when-active language as .toggle-btn.active, sized and framed
-   like a real button rather than a checkbox since there's no segmented
-   "other option" here, just on vs. off. */
-.mode-toggles {
+/* GH #7: Boosts/Start Game(or Back to game)/Timer in one row - the
+   compact square toggles flank the wide primary action instead of
+   sitting in their own full-width row above it. align-items:stretch (the
+   flex default) makes all three match the tallest child's height with no
+   manual tuning. */
+.setup-action-row {
   display: flex;
   gap: 0.6rem;
   margin-bottom: 0.6rem;
 }
+/* button.primary's own `width: 100%` would otherwise win as this flex
+   item's basis - flex-basis:0 with flex-grow:1 makes it share the row's
+   remaining space correctly instead of trying to claim 100% of it. */
+.setup-action-row button.primary {
+  flex: 1 1 0%;
+  width: auto;
+}
+/* M23/D-67: two big, clearly-on-or-off mode toggles (Timer, Boosts) -
+   same sand-when-active language as .toggle-btn.active, sized and framed
+   like a real button rather than a checkbox since there's no segmented
+   "other option" here, just on vs. off. Compact/square now (GH #7) -
+   flex:0 0 auto, not flex:1, since the primary action beside them should
+   get the row's remaining width. */
 .mode-toggle-btn {
-  flex: 1;
+  flex: 0 0 auto;
+  width: 4.6rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
-  padding: 0.65em 0.5em;
+  padding: 0.5em;
   border-radius: 14px;
   border: 2px solid var(--border);
   background: var(--bg-subtle);
   color: var(--text-soft);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
 }
 .mode-toggle-btn svg { width: 1.3rem; height: 1.3rem; }
 .mode-toggle-btn.active {

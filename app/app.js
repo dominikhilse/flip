@@ -547,7 +547,7 @@
   function renderSetup() {
     var midGame = game !== null;
     setupTitleEl.textContent = midGame ? 'Settings' : 'New Game';
-    setupSubtitleEl.textContent = midGame ? 'Match in progress' : 'Pass-and-play · 2–8 players';
+    setupSubtitleEl.textContent = midGame ? 'Match in progress' : 'Pass-and-play · 2–12 players';
     renderRosterList();
     renderColorSwatches();
     renderRosterEditability();
