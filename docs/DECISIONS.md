@@ -1419,3 +1419,48 @@ edge case (finisher keeps rank 1, others blank) - all via a temporary debug harn
 `all-places`-gap double-count was reproduced and confirmed fixed; a full real-gameplay game (82 turns,
 real `onRoll`/`onConfirm`/`onPass`, no forced state) completed and rendered the results screen
 correctly with zero console errors throughout. Debug harness stripped before commit.
+
+### 2026-10-08 — M21 follow-up: three explicit result-screen cases (replaces the earlier binary split)
+
+User follow-up request, explicit and complete - the earlier "podium vs podium-less" binary (the
+`top-two`/`all-places`-timeout edge case I'd resolved and documented above) wasn't quite right: a real
+finisher at a timeout deserves the SAME podium treatment as a normal win, not just a numbered table row.
+Replaced with three cases, all still driven by the same `buildRanking()`/`renderRankingRows()` pair:
+
+1. **Normal win** (`#screen-end`, unchanged from the first M21 pass): podium + full table, every row
+   numbered, continuous rank 1..N.
+2. **Timeout WITH a real finisher** (`top-two`/`all-places`, clock ran out before the next threshold):
+   now shown on `#screen-timeout` itself via a new `#timeout-winner-banner` (identical markup/avatar to
+   `#screen-end`'s podium) - winner banner, then "Time's up!" + clock (the match genuinely was cut
+   short), then "Player X ran out of time" (always a *different*, still-unfinished player -
+   `advanceTurn()` always skips finished players, confirmed never the winner), then the table with
+   **no rank numbers for anyone, including the winner's own row** - the banner above it already
+   covers rank 1, so the table's job here is just to show where the Score-ranked rest landed.
+   `#timeout-message` ("No one shut their box...") is hidden in this case - it would be false.
+3. **Timeout with nobody finished** (the common case, unchanged in substance from the first pass):
+   banner stays hidden, `#timeout-message` shows, table has no rank numbers (same as before - this
+   case already had none, since `ranking.finishers` was always empty here).
+
+**Implementation:** `renderRankingRows(listEl, entries, showRanks)` gained a third, all-or-nothing
+parameter - normal end passes `true`, both timeout cases pass `false` (replaces the earlier per-row
+`entry.rank === null` convention for non-finishers only). `#screen-end`'s podium and the new
+`#timeout-winner-banner` both got a real avatar image (`.results-winner-avatar`, same top-cropped-
+circle treatment as every other avatar in the app) - the podium was text-only before; "winner with
+avatar" was explicit in the request and applied to both screens for visual consistency, not just the
+one case that asked for it.
+
+**A real styling wrinkle, resolved:** case 2 needs the shared `--player-accent`/`--player-accent-text`
+to point at the WINNER (for the banner, via `applyTheme(winner)`) while `#timeout-player-chip` ("X ran
+out of time") needs a DIFFERENT player's colour. Fixed by giving the chip its own colour inline (same
+`showLight ? playerEdge(p.color) : p.color` pattern the results-list rows already use), computed AFTER
+`applyTheme()` runs so the fill-vs-edge choice matches whichever theme (light/dark, possibly flipped by
+D-34's overpay signal) actually lands - removed the `play-accent-text` class from `#timeout-player-chip`
+so it can't silently fight the inline override.
+
+**Verified:** all three cases forced and screenshotted in both dark and light theme (podium banner
+colour vs. "ran out of time" chip colour confirmed visually distinct and each correct for its own
+player); the realistic-state check (`advanceTurn` never leaves `currentPlayer()` as the winner)
+re-confirmed with `turnIndex` actually moved, not just the finished flag forced; a full real game
+(44 turns, real `onRoll`/`onConfirm`/`onPass`/`onBoostDecline`) completed end-to-end with the podium
+avatar populated correctly; zero errors captured by `window.onerror` during every automated run.
+Debug harness stripped before commit.

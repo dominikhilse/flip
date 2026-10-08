@@ -395,13 +395,16 @@
        flipped tile values, rendered quiet/secondary - see .results-score) -
        finishers first in shut-order, then anyone who didn't shut ranked by
        Score, continuous numbering top to bottom. Every row (including the
-       winner) shows a Score now; see renderEnd/buildRanking in app.js. -->
+       winner) shows a Score now; see renderEnd/buildRanking in app.js.
+       This is ALWAYS "case 1" (a real win reached before any clock could
+       matter - see timeoutGame's own gating) - #screen-timeout below covers
+       the two timer-interrupted cases. -->
   <section id="screen-end" class="screen screen-banner" hidden>
     <div class="banner-center">
       <div class="results-kicker">Final scores</div>
       <div class="results-winner">
-        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 7l4.5 3L12 4l4.5 6L21 7l-1.8 11H4.8z"></path></svg>
-        <span id="results-winner-name" class="play-accent-text"></span>
+        <span class="results-winner-avatar"><img id="results-winner-avatar" alt=""></span>
+        <span id="results-winner-name" class="results-winner-name play-accent-text"></span>
       </div>
       <ol id="finish-list" class="results-list"></ol>
     </div>
@@ -411,17 +414,22 @@
     </div>
   </section>
 
-  <!-- Time challenge timeout (M9). M21/D-64 (D-59 updated): deliberately
-       PODIUM-LESS - a timeout leader is a progress leader, not a crowned
-       shut-the-box winner, so unlike #screen-end there is no trophy/"wins"
-       line here. #timeout-ranking-list reuses .results-list but its rows
-       carry no rank number for anyone who didn't shut (renderTimeoutRanking
-       in app.js) - the clock icon above stands in for the podium's winner
-       avatar. Any player who DID already shut (possible under top-two/
-       all-places if the clock runs out before the next threshold is
-       reached) still keeps their real rank number - "every finisher is
-       framed as a finisher regardless of table position" holds on both
-       screens; see DECISIONS.md for this edge case.
+  <!-- Time challenge timeout (M9). M21/D-64 follow-up: covers TWO distinct
+       cases, both driven by timeoutGame() in app.js -
+       - **Case 2 (a real winner exists - top-two/all-places, clock ran out
+         before the next threshold)**: #timeout-winner-banner shows (same
+         markup/avatar as #screen-end's podium), #timeout-message is
+         hidden (it would be factually wrong - someone DID shut their box).
+       - **Case 3 (nobody has shut at all - the common case)**:
+         #timeout-winner-banner stays hidden, #timeout-message shows.
+       In BOTH cases #timeout-ranking-list shows every player (winner
+       included, per case 2) with NO rank numbers at all - the podium
+       already covers rank 1 when there is one; nobody is crowned purely
+       off an in-progress Score. #timeout-player-chip always names whoever's
+       turn was live when the clock hit zero (never the winner - advanceTurn
+       always skips finished players) and gets that player's OWN colour
+       inline (not the shared --player-accent, which case 2 points at the
+       winner instead - see timeoutGame). See DECISIONS.md.
        M15 brand pass (GameScreens_Redesign Frame 3): visual redesign only
        - the mockup's own copy/Dev-tab label describe a per-turn shot clock
        ("the turn passes... Pass to next player"), but the actual mechanic
@@ -431,11 +439,15 @@
        reflect the real, unchanged behaviour. -->
   <section id="screen-timeout" class="screen screen-banner" hidden>
     <div class="banner-center">
+      <div id="timeout-winner-banner" class="results-winner" hidden>
+        <span class="results-winner-avatar"><img id="timeout-winner-avatar" alt=""></span>
+        <span id="timeout-winner-name" class="results-winner-name play-accent-text"></span>
+      </div>
       <div class="timeout-ring">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
       </div>
       <h1>Time's up!</h1>
-      <div id="timeout-player-chip" class="identity-chip play-accent-text">
+      <div id="timeout-player-chip" class="identity-chip">
         <span class="identity-chip-avatar">
           <img id="timeout-player-avatar" alt="">
         </span>

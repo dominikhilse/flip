@@ -109,10 +109,16 @@
 
   var finishListEl = document.getElementById('finish-list');
   var resultsWinnerNameEl = document.getElementById('results-winner-name');
+  var resultsWinnerAvatarEl = document.getElementById('results-winner-avatar');
   var endNewGameBtn = document.getElementById('end-new-game');
   var endRematchBtn = document.getElementById('end-rematch');
+  var timeoutWinnerBannerEl = document.getElementById('timeout-winner-banner');
+  var timeoutWinnerNameEl = document.getElementById('timeout-winner-name');
+  var timeoutWinnerAvatarEl = document.getElementById('timeout-winner-avatar');
+  var timeoutPlayerChipEl = document.getElementById('timeout-player-chip');
   var timeoutPlayerAvatarEl = document.getElementById('timeout-player-avatar');
   var timeoutPlayerPhraseEl = document.getElementById('timeout-player-phrase');
+  var timeoutMessageEl = document.getElementById('timeout-message');
   var timeoutRankingListEl = document.getElementById('timeout-ranking-list');
   var timeoutNewGameBtn = document.getElementById('timeout-new-game');
   var timeoutRematchBtn = document.getElementById('timeout-rematch');
@@ -2047,10 +2053,15 @@
 
   // Shared row-builder for both #finish-list (normal end) and
   // #timeout-ranking-list (timeout) - same markup/classes either way.
-  // `entry.rank` null renders a blank rank cell (timeout's non-finisher
-  // rows - D-64 explicitly shows no rank number there); `entry.podium`
-  // tints row 1 to match the trophy banner above it (normal end only).
-  function renderRankingRows(listEl, entries) {
+  // `showRanks` is a per-call, all-or-nothing switch: on for the normal end
+  // (a real competition, every row numbered), off for both timeout cases -
+  // when there's a podium winner it already covers rank 1, and nobody else
+  // is crowned off an in-progress Score either, so no row gets a number
+  // there, not even the podium's own row in the table below it.
+  // `entry.podium` tints row 1 to match the winner banner above it, on
+  // whichever screen has one (normal end; timeout only when a real
+  // finisher exists).
+  function renderRankingRows(listEl, entries, showRanks) {
     var showLight = document.body.classList.contains('theme-light');
     listEl.innerHTML = '';
     entries.forEach(function (entry) {
@@ -2060,7 +2071,7 @@
 
       var rank = document.createElement('span');
       rank.className = 'results-rank';
-      rank.textContent = entry.rank != null ? entry.rank : '';
+      rank.textContent = (showRanks && entry.rank != null) ? entry.rank : '';
       li.appendChild(rank);
 
       var avatar = document.createElement('span');
@@ -2090,17 +2101,21 @@
   // time this is reached - see its own `if (finishedCount === 0) return
   // false` gate) - a real, earned winner, continuous rank numbering
   // through the whole table (finishers, then Score-ranked non-finishers).
+  // This is "case 1": a win reached before the clock could matter at all -
+  // timeoutGame() never runs in this case, so there is no "Time's up"/"ran
+  // out of time" messaging to worry about suppressing here.
   function renderEnd() {
     var ranking = buildRanking();
     var winner = ranking.finishers[0].player;
     resultsWinnerNameEl.textContent = winner.name + ' wins!';
+    resultsWinnerAvatarEl.src = 'avatars/' + winner.avatar;
     applyTheme(winner);
     var entries = ranking.finishers.concat(ranking.nonFinishers);
     entries.forEach(function (entry, index) {
       entry.rank = index + 1;
       entry.podium = index === 0;
     });
-    renderRankingRows(finishListEl, entries);
+    renderRankingRows(finishListEl, entries, true);
   }
 
   function endGame() {
@@ -2168,30 +2183,59 @@
     playTimerEl.textContent = label;
   }
 
-  // Deliberately no ranking (§5/M9) - nobody shut their box, so there is no
-  // winner, and a placeholder table would undercut the very tension being
-  // tested. Do not add one here.
-  // M21/D-64: podium-less by design - a timeout leader is a progress
-  // leader, not a crowned shut-the-box winner (keeps D-02's spirit). Any
-  // genuine finisher (rare: top-two/all-places, clock runs out before the
-  // next threshold) still keeps a real rank number and sorts above the
-  // Score-ranked rest, who get none - see buildRanking/renderRankingRows.
+  // Timer-interrupted end - two distinct cases, both reached only via the
+  // clock (checkGameEnd never routes here; see timeoutGame). Never
+  // podium-*numbered* in the table (showRanks false either way - a timeout
+  // leader by Score is a progress leader, not a crowned shut-the-box
+  // winner, keeps D-02's spirit), but a REAL finisher still gets the same
+  // podium treatment as a normal win, since they genuinely did shut their
+  // box - only possible under top-two/all-places, when the clock runs out
+  // before the next placement threshold is reached.
+  //
+  // Case 2 (ranking.finishers.length > 0): winner banner shown (avatar +
+  // name, themed), "Time's up!" + "X ran out of time" still shown below it
+  // (the match really was cut short by the clock), #timeout-message
+  // hidden (it would be wrong - someone DID shut their box), ranking table
+  // includes the winner as its own (unnumbered) row - the banner already
+  // covers rank 1, no need to also print "1" under it.
+  //
+  // Case 3 (no finisher at all - the common case): winner banner hidden,
+  // #timeout-message shown, every row in the table unranked.
   function renderTimeoutRanking() {
     var ranking = buildRanking();
-    ranking.finishers.forEach(function (entry, index) { entry.rank = index + 1; });
-    ranking.nonFinishers.forEach(function (entry) { entry.rank = null; });
-    renderRankingRows(timeoutRankingListEl, ranking.finishers.concat(ranking.nonFinishers));
+    ranking.finishers.forEach(function (entry, index) { entry.podium = index === 0; });
+    renderRankingRows(timeoutRankingListEl, ranking.finishers.concat(ranking.nonFinishers), false);
   }
 
   function timeoutGame() {
-    // M15: name whoever's turn was active when the clock ran out, in their
-    // colour - turnIndex hasn't moved (the countdown only ticks while a
-    // turn is live), so currentPlayer() here is exactly that player.
+    var ranking = buildRanking();
+    var winner = ranking.finishers.length ? ranking.finishers[0].player : null;
+
+    timeoutWinnerBannerEl.hidden = !winner;
+    timeoutMessageEl.hidden = !!winner;
+    if (winner) {
+      timeoutWinnerNameEl.textContent = winner.name + ' wins!';
+      timeoutWinnerAvatarEl.src = 'avatars/' + winner.avatar;
+    }
+
+    // M15: name whoever's turn was active when the clock ran out - turnIndex
+    // hasn't moved (the countdown only ticks while a turn is live), so
+    // currentPlayer() here is exactly that player, and advanceTurn() always
+    // skips finished players, so this is never the winner.
     var p = currentPlayer();
     timeoutPlayerAvatarEl.src = 'avatars/' + p.avatar;
     timeoutPlayerAvatarEl.alt = '';
     timeoutPlayerPhraseEl.textContent = p.name + ' ran out of time';
-    applyTheme(p);
+
+    // When there's a winner, this points the shared --player-accent* at
+    // THEM for the banner - so the chip above needs its OWN colour set
+    // inline (not the shared play-accent-text class/var) or it would read
+    // as if it were about the winner too. Applied after applyTheme() so the
+    // fill-vs-edge contrast choice matches whichever theme actually lands.
+    applyTheme(winner || p);
+    var showLight = document.body.classList.contains('theme-light');
+    timeoutPlayerChipEl.style.color = showLight ? playerEdge(p.color) : p.color;
+
     renderTimeoutRanking();
     showScreen('timeout');
   }
