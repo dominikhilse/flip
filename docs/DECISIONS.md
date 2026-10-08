@@ -1464,3 +1464,51 @@ re-confirmed with `turnIndex` actually moved, not just the finished flag forced;
 (44 turns, real `onRoll`/`onConfirm`/`onPass`/`onBoostDecline`) completed end-to-end with the podium
 avatar populated correctly; zero errors captured by `window.onerror` during every automated run.
 Debug harness stripped before commit.
+
+### 2026-10-08 — M22: menu lockdown + hideable Dev tab (D-65/D-66)
+
+Built per the locked spec, with one scoping decision the spec's literal text left genuinely
+ambiguous (and one defensive extension of its own stated principle):
+
+- **Boost mode and Timer were NOT touched or relocated.** M22's own "Out of scope" line says
+  "Timer/Boost *placement* (that's M23)," and "Do-not-touch on entry" explicitly calls out "the
+  bottom Start/Timer/Boosts component (that's M23's to build — M22 just doesn't duplicate it in
+  Rules)." Taken literally that only bars *adding* a duplicate, but in the actual shipped code
+  there was never a duplicate to remove — Boost mode has lived in Rules since M7, Timer in Dev
+  since M9, neither was ever copied into Rules by an intermediate build. Stripping either out now,
+  before M23's footer exists to replace them, would strand a currently-working feature with zero
+  UI path to it. Left both exactly where they already were; M23 is the one that actually relocates
+  them into the shared footer and removes them from here.
+- **Overpay moved Rules → Dev**, exactly as specified.
+- **Tap sounds deleted outright** (confirmed dead: a disabled "Benched" checkbox, zero JS
+  listeners anywhere, no audio system at all) - not relocated.
+- **Motion/tap invariant text** changed to the exact locked string: "Turning both off isn't
+  allowed."
+- **Hide mechanism**: `CONFIG.showDevTab` (default `false`), a plain source constant alongside
+  this project's other hand-tuned `config.js` values - no runtime reveal gesture, matches the
+  locked spec exactly. `renderSetupTabs()` hides the Dev tab button itself (not just its panel)
+  and falls back to the Players tab if `activeSetupTab` was somehow left on `'dev'`. The tab bar
+  needed no new CSS - `.tab-btn { flex: 1 }` already reflows to however many siblings are visible.
+- **Forced production defaults, extended by one field beyond the spec's literal list:** the plan
+  names Overpay → A, Test Dice off, dice-animation → locked constant. Added
+  `timeChallengeSeconds → 0` to the same forcing pass, by the plan's own stated reasoning ("a
+  hidden Dev can never strand the game in an experimental state... with no visible control") -
+  Timer has no production home yet either (see above), so without this a prior Dev session's
+  countdown would keep running with nothing in the production UI able to turn it off. Applied
+  once at boot (right after `settings` loads, before any screen renders) and persisted back via
+  `STORAGE.saveSettings`, so a stale experimental value from an earlier Dev session doesn't keep
+  reappearing on every load.
+- **Dice animation locked to 500ms** (`CONFIG.diceAnimationDurationMs`), per D-66 - both 400 and
+  600 tested good, 500 is the chosen midpoint. The Dev tab's live-tunable control is untouched and
+  still works when Dev is shown.
+
+**Verified:** with `showDevTab: false` (shipped default) - exactly 3 tabs render, Dev tab and all
+its controls are unreachable, Overpay/Test-dice/devDiceChoice/timeChallengeSeconds all read back
+from `localStorage` as their production defaults even starting from a blank slate, App tab's
+invariant text matches the locked string exactly, Tap sounds is gone, Boost mode still toggles
+normally in Rules. With the flag flipped to `true` at runtime (verifying the mechanism, not the
+shipped default) - 4 tabs render, Dev shows Overpay/Test dice/Time challenge/Dice roll animation
+(500ms) and no Tap sounds. A full real game (53 turns, Boost mode enabled via Rules, real
+`onRoll`/`onConfirm`/`onPass`/`onBoostDecline`) completed with zero console errors and Overpay
+confirmed locked to `A` throughout. Debug harness stripped before commit; dev-server port (bumped
+to defeat HTTP caching while testing config.js changes) reverted to 8123.

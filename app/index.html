@@ -82,7 +82,11 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2.5"></rect><line x1="9" y1="18" x2="15" y2="18"></line></svg>
         App
       </button>
-      <button type="button" class="tab-btn" data-tab="dev">
+      <!-- M22/D-65: hidden entirely (not just disabled) when
+           CONFIG.showDevTab is false - see renderSetupTabs in app.js. The
+           tab bar's flex layout (.tab-btn { flex: 1 }) already reflows to
+           however many siblings are actually visible, no extra CSS. -->
+      <button type="button" id="setup-tab-btn-dev" class="tab-btn" data-tab="dev">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-2.8-2.8 2.1-2.1z"></path></svg>
         Dev
       </button>
@@ -125,14 +129,10 @@
         </select>
       </div>
 
-      <div class="setting-row">
-        <span>Overpay <span class="chip">next lap</span></span>
-        <div class="toggle-group" id="overpay-toggle">
-          <button type="button" class="toggle-btn" data-overpay="A">A</button>
-          <button type="button" class="toggle-btn" data-overpay="D">D</button>
-        </div>
-      </div>
-
+      <!-- M22/D-65: Boost mode's own home is still open - Timer/Boost
+           *placement* is explicitly out of scope for M22 (that's M23's
+           shared footer); left exactly where it's always been rather than
+           stripped out with nowhere else to go in the meantime. -->
       <div class="setting-row">
         <span>Boost mode (A only) <span class="chip">next lap</span></span>
         <label class="switch"><input type="checkbox" id="boost-checkbox"><span class="switch-track"></span></label>
@@ -149,15 +149,7 @@
         <span>Tap to proceed</span>
         <label class="switch"><input type="checkbox" id="tap-toggle"><span class="switch-track"></span></label>
       </div>
-      <div class="menu-banner">One of Motion / Tap must stay on — turning both off isn't allowed</div>
-
-      <!-- M15: benched, per the user's decision - the row is real UI
-           (matches the mockup) but wired to nothing; there is no audio
-           system anywhere in this build yet. See DECISIONS.md. -->
-      <div class="setting-row">
-        <span>Tap sounds <span class="dev-badge">Benched</span></span>
-        <label class="switch"><input type="checkbox" id="tap-sounds-toggle" disabled><span class="switch-track"></span></label>
-      </div>
+      <div class="menu-banner">Turning both off isn't allowed.</div>
 
       <div class="setting-row">
         <span>Theme</span>
@@ -205,6 +197,17 @@
     <!-- 3c Dev -->
     <div id="setup-tab-dev" class="setup-tab" hidden>
       <div class="menu-banner dev-banner"><span class="dev-badge">Dev build only</span> Developer tools — not part of normal play</div>
+
+      <!-- M22/D-65: moved from Rules - production always runs Overpay A
+           (see CONFIG.showDevTab in app.js, which forces this whenever
+           the Dev tab itself is hidden, same as Test dice #). -->
+      <div class="setting-row">
+        <span>Overpay <span class="chip">next lap</span></span>
+        <div class="toggle-group" id="overpay-toggle">
+          <button type="button" class="toggle-btn" data-overpay="A">A</button>
+          <button type="button" class="toggle-btn" data-overpay="D">D</button>
+        </div>
+      </div>
 
       <div class="setting-row">
         <span>Test dice #</span>

@@ -17,6 +17,16 @@ window.CONFIG = {
   stillMagnitudeThreshold: 0.3, // m/s^2
   restToFlipDelayMs: 300, // PENDING RETUNE - see comment above
 
+  // M22/D-65: the one switch that decides whether the Dev tab renders at
+  // all. Source-level, not a user setting - no runtime reveal gesture, no
+  // build step to strip the Dev code either; flip this and redeploy to get
+  // it back. Default for the shipped product is false. Hiding it also
+  // forces every Dev-controlled setting to its production default (see
+  // app.js, right after `settings` loads) - a hidden Dev tab can never
+  // leave the game stuck in an experimental state with no visible control
+  // to undo it.
+  showDevTab: false,
+
   // Boost mode (§3.6, M6). boostDryStreakWindow/Threshold are the starting
   // values from the spec, explicitly flagged there as tunable after real
   // play - change in place if the feel is off, no need to re-derive them.
@@ -35,9 +45,12 @@ window.CONFIG = {
   // Dice roll animation (M10, D-47). Purely cosmetic - the actual roll
   // result is decided by RULES.rollDice() before the animation ever runs
   // (see onRoll/animateDiceRoll); these two values only control how long
-  // and how fast the face-cycle flashes before settling. Starting values,
-  // not measured - tune by feel.
-  diceAnimationDurationMs: 400,
+  // and how fast the face-cycle flashes before settling.
+  // diceAnimationDurationMs is LOCKED (M22/D-66): both 400 and 600 tested
+  // good, 500 is the chosen midpoint. The Dev tab's live-tunable control
+  // still exists behind showDevTab for re-tuning if the animation itself
+  // ever changes - re-test there and update this constant, don't guess.
+  diceAnimationDurationMs: 500,
   diceAnimationFrameMs: 60,
 
   // Avatars (M13, D-55). Files live at app/avatars/01.png..NN.png - this is

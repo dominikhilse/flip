@@ -4,6 +4,28 @@
   // ---- Persistent state (roster + settings) ----
   var roster = STORAGE.loadRoster();
   var settings = STORAGE.loadSettings();
+
+  // M22/D-65: hiding the Dev tab must never strand the game in an
+  // experimental state with no visible control to undo it (e.g. stuck in
+  // Overpay-D) - so the moment it's hidden, every Dev-controlled value in
+  // `settings` is forced back to its production default and the
+  // correction is persisted, overriding whatever a prior Dev session left
+  // behind. Re-showing Dev (CONFIG.showDevTab true) restores the
+  // controls, not necessarily these prior experimental values - matches
+  // the locked spec. Timer (timeChallengeSeconds) is included here too,
+  // even though the plan's own bullet list named only Overpay/Test-dice/
+  // dice-anim - Timer has no production home yet either (Timer/Boost
+  // *placement* is M23's job, out of scope for M22), so by the exact same
+  // "no visible control to undo it" reasoning it would otherwise be
+  // strandable too; see DECISIONS.md.
+  if (!CONFIG.showDevTab) {
+    settings.overpayMode = 'A';
+    settings.devDiceTestEnabled = false;
+    settings.devDiceChoice = 'ask';
+    settings.timeChallengeSeconds = 0;
+    STORAGE.saveSettings(settings);
+  }
+
   var selectedColor = null;
 
   // ---- In-memory game state (never persisted; a reload always starts fresh) ----
@@ -27,6 +49,7 @@
   var setupSubtitleEl = document.getElementById('setup-subtitle');
   var setupMidgameBannerEl = document.getElementById('setup-midgame-banner');
   var setupTabbarEl = document.getElementById('setup-tabbar');
+  var setupTabBtnDevEl = document.getElementById('setup-tab-btn-dev');
   var setupTabPanels = {
     players: document.getElementById('setup-tab-players'),
     rules: document.getElementById('setup-tab-rules'),
@@ -496,6 +519,15 @@
   // module-level var, not part of `game`/`settings`) so reopening the menu
   // doesn't reset the player back to Players every time.
   function renderSetupTabs() {
+    // M22/D-65: hidden entirely, not disabled - the tab bar's own flex
+    // layout (.tab-btn { flex: 1 }) already reflows to whatever's left.
+    // If Dev happened to be the active tab when the flag is off (can't
+    // happen via a click once the button itself is hidden, but guards a
+    // stale activeSetupTab from an earlier session), fall back to Players
+    // rather than render a blank panel.
+    setupTabBtnDevEl.hidden = !CONFIG.showDevTab;
+    if (!CONFIG.showDevTab && activeSetupTab === 'dev') activeSetupTab = 'players';
+
     var tabBtns = setupTabbarEl.querySelectorAll('.tab-btn');
     tabBtns.forEach(function (btn) {
       btn.classList.toggle('active', btn.getAttribute('data-tab') === activeSetupTab);
