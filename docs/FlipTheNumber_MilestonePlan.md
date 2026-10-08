@@ -4,6 +4,27 @@
 **Audience:** a Claude Code session with no prior context. Everything needed is in this file.
 **Supersedes:** nothing. This is the first plan for this project.
 
+**Revision note (M21–M23 BUILT, reconciling DECISIONS.md through 2026-10-10):** all three
+status-flipped SPECIFIED → **BUILT, VERIFIED**, with three shipped refinements. **M21:** the result
+screen shipped as **three cases, not two** — normal win (podium, numbered table), timeout *with* a real
+finisher (winner banner + "Time's up" + "X ran out of time" chip + unnumbered table — a real finisher
+keeps the podium treatment), and timeout with nobody finished (unnumbered table). Podium + banner gained
+a real avatar. **M22:** built as specced, but deliberately left Boost/Timer in place — **M23** is where
+they relocated. **M23:** fixed footer built, then refined twice — picker moved *above* the toggles for
+dynamic height (Start never moves), then GH #7 put Boosts/Start/Timer in one shared row; also fixed
+stale "2–8 players" → "2–12". **GH #8** (D-69/D-70): move options now wait for the dice animation to
+settle; boost buttons name their type ("Use Overpay"/"Use 1-for-2"), retiring the generic "Use/Change
+boost" labels from M18/D-56. M24 (localisation) remains SPECIFIED, not started.
+
+**Revision note (M24 localisation added, 2026-10-08):** **M24 — localisation (EFIGS: EN/FR/IT/DE/ES)**
+specified as two stages (A: code extract-to-keys, `t()` with interpolation, de-concatenate sentences,
+Language setting with flag+name, ships EN-only; B: machine-translation fill by executor → Dominik
+proofs DE-first as a tone rewrite, DE/FR layout QA). Entirely front-end; Google Sheet is authoring-only
+with manual JSON export. A sibling contract doc, `FlipTheNumber_LocalisationSchema.md`, defines keys,
+slot syntax, the no-concatenation rule, the Sheet, and `t()` fallback — settle it before extraction.
+D-68 added. The two bite-points flagged and designed-against: concatenated sentences (reworked to
+slotted templates in Stage A) and DE/FR string overflow (QA in Stage B, Dominik leads DE natively).
+
 **Revision note (M21–M23 updated per executor cross-check, 2026-10-08):** six executor points resolved.
 **M21:** result screen split into two variants — normal end keeps the podium + table; **timeout (nobody
 shut) is podium-less** — "Time's up!" header + Score table only, no crowning (a timeout leader isn't a
@@ -1636,7 +1657,19 @@ No rules/engine/mechanics changes in any of these; all are chrome, layout-measur
 
 ---
 
-### M20 — Avatar grid picker — SPECIFIED
+### M20 — Avatar grid picker — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-09-25).** Tap = cycle (unchanged), tap-and-hold (500 ms, 10 px slop)
+= grid modal, on both avatar buttons (Play header + turn-card). Built as a second native
+`<dialog id="avatar-dialog">` (same shape as `#confirm-dialog`; X / backdrop / Esc dismiss). No D-50
+clash (drag-to-reorder is on the roster handle, not the avatar). Hint label "Tap to change · hold to
+choose", permanent + fixed-height. **One deviation from D-63, sensible:** the "equipped checkmark" ships
+as the **sand accent** (`--accent-sand`, the app's existing selected-state colour, theme-following)
+rather than literal yellow — a sand ring + check badge on the own avatar, nothing dimmed. Soft
+uniqueness holds (grid shows all 36 incl. taken; cycling still skips taken — the two paths intentionally
+differ). Not device-verified: real-finger long-press feel and iOS callout suppression (needs a device
+pass). Original spec below.
+
 
 **Goal.** Give players a fast way to reach a *specific* avatar out of the (now ~36) set, without
 cycling past it — while keeping cycling for the casual "just give me a different one" case.
@@ -1701,7 +1734,30 @@ report** the gesture clash rather than working around it silently.
 
 ---
 
-### M21 — Scoring & ranking for non-finishers (reverses D-02) — SPECIFIED
+### M21 — Scoring & ranking for non-finishers (reverses D-02) — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-10-08). The result model shipped as THREE cases, not the two
+variants originally specced** — a real finisher at a timeout (possible in `top-two`/`all-places` when
+the clock runs out *after* someone shut but before the next placement threshold) deserves the podium
+treatment, not demotion to a table row. All three cases use the same `buildRanking()` /
+`renderRankingRows(listEl, entries, showRanks)` pair; `showRanks` is all-or-nothing per screen.
+
+**The three result cases (shipped, supersedes the two-variant spec below):**
+1. **Normal win** (`#screen-end`): podium (winner, now with avatar) + full table, **every row numbered**
+   (continuous rank 1..N). `showRanks = true`.
+2. **Timeout WITH a real finisher** (`#screen-timeout`): a `#timeout-winner-banner` (same markup/avatar
+   as the podium) shows the real winner, then "Time's up!" + clock, then a chip "Player X ran out of
+   time" (always a *different* still-unfinished player — `advanceTurn()` always skips finished players,
+   so never the winner), then the table with **no rank numbers for anyone** (the banner already covers
+   rank 1). The "No one shut their box" message is hidden here (it would be false). `showRanks = false`.
+3. **Timeout with nobody finished** (the common case): banner hidden, "No one shut their box" message
+   shown, table with **no rank numbers**. `showRanks = false`.
+
+The podium and the timeout winner-banner both gained a real avatar image (`.results-winner-avatar`,
+same top-cropped circle as elsewhere) — podium was text-only before; "winner with avatar" applied to
+both for consistency. Styling wrinkle resolved: case 2 needs `--player-accent` on the *winner* (banner,
+via `applyTheme(winner)`) while the "ran out of time" chip needs a *different* player's colour — fixed
+with an inline chip colour computed after `applyTheme()` so fill-vs-edge matches the landed theme.
 
 **Build first of the three MVP-finishing milestones — M22 and M23 both consume it.**
 
@@ -1785,7 +1841,14 @@ path would route through the podium results screen, **stop** — timeout is expl
 
 ---
 
-### M22 — Menu lockdown + hideable Dev tab — SPECIFIED (build second)
+### M22 — Menu lockdown + hideable Dev tab — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-10-08).** Overpay → Dev, tap-sounds deleted, `CONFIG.showDevTab`
+source-constant gate (default false, reflows tab bar), Dev-hidden forces production defaults, dice value
+locked at 500 ms — all per spec. **Note:** M22 deliberately left Boost mode and Timer *in place* (Rules
+and Dev respectively); **M23 is where they actually relocated** into the shared footer (M22 built the
+lockdown structure, M23 moved the two mode controls to their real home). Original spec below.
+
 
 **Goal.** Lock the production settings to the real, shipping set; move everything experimental to the
 Dev tab; make the Dev tab **hideable via a visible flag** so the shipped product shows only production
@@ -1848,7 +1911,30 @@ compile out.
 
 ---
 
-### M23 — Mode toggles in a fixed settings-menu footer — SPECIFIED (build third)
+### M23 — Mode toggles in a fixed settings-menu footer — BUILT, VERIFIED
+
+**Status: BUILT and verified (2026-10-09), then refined twice.** `#screen-setup` became a three-region
+flex column (fixed header+tabbar / scrollable `#setup-scroll` wrapping all tab panels / fixed
+`#setup-footer` outside the scroll — so "same footer on every tab" falls out of the DOM structure, no
+per-tab logic). Boost mode and Timer actually relocated here (out of Rules/Dev); same settings
+(`boostEnabled` lap-anchored + A-only; `timeChallengeSeconds` blocked-until-next-game), only location
+and shape changed. Launch screen stayed a splash + the new motion-permission line.
+
+**Two refinements after the first build (both shipped):**
+- **Dynamic footer height, picker moved above the toggles.** Instead of permanently reserving the
+  picker's space, the picker now sits *above* the toggle row; because the footer is bottom-anchored,
+  growing it only pushes its own top edge up into the scroll area — so Start Game never moves. Verified
+  pixel-identical Start-button top with the picker shown/hidden. (Replaced the earlier
+  reserved-space/`visibility` technique with a genuine `hidden` toggle.)
+- **GH #7 — single shared action row.** Boosts / Start-Game(-or-Back-to-game) / Timer now share one row
+  (`.setup-action-row`): compact square toggles flank the wide primary action, picker right-aligned
+  above the Timer button. Caught and fixed a real pre-ship regression (a `button.primary + button`
+  margin rule leaking into the flex row). Also fixed stale copy: **"2–8 players" → "2–12 players"** in
+  the launch tagline and Setup subtitle (D-07 never capped at 8; 12 matches the real UI limit).
+
+Original spec below (the fixed-footer intent holds; the picker-position and single-row details above
+are the shipped realisation).
+
 
 **Goal.** Make the match's optional modes — **Timer** and **Boosts** — always visible and settable in
 the settings menu, via a **fixed bottom component reused across every tab**, together with the Start
@@ -1918,6 +2004,74 @@ rewritten); the existing ≥2-player enable rule.
 **Stop conditions.** If making the footer fixed-on-every-tab requires rewriting the match-start/commit
 logic or bypassing Setup, **stop and report** — this reuses the existing start path and the existing
 roster flow; it relocates the controls, it does not re-architect how a match begins.
+
+---
+
+### M24 — Localisation (EFIGS) — SPECIFIED, two stages
+
+**Goal.** Make every user-facing string translatable and add a Language setting, then ship five
+languages. **EFIGS: EN, FR, IT, DE, ES.** English is the source of truth; no locale auto-detection —
+a plain setting picks the language.
+
+**Entirely front-end. No backend.** Localisation in this static app is a per-language string file, a
+lookup function, and a setting. The Google Sheet is an **authoring tool only**, never a runtime
+dependency — it exports to JSON in the repo. Consistent with the no-build, no-server constraints.
+
+**The contract:** `FlipTheNumber_LocalisationSchema.md` (sibling doc) defines key naming, slot/
+interpolation syntax, the concatenation rule, the Sheet columns, the per-language JSON shape, and the
+`t()` fallback behaviour. **Build to that schema; settle it before extraction.**
+
+**Stage A — code refactor, English-only (the real work; independently verifiable):**
+- **Extract every user-facing string → a stable key** per the schema. The executor does this because
+  it reads the actual source and won't miss strings not currently on screen (stall messages, confirm
+  dialogs, boost prompts, error states, the result/timeout screens). Output: the English column plus
+  slot annotations, delivered as a CSV that imports into the Sheet in one step.
+- **Implement `t(key, params)`** with `{slot}` interpolation and English fallback (schema §6).
+- **Convert every concatenated user-facing sentence into a single slotted template** (schema §3). This
+  is required, not optional cleanup — any sentence currently built by `+` or template-literal gluing of
+  a fragment is reworked into one template with slots, or it will be ungrammatical in DE/FR/IT.
+- **Add the Language setting** to the settings menu: **flag + language name** per option (Dominik picks
+  the flags; name-beside-flag is deliberate since flags represent countries, not languages). Persisted
+  in `localStorage` like other settings; default EN.
+- **Load `lang/<code>.json` and re-render on change** so every visible string updates. Strings set once
+  and never re-touched must still route through `t()` — extraction must catch these.
+- **Ships with EN only.** The app looks identical to today, but every string now flows through `t()`.
+  That identical-looking result is exactly what makes Stage A verifiable on its own.
+
+**Stage B — content (separate step):**
+- Executor fills **FR/IT/DE/ES** into the Sheet as a **first-pass machine translation**, done in-context
+  against the extracted keys so interpolation slots are preserved (and flagged wherever word order moved
+  a slot). Export per-language JSON into `lang/`.
+- **Dominik proofs**, DE first — and the German pass is a **rewrite-for-tone**, not just correctness
+  (MT is grammatically fine but flat; the game's voice is light and playful). FR/IT/ES proofed after;
+  MT-plus-proof is acceptable for the MVP.
+- **Layout QA happens here**, led by Dominik natively on DE (the worst overflow case) with FR second
+  (IT close behind). EN/ES fit inside whatever holds DE. UI that collapses under long strings is fixed
+  in this stage (wrap / shrink / careful truncation) — a design/QA problem localisation surfaces, not a
+  code defect.
+
+**Out of scope.** Locale auto-detection or hero/region inference (a plain setting only). A runtime
+dependency on the Sheet (export is manual, matching the deploy style). RTL languages (EFIGS is all LTR;
+if ever added, RTL is its own milestone). Translating player-entered names or tile digits. Pluralisation
+beyond EFIGS's simple singular/plural (handled per schema §3 where needed).
+
+**Do-not-touch on entry.** Game logic, rules, the engine — this is a presentation-layer change only.
+Tile digits and player names (not localised). The no-build / no-server constraints (all client-side).
+
+**Acceptance criteria:**
+- **Stage A:** the app runs identically to today with EN selected, but every user-facing string resolves
+  through `t()`; a Language setting shows flag + name; no user-facing string remains a hardcoded literal
+  (spot-check the non-obvious ones: stall messages, confirm dialogs, boost prompts, timeout screen); no
+  user-facing sentence is assembled by concatenation.
+- **Stage B:** selecting DE/FR/IT/ES switches every visible string, including interpolated ones (slots
+  correctly placed); a missing key falls back to English, never a blank or raw key; the German and French
+  layouts are QA'd with no clipped/overflowing text on any screen; interpolation slots are intact in all
+  languages.
+
+**Stop conditions.** If extraction finds a user-facing sentence built from fragments that can't be
+cleanly converted to one slotted template without touching game logic, **stop and report** — flag it
+rather than shipping a concatenation that breaks in DE/FR. If any string can't be reached by `t()`
+without a re-render the current architecture doesn't support, **stop and report** the specific screen.
 
 ---
 
@@ -2107,7 +2261,7 @@ and date (all since resolved); no number for any of these should appear as thoug
 | D-53 | Brand track resolved (M13). Flip the character is **cut**; name **"Flip the Number" kept** (flip = tile verb, no mascot dependency, zero repo/URL churn). Spudlings are **in as sidekicks + chosen avatars**, never as tile art (tiles stay plain numerals, D-13). Feel: warm handmade burlap storybook. Type: Bagel Fat One (display) + Figtree (UI) via network `<link>` — the §3.1 offline caveat is knowingly accepted | Locked |
 | D-54 | Player palette (replaces the ad-hoc `theme.js` set): 8 CVD-safe hues + 4 graceful 9–12, each as `{fill, edge, ink}` (edge = dark partner = border + non-hue identity channel surviving the theme flip). Assign safe-8-first. Closed tiles use 3 individually-sufficient non-hue cues (desaturate + pressed inset + hollow numeral). Overpay XOR flips chrome only; player hues live outside the chrome-token system and never flip | Locked |
 | D-55 | Avatars: a fixed set of Spudling PNGs in `app/avatars/` (**19 as shipped**, `config.js avatarCount`; the 20th was left ungenerated — no source asset and character art is barred), static, provisional/swappable (players hold an id/filename reference; a colour+monogram fallback `renderIdentityCircle` covers the pre-`assignAvatars` state). **Randomly assigned without replacement at game start** (unique per player, 19 ≥ 12 max), **cycle-through to change**. Avatar shows on the player screen (**gameplay chrome — supersedes the handoff's "never gameplay chrome" line**) and is the **primary 9–12 distinguisher** (avatar → name → colour past 8). The avatar creator itself is out of scope | Locked |
-| D-56 | **Reverses D-36/D-37 (partially).** When a player holds both boost types and both resolve the stall, the player **chooses** which to spend via a one-button cycle-and-preview (Use boost → previews 1-for-2 → "Change boost" cycles → Confirm). Conservation is preserved as the **default** (1-for-2 shown first; tap-through = today's auto-select outcome), not enforced — so D-37's conservation is demoted from enforced to default, not deleted. No dropdown/multi-select. Only-one-applicable case unchanged. (M18) | Locked |
+| D-56 | **Reverses D-36/D-37 (partially).** When a player holds both boost types and both resolve the stall, the player **chooses** which to spend via a one-button cycle-and-preview. Conservation preserved as the **default** (1-for-2 shown first; tap-through = auto-select outcome), not enforced. No dropdown/multi-select. (M18) **Labels later renamed by GH #8 (D-70):** the generic "Use boost"/"Change boost" became type-naming buttons ("Use Overpay"/"Use 1-for-2") — the mechanic is unchanged, only the button text | Locked (labels per D-70) |
 | D-57 | Boost-earned toast (M14, shipped) refined to **travel into its type's chip**: appears right-aligned, slides left + shrinks on a layer *under* the chips, arrives at the awarded type's specific chip, which pops and increments its count at arrival. Refinement of existing machinery, not a rebuild (M19) | Locked |
 | D-58 | Two skins ship — Colorful (default) + Monochrome (`settings.skin`, cosmetic-only). Mono uses a computed HSL lightness ramp with reverse-engineered (unmeasured) starting values, flagged to revisit after a readability pass (M14) | Locked |
 | D-59 | Time challenge is a **single whole-match countdown**. **Updated by D-64 (M21):** on timeout it now shows the ranked scoreboard (podium + Score table) instead of ending with no winner — the countdown and whole-match semantics are unchanged, only the end screen. Per-turn shot clock still parked as a future mode (§6a) | Locked (end-screen updated by D-64) |
@@ -2118,4 +2272,7 @@ and date (all since resolved); no number for any of these should appear as thoug
 | D-64 | **Reverses/narrows D-02 (M21).** Scoring: finish-order primary; non-finishers ranked by **Score = sum of flipped tile values, highest first** (kid-legible). Score shown **on result screens only**, never during play. **Two result variants (same table component, `showRank` flag):** normal end (someone shut) = winner on podium + full table with rank callout (winner also row 1); **timeout (nobody shut) = "Time's up!" header + clock + table only — NO podium, NO rank numbers** (avatar + name + quiet Score, sorted by Score, order shown by position not called out) — a timeout leader is a progress leader, not a crowned winner (keeps D-02's spirit). Score rendered quiet; finishers framed as finishers. Updates D-59 | Locked |
 | D-65 | Menu lockdown (M22): Rules = rack size, placement (Timer/Boosts are NOT here — they're in M23's shared footer); App = motion, tap-to-proceed, theme, tile skin (invariant text → "Turning both off isn't allowed"); **Dev = Overpay A/D, Test Dice #, Dice roll animation**. **Tap sounds DELETED** (dead "Benched" code, no audio system — removed, not moved). Dev tab hidden via a **source-level boolean constant** `CONFIG.showDevTab` (default false; re-enable = edit + redeploy, no runtime gesture); tab bar reflows to visible count; **hiding Dev forces all Dev settings to production defaults**; code retained (no build step to strip) | Locked |
 | D-66 | M10 dice-animation value **locked to 500 ms** (`diceAnimationDurationMs: 500`) in M22 — 400 and 600 both tested good, 500 is the chosen midpoint. Dev tuning control stays behind the Dev flag; production uses 500. Removes the "not measured" comment on this field. (M10 itself now BUILT, VERIFIED) | Locked |
+| D-68 | Localisation (M24, EFIGS: EN/FR/IT/DE/ES): **entirely front-end** — per-language JSON in `lang/`, a `t(key, params)` lookup with `{slot}` interpolation + English fallback, a Language setting (flag + name, no auto-detect). Google Sheet is authoring-only, manual export to JSON. Two stages: A = code extract-to-keys + `t()` + de-concatenate sentences + setting, ships EN-only; B = MT fill (executor) → Dominik proof (DE first, as a tone rewrite) + DE/FR layout QA. Schema in `FlipTheNumber_LocalisationSchema.md`. Executor extracts (sees all strings); Dominik owns the Sheet | Locked |
+| D-69 | GH #8: **move options wait for the dice animation to settle.** The roll result is still decided immediately (D-47/M10 cosmetic-only unchanged), but tile clickability, Confirm's enabled state, the boost offer, and the stall/whole-rack/selection-sum messages gate on a new `rollRevealed()` (flips true when the animation settles, matched to the exact roll instance). Exception: Roll's own disabled state stays tied to the real roll so a double-roll is blocked instantly | Locked |
+| D-70 | GH #8: boost buttons **name their type** — "Use Boost"/"Change Boost" retired for "Use Overpay"/"Use 1-for-2". Pre-spend shows the offered default (1-for-2 first when both apply, D-37/D-56 unchanged); the second button names whichever type cycling switches *to* (label derived from the same next-in-list computation, can't drift). Single-applicable case shows the specific label directly, no Change button. Mechanic unchanged; labels only | Locked |
 | D-67 | ~~Prematch toggles on the launch screen above "Tap to start"~~ **Revised (M23, executor-flagged): "Tap to start" doesn't begin a match — it navigates to Setup.** So the launch screen stays a splash + CTA (adding a motion-permission hint), and Timer/Boosts + a full-width **Start Game** button live in a **fixed bottom footer reused on every settings tab** (same position all tabs; top tabs fixed, footer fixed, middle content scrolls). Independent toggles, four states; Timer-on reveals a picker in reserved space (button never jumps). Start follows the existing ≥2-player rule; reuses the existing start path (no Setup-skip). Timer/Boosts now live in ONE place (the footer), so they're removed from Rules — the earlier "one setting, two views" sync is moot | Locked |
