@@ -1813,3 +1813,66 @@ is acceptable for the MVP" framing.
   before commit; dev-server port reverted to 8123.
 - **Not done, and explicitly not this entry's job:** Dominik's proofing pass (DE tone rewrite first,
   then FR/IT/ES), and the dedicated DE/FR layout QA pass - both still open, per §5/M24's own staging.
+
+### 2026-10-09 — M24 Stage B: "rack" has no working German translation; EN source revised, 11 strings retranslated
+
+Dominik's first German proofing pass (via a Sheet re-export, `key,en` only - re-imported after editing
+through a macOS Downloads-folder permission issue, resolved by moving the file into the repo's `docs/`
+instead) found "Spielfeld" - the word this session's Stage B pass had used for "the whole rack" - reads
+wrong, and that none of the obvious German alternatives work either. **His call: don't keep hunting for
+a German word for "rack" - change the English source to avoid needing one at all**, which is a Stage-B
+proofing decision affecting the shared EN source, not a translation-only fix.
+
+- **EN source changes** (`app/lang/en.json`, diffed against the re-exported CSV to isolate exactly what
+  changed): `play.message.wholerackblocked`/`play.message.wholerackoverpayblocked`'s "the whole rack" →
+  "the whole round"; `dialog.restartmatch.body`'s "Racks and boosts reset" → "Progress and boosts
+  reset". Also in the same re-export, unrelated to the rack issue: `launch.permission` rewritten in full
+  (new stated reason for the motion-sensing permission - keeping the phone safely on the table during
+  play, not the tilt-to-flip mechanic) and `boost.offer.onefortwo` clarified ("a single {target}" → "a
+  single die roll {target}"). **Corrected one typo in the submitted text** ("sefely" → "safely" in
+  `launch.permission`) rather than shipping it into the canonical English source - flagging here since
+  it's the one liberty taken with Dominik's literal text.
+- **A second, unflagged, but clearly deliberate change ran through the same re-export: every em-dash
+  (`—`) in the English source was replaced with a plain hyphen (`-`)**, with no exceptions - all 9 keys
+  that previously contained one were affected, confirmed by diffing against every em-dash occurrence in
+  the prior `en.json`. Read as a standing typography decision (not scoped to this one proofing pass) and
+  applied the same way across every language's translation of those 9 keys, not just the English source -
+  "we need to apply [this] while retranslating the relevant strings" is being read as "every string
+  containing one," which this already was by construction (no em-dash existed anywhere else in the
+  81-key set to miss).
+- **The actual fix judgment call, scoped to German only:** rather than translate the new English word
+  "round" literally (which risked colliding with `nächste Runde`, already German's word for "lap"
+  elsewhere in this project - exactly the kind of confusion the rack fix exists to avoid), German's two
+  "whole rack" strings were reworded around **"alle Felder auf einmal"** ("all tiles at once") - avoids
+  both the flagged-wrong "Spielfeld" and a second, newly-risked collision with "Runde", while keeping
+  "Feld" (singular, for one tile) exactly as already used everywhere else in German - that word was
+  never the problem, only the collective "whole board" noun was. `dialog.restartmatch.body` (which used
+  "Spielfelder" for "Racks") now reads "Der Fortschritt" (progress), matching the wording
+  `dialog.endmatch.body` already uses for the same concept.
+- **FR/IT/ES deliberately did NOT get the same wording treatment** for `play.message.wholerackblocked`/
+  `play.message.wholerackoverpayblocked`, even though the English source they translate from now says
+  "round." Those three languages' existing "whole rack/board" phrasing (`grille`/`tabellone`/`tablero`)
+  was never flagged as wrong - Dominik's report was specific ("works in the other languages but for
+  German not at all") - so chasing the new English word literally there would have traded a working
+  translation for an unnecessary one. Only the dash and (where applicable) other genuinely-changed
+  content was applied to FR/IT/ES; the "rack" concept itself stays expressed the way it already worked.
+  `dialog.restartmatch.body` and `launch.permission`, by contrast, got full retranslation in all four
+  languages, since those EN rewrites changed actual meaning everywhere, not just a German-specific
+  workaround.
+- **Process note on the Sheet/CSV bridge**, since this came up getting the re-export back into the repo:
+  Google Sheets only imports/exports CSV (never JSON), so CSV remains the only interchange format in
+  either direction - `docs/localisation_translation_efigs.csv` is regenerated (overwritten, not
+  versioned per-pass) every time strings change, for Dominik to re-import. Separately: his exported CSV
+  landed in `~/Downloads`, which this session's shell couldn't read even after the in-app folder-access
+  grant (a macOS-level Full Disk Access gap, not an in-app permission) - moving the file into the repo's
+  own `docs/` folder was the working fallback. Worth knowing for next time rather than re-discovering it.
+- **Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated to
+  bypass the standing browser-HTTP-cache issue, reverted to 8123 after): a script-level diff against the
+  prior `en.json` confirmed exactly the 11 intended keys changed and nothing else drifted; the same
+  slot-preservation validation as the first Stage-B pass re-run and passing for all 81 keys × 4
+  languages; `grep` confirmed zero remaining "Spielfeld" occurrences and zero remaining em-dashes
+  anywhere in `app/lang/*.json`; five full automated games (EN + all four translated languages, 55-227
+  turns each) completed cleanly with zero console errors; the five retranslated/reworded German strings
+  spot-checked directly via `I18N.t()` for correct text and intact `{target}` interpolation. Debug hook
+  stripped before commit (file diff confirmed net-zero against the version before this pass); dev-server
+  port reverted to 8123.
