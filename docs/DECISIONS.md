@@ -1750,3 +1750,66 @@ Language setting, and the EN-only ship per Stage A's own acceptance bar.
   117 turns, 4 players, reaching the End screen with a real ranking table) completed cleanly with
   zero console errors. Debug hook stripped before commit; dev-server port rotated to bypass
   browser-HTTP-cache during testing, reverted to 8123 before finishing.
+
+### 2026-10-09 — M24 Stage B (first pass): FR/IT/DE/ES machine translation, shipped live
+
+Dominik pushed and tested Stage A, then asked for the next step. Per §5/M24, Stage B's first bullet
+is the executor producing first-pass MT for FR/IT/DE/ES "in-context against the extracted keys," with
+slot preservation flagged where word order moves one, and exporting per-language JSON into `lang/` -
+before Dominik's own proofing/tone pass. Asked Dominik directly whether the JSON should go live now or
+wait behind proofing; he chose live now, matching the plan's own bullet order and its "MT-plus-proof
+is acceptable for the MVP" framing.
+
+- **All 81 keys** (the 80 from the approved extraction CSV plus `settings.app.language`, added during
+  Stage A) translated into FR/IT/DE/ES and written to `app/lang/{fr,it,de,es}.json`. Built via a
+  one-off Python script (not committed, scratch-only) that also **validated every `{slot}` name
+  survives translation unchanged per key, per language** - a mechanical check against the exact
+  failure mode the schema's concatenation/slot rules exist to prevent, before anything was written to
+  disk.
+- **Terminology judgment calls, first pass (Dominik can override any of these in proofing):**
+  - **"Boost" kept as an English loanword** in all four languages (`Boosts`/`Boost`), matching how the
+    term already functions as a generic loanword across European mobile-game UIs.
+  - **"Overpay" translated** to a short descriptive word per language (FR `Surplus`, IT `Eccesso`, DE
+    `Überschuss`, ES `Exceso`) rather than kept as a loanword like "Boost" - flagged in the CSV's notes
+    column as a call Dominik may want to reverse for consistency with keeping "Boost" untranslated.
+  - **"1-for-2" translated preserving the digit-hyphen pattern** (FR `1 pour 2`, IT `1 su 2`, DE
+    `1-für-2`, ES `1 por 2`) per the extraction CSV's own flag on this key - reads naturally as "one
+    for two" idiomatically in each language, so kept as a direct pattern translation rather than a
+    renamed mechanic.
+  - **"Tile"/"rack" given one consistent translation per language** throughout (FR tuile/grille, IT
+    tessera/tabellone, DE Feld/Spielfeld, ES ficha/tablero) - not per-string-independent MT, so the
+    same game concept reads as the same word everywhere it appears.
+  - **Informal address** (tu/du/tú/tu, never vous/Sie/usted) throughout - matches a pass-the-phone
+    party game's casual voice; consistent with German needing the Stage-B "rewrite-for-tone" pass
+    for voice/flatness, not formality level.
+  - **`launch.title` ("Flip the Number") left untranslated in all four** languages, carrying forward
+    Stage A/the extraction CSV's own flag rather than forcing a guess at a localized brand name.
+  - **Two slot-order reorderings a literal MT pass would have introduced were avoided by rephrasing**,
+    not flagged-and-shipped: `boost.use` ("Use {boost}") in German would naturally front the slot
+    (`{boost} nutzen`) - rephrased as the imperative `Nutze {boost}` to keep the slot in the same
+    trailing position as every other language. `timeout.ranoutoftime` ("{name} ran out of time") in
+    Italian and Spanish would naturally move the name mid-sentence (`Il tempo di {name} è scaduto`, `A
+    {name} se le acabó el tiempo`) - rephrased as `{name} ha esaurito il tempo` / `{name} se quedó sin
+    tiempo`, both natural constructions that keep the name first. No actual slot reordering shipped in
+    any of the 81 keys × 4 languages as a result - noted here since the plan explicitly calls out
+    flagging word-order slot moves, and the honest answer is these two were designed around instead.
+  - **`result.winner` in Spanish needs a leading `¡`** (`¡{name} gana!`) - static punctuation before
+    the slot, not a reordering; interpolation is unaffected since `{name}` is still the first
+    replaceable token.
+- **`docs/localisation_translation_efigs.csv`** (new, `key,en,fr,it,de,es,slots,notes`) delivered for
+  Dominik's Sheet - carries forward every note from the original extraction CSV plus the three
+  terminology-judgment notes above, so the Sheet reflects the same reasoning this entry records.
+- **Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated
+  through 8592 then 8793 after the standing convention's usual stale-cache symptom showed up on first
+  rotation too - confirmed via a cache-busting `fetch()` that the server-side file was correct and the
+  staleness was browser-side, resolved by closing the tab and opening a fresh one rather than just
+  re-navigating): all four languages confirmed loadable via `I18N.setLanguage()` with zero JS errors;
+  four full automated games (brute-force exact-subset solver, one per language, 59-177 turns each, 472
+  turns total) completed cleanly to the End screen with zero console errors; German - the flagged
+  highest-overflow-risk language - clicked through live via the real UI (Settings' all three tabs, the
+  Language picker itself, the turn card, and a live roll on the rack) with no visibly clipped or
+  overflowing text on any screen at the standard viewport, though this is a smoke check, not the
+  layout QA pass §5/M24 explicitly reserves for Dominik proofing DE natively. Debug hook stripped
+  before commit; dev-server port reverted to 8123.
+- **Not done, and explicitly not this entry's job:** Dominik's proofing pass (DE tone rewrite first,
+  then FR/IT/ES), and the dedicated DE/FR layout QA pass - both still open, per §5/M24's own staging.
