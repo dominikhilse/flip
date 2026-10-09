@@ -49,13 +49,13 @@
         <span class="launch-tile" style="background:#6A5AC8; border-color:#3E3583; transform:rotate(-3deg);">1</span>
       </div>
       <h1 class="launch-title">Flip the<br>Number</h1>
-      <div class="launch-tagline">Pass-and-play · 2–12 players</div>
+      <div class="launch-tagline" data-i18n="launch.tagline">Pass-and-play · 2–12 players</div>
       <!-- M23: the permission prompt itself is unchanged (still requested
            from the New Game menu's own motion-gated flow, see
            beginMotionListening/screens.launch's click handler) - this is
            only a heads-up so it doesn't arrive unexplained. -->
-      <div class="launch-permission-hint">We'll ask to use motion sensing, for flipping tiles by tilting your phone.</div>
-      <button type="button" id="launch-hint" class="primary">Tap to start</button>
+      <div class="launch-permission-hint" data-i18n="launch.permission">We'll ask to use motion sensing, for flipping tiles by tilting your phone.</div>
+      <button type="button" id="launch-hint" class="primary" data-i18n="launch.cta">Tap to start</button>
     </div>
   </section>
 
@@ -75,22 +75,22 @@
          GameScreens_Redesign's Frames 4-7 - see renderSetup in app.js. -->
     <div id="setup-title" class="setup-title"></div>
     <div id="setup-subtitle" class="setup-subtitle"></div>
-    <div id="setup-midgame-banner" class="menu-banner" hidden>Match in progress — rule changes apply at the next lap</div>
+    <div id="setup-midgame-banner" class="menu-banner" hidden data-i18n="settings.midgamebanner">Match in progress — rule changes apply at the next lap</div>
 
     <!-- M15 brand pass: icons swapped to match GameScreens_Redesign's tab
          set (two-person/ruler/phone/wrench). -->
     <div id="setup-tabbar" class="tab-bar">
       <button type="button" class="tab-btn" data-tab="players">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        Players
+        <span data-i18n="settings.tab.players">Players</span>
       </button>
       <button type="button" class="tab-btn" data-tab="rules">
         <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-        Rules
+        <span data-i18n="settings.tab.rules">Rules</span>
       </button>
       <button type="button" class="tab-btn" data-tab="app">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2.5"></rect><line x1="9" y1="18" x2="15" y2="18"></line></svg>
-        App
+        <span data-i18n="settings.tab.app">App</span>
       </button>
       <!-- M22/D-65: hidden entirely (not just disabled) when
            CONFIG.showDevTab is false - see renderSetupTabs in app.js. The
@@ -106,26 +106,26 @@
 
     <!-- 3a Players -->
     <div id="setup-tab-players" class="setup-tab" hidden>
-      <div class="setup-section-label" id="roster-count-label">Roster</div>
+      <div class="setup-section-label" id="roster-count-label" data-i18n="settings.players.roster">Roster</div>
       <ul id="roster-list"></ul>
 
-      <div class="setup-section-label">Add player</div>
+      <div class="setup-section-label" data-i18n="settings.players.addplayer">Add player</div>
       <form id="add-player-form" class="add-player-row">
-        <input id="player-name-input" type="text" placeholder="Name…" maxlength="20" autocomplete="off">
+        <input id="player-name-input" type="text" placeholder="Name…" maxlength="20" autocomplete="off" data-i18n-placeholder="settings.players.nameplaceholder">
         <button type="submit" class="add-player-btn">
           <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Add
+          <span data-i18n="settings.players.add">Add</span>
         </button>
       </form>
-      <div class="setup-section-label swatch-label">Colour · taken hues are dimmed</div>
+      <div class="setup-section-label swatch-label" data-i18n="settings.players.colourlabel">Colour · taken hues are dimmed</div>
       <div id="color-swatches"></div>
-      <div class="setting-note blocked-note" id="roster-note" hidden>Applies next game - end this game to add or remove players</div>
+      <div class="setting-note blocked-note" id="roster-note" hidden data-i18n="settings.players.note">Applies next game - end this game to add or remove players</div>
     </div>
 
     <!-- 2a Rules -->
     <div id="setup-tab-rules" class="setup-tab" hidden>
       <div class="setting-row">
-        <span>Rack size <span class="chip">next game</span></span>
+        <span><span data-i18n="settings.rules.racksize">Rack size</span> <span class="chip" data-i18n="settings.chip.nextgame">next game</span></span>
         <div class="toggle-group" id="rack-size-toggle">
           <button type="button" class="toggle-btn" data-rack-size="9">9</button>
           <button type="button" class="toggle-btn" data-rack-size="12">12</button>
@@ -133,11 +133,11 @@
       </div>
 
       <div class="setting-row">
-        <span>Placement <span class="chip">next lap</span></span>
+        <span><span data-i18n="settings.rules.placement">Placement</span> <span class="chip" data-i18n="settings.chip.nextlap">next lap</span></span>
         <select id="placement-mode">
-          <option value="winner-only">Winner only</option>
-          <option value="top-two">Top two</option>
-          <option value="all-places">All places</option>
+          <option value="winner-only" data-i18n="settings.rules.placement.winneronly">Winner only</option>
+          <option value="top-two" data-i18n="settings.rules.placement.toptwo">Top two</option>
+          <option value="all-places" data-i18n="settings.rules.placement.allplaces">All places</option>
         </select>
       </div>
 
@@ -146,28 +146,28 @@
     <!-- 3b App -->
     <div id="setup-tab-app" class="setup-tab" hidden>
       <div class="setting-row">
-        <span>Motion</span>
+        <span data-i18n="settings.app.motion">Motion</span>
         <label class="switch"><input type="checkbox" id="motion-toggle"><span class="switch-track"></span></label>
       </div>
       <div class="setting-row">
-        <span>Tap to proceed</span>
+        <span data-i18n="settings.app.taptoproceed">Tap to proceed</span>
         <label class="switch"><input type="checkbox" id="tap-toggle"><span class="switch-track"></span></label>
       </div>
-      <div class="menu-banner">Turning both off isn't allowed.</div>
+      <div class="menu-banner" data-i18n="settings.app.motiontapnotice">Turning both off isn't allowed.</div>
 
       <div class="setting-row">
-        <span>Theme</span>
+        <span data-i18n="settings.app.theme">Theme</span>
         <div class="toggle-group" id="theme-toggle-group">
-          <button type="button" class="toggle-btn" data-theme="dark">Dark</button>
-          <button type="button" class="toggle-btn" data-theme="light">Light</button>
+          <button type="button" class="toggle-btn" data-theme="dark" data-i18n="settings.app.theme.dark">Dark</button>
+          <button type="button" class="toggle-btn" data-theme="light" data-i18n="settings.app.theme.light">Light</button>
         </div>
       </div>
 
       <!-- M14 brand pass: a skin is a tile palette only, independent of
            theme and of player identity colour - see DECISIONS.md. -->
       <div class="setting-row">
-        <span>Tile skin</span>
-        <span class="setting-note-inline">2 skins</span>
+        <span data-i18n="settings.app.tileskin">Tile skin</span>
+        <span class="setting-note-inline" data-i18n="settings.app.tileskin.count">2 skins</span>
       </div>
       <div class="skin-picker" id="skin-toggle-group">
         <button type="button" class="skin-card" data-skin="colorful">
@@ -179,7 +179,7 @@
             <span class="skin-card-check">
               <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </span>
-            Colorful
+            <span data-i18n="settings.app.tileskin.colorful">Colorful</span>
           </span>
         </button>
         <button type="button" class="skin-card" data-skin="mono">
@@ -191,13 +191,26 @@
             <span class="skin-card-check">
               <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </span>
-            Mono
+            <span data-i18n="settings.app.tileskin.mono">Mono</span>
           </span>
         </button>
       </div>
       <!-- GH #7: same dashed info-box treatment as "Turning both off isn't
            allowed" above - was plain .setting-note text. -->
-      <div class="menu-banner">Mono derives a 12-step ramp on each player's hue — whose turn it is reads at a glance at all times.</div>
+      <div class="menu-banner" data-i18n="settings.app.tileskin.mononote">Mono derives a 12-step ramp on each player's hue — whose turn it is reads at a glance at all times.</div>
+
+      <!-- M24 (D-?? pending plan sync): Language setting - flag + name per
+           option, same list-of-cards idiom as the skin picker above (the
+           closest existing precedent for "pick one of a short list").
+           Flags are placeholders (schema: "Dominik picks the flags") - swap
+           data-flag content for real choices whenever settled; nothing else
+           needs to change. Stage A ships lang/en.json only - selecting any
+           other language degrades gracefully to English per-key (see
+           i18n.js), not a build requirement to finish translating first. -->
+      <div class="setting-row">
+        <span data-i18n="settings.app.language">Language</span>
+      </div>
+      <div class="language-picker" id="language-picker"></div>
     </div>
 
     <!-- 3c Dev -->
@@ -280,17 +293,17 @@
       <div class="setup-action-row">
         <button type="button" id="mode-toggle-boosts" class="mode-toggle-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-          <span>Boosts</span>
+          <span data-i18n="settings.mode.boosts">Boosts</span>
         </button>
-        <button id="start-game" class="primary" disabled>Start game</button>
-        <button id="back-to-game" class="primary" hidden>Back to game</button>
+        <button id="start-game" class="primary" disabled data-i18n="settings.start">Start game</button>
+        <button id="back-to-game" class="primary" hidden data-i18n="settings.backtogame">Back to game</button>
         <button type="button" id="mode-toggle-timer" class="mode-toggle-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
-          <span>Timer</span>
+          <span data-i18n="settings.mode.timer">Timer</span>
         </button>
       </div>
-      <button id="restart-match" class="secondary" hidden>Restart match</button>
-      <button id="end-game" class="secondary" hidden>End game</button>
+      <button id="restart-match" class="secondary" hidden data-i18n="settings.restartmatch">Restart match</button>
+      <button id="end-game" class="secondary" hidden data-i18n="settings.endgame">End game</button>
     </div>
   </section>
 
@@ -325,15 +338,15 @@
       </button>
     </div>
     <div class="turncard-center">
-      <button type="button" id="turncard-avatar-btn" class="turncard-avatar-btn" title="Tap to change · hold to choose">
+      <button type="button" id="turncard-avatar-btn" class="turncard-avatar-btn" title="Tap to change · hold to choose" data-i18n-title="avatar.hint">
         <img id="turncard-avatar-img" alt="">
       </button>
-      <div class="avatar-hint avatar-hint-turncard">Tap to change · hold to choose</div>
+      <div class="avatar-hint avatar-hint-turncard" data-i18n="avatar.hint">Tap to change · hold to choose</div>
       <div id="turncard-seat-label" class="turncard-seat-label"></div>
       <div id="turncard-name"></div>
       <div class="turncard-flat-hint">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2.4" transform="rotate(-6 12 12)"></rect><circle cx="12" cy="12" r="1"></circle></svg>
-        <div id="turncard-instruction">Lay the phone flat to start your turn</div>
+        <div id="turncard-instruction" data-i18n="turncard.instruction">Lay the phone flat to start your turn</div>
       </div>
     </div>
     <!-- Real, existing tap-to-proceed path (settings.tapToProceed, D-29) -
@@ -342,7 +355,7 @@
          option a real user can toggle in Settings > App. Its de-emphasised
          pill styling matches the mockup's intent (motion is the primary
          path) without mislabelling a real feature as developer-only. -->
-    <div id="turncard-hint" class="turncard-tap-hint">Tap anywhere but the avatar to continue</div>
+    <div id="turncard-hint" class="turncard-tap-hint" data-i18n="turncard.tap">Tap anywhere but the avatar to continue</div>
   </section>
 
   <section id="screen-play" class="screen" hidden>
@@ -352,7 +365,7 @@
          zones 1/2. -->
     <div class="play-header">
       <div id="play-identity">
-        <button type="button" id="play-avatar-btn" class="avatar-btn" title="Tap to change · hold to choose">
+        <button type="button" id="play-avatar-btn" class="avatar-btn" title="Tap to change · hold to choose" data-i18n-title="avatar.hint">
           <img id="play-avatar-img" alt="">
         </button>
         <h1 id="play-player-name" class="play-accent-text"></h1>
@@ -361,7 +374,7 @@
     </div>
     <!-- M20 (D-63): a permanent, fixed-height signpost for both avatar
          gestures - deliberately not a hidden gesture. -->
-    <div class="avatar-hint avatar-hint-play">Tap to change · hold to choose</div>
+    <div class="avatar-hint avatar-hint-play" data-i18n="avatar.hint">Tap to change · hold to choose</div>
 
     <!-- Settings (icon-only cog now, was a text button) - two permanent
          boost chips (icon + count, always present, dimmed at 0) - a
@@ -411,11 +424,11 @@
          source. -->
     <div class="action-row">
       <button id="play-boost-spend" class="primary">Use 1-for-2</button>
-      <button id="play-boost-decline" class="secondary">Stay stalled</button>
+      <button id="play-boost-decline" class="secondary" data-i18n="boost.decline">Stay stalled</button>
       <button id="play-boost-change" class="primary">Use Overpay</button>
-      <button id="play-roll" class="primary">Roll</button>
-      <button id="play-confirm" class="primary">Confirm</button>
-      <button id="play-pass" class="primary">Next player</button>
+      <button id="play-roll" class="primary" data-i18n="play.roll">Roll</button>
+      <button id="play-confirm" class="primary" data-i18n="play.confirm">Confirm</button>
+      <button id="play-pass" class="primary" data-i18n="play.pass">Next player</button>
     </div>
 
     <!-- Issue #3: a reserved safe area below the buttons for every message-
@@ -441,7 +454,7 @@
        the two timer-interrupted cases. -->
   <section id="screen-end" class="screen screen-banner" hidden>
     <div class="banner-center">
-      <div class="results-kicker">Final scores</div>
+      <div class="results-kicker" data-i18n="result.title">Final scores</div>
       <div class="results-winner">
         <span class="results-winner-avatar"><img id="results-winner-avatar" alt=""></span>
         <span id="results-winner-name" class="results-winner-name play-accent-text"></span>
@@ -449,8 +462,8 @@
       <ol id="finish-list" class="results-list"></ol>
     </div>
     <div class="banner-actions">
-      <button id="end-rematch" class="primary">Play again</button>
-      <button id="end-new-game" class="secondary">New game</button>
+      <button id="end-rematch" class="primary" data-i18n="result.playagain">Play again</button>
+      <button id="end-new-game" class="secondary" data-i18n="result.newgame">New game</button>
     </div>
   </section>
 
@@ -486,19 +499,19 @@
       <div class="timeout-ring">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2.5"></path><path d="M9 2h6"></path></svg>
       </div>
-      <h1>Time's up!</h1>
+      <h1 data-i18n="timeout.title">Time's up!</h1>
       <div id="timeout-player-chip" class="identity-chip">
         <span class="identity-chip-avatar">
           <img id="timeout-player-avatar" alt="">
         </span>
         <span id="timeout-player-phrase"></span>
       </div>
-      <p id="timeout-message">No one shut their box before time ran out — here's how everyone did.</p>
+      <p id="timeout-message" data-i18n="timeout.message">No one shut their box before time ran out — here's how everyone did.</p>
       <ol id="timeout-ranking-list" class="results-list"></ol>
     </div>
     <div class="banner-actions">
-      <button id="timeout-new-game" class="primary">New game</button>
-      <button id="timeout-rematch" class="secondary">Rematch</button>
+      <button id="timeout-new-game" class="primary" data-i18n="timeout.newgame">New game</button>
+      <button id="timeout-rematch" class="secondary" data-i18n="timeout.rematch">Rematch</button>
     </div>
   </section>
 
@@ -517,7 +530,7 @@
     <p id="confirm-dialog-title"></p>
     <p id="confirm-dialog-text"></p>
     <div class="action-row">
-      <button id="confirm-dialog-cancel" class="secondary">Keep playing</button>
+      <button id="confirm-dialog-cancel" class="secondary" data-i18n="dialog.cancel">Keep playing</button>
       <button id="confirm-dialog-ok" class="primary danger"></button>
     </div>
   </dialog>
@@ -527,7 +540,7 @@
        Opened by tap-and-hold on either avatar (see bindAvatarGestures). -->
   <dialog id="avatar-dialog">
     <div class="avatar-dialog-head">
-      <p id="avatar-dialog-title">Choose your avatar</p>
+      <p id="avatar-dialog-title" data-i18n="avatar.dialog.title">Choose your avatar</p>
       <button type="button" id="avatar-dialog-close" class="avatar-dialog-close" aria-label="Close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
       </button>
@@ -540,6 +553,7 @@
   <script src="rules.js"></script>
   <script src="config.js"></script>
   <script src="motion.js"></script>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

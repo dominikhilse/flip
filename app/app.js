@@ -75,6 +75,7 @@
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleGroupEl = document.getElementById('theme-toggle-group');
   var skinToggleGroupEl = document.getElementById('skin-toggle-group');
+  var languagePickerEl = document.getElementById('language-picker');
   // M23/D-67: Timer and Boosts now live only in the shared setup footer -
   // see renderSettingsControls and the handlers below.
   var modeToggleTimerBtn = document.getElementById('mode-toggle-timer');
@@ -244,6 +245,24 @@
     body.style.setProperty('--player-accent-text', showLight ? playerEdge(p.color) : p.color);
   }
 
+  // M24: static HTML text that isn't already re-set by a render() function
+  // on every state change - [data-i18n] sets textContent (covers <option>
+  // too), [data-i18n-placeholder]/[data-i18n-title] cover the two
+  // attribute cases (the name input's placeholder, avatar buttons' title).
+  // Called once on boot and again after every language switch so nothing
+  // across any screen (including ones currently hidden) is left stale.
+  function applyStaticTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      el.textContent = I18N.t(el.getAttribute('data-i18n'));
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      el.placeholder = I18N.t(el.getAttribute('data-i18n-placeholder'));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+      el.title = I18N.t(el.getAttribute('data-i18n-title'));
+    });
+  }
+
   // ---- Setup screen ----
 
   function makePlayerId() {
@@ -269,7 +288,7 @@
 
   function renderRosterList() {
     var blocked = game !== null;
-    rosterCountLabelEl.textContent = 'Roster (' + roster.length + ')';
+    rosterCountLabelEl.textContent = I18N.t('settings.players.roster', { count: roster.length });
     rosterListEl.innerHTML = '';
     roster.forEach(function (p) {
       var li = document.createElement('li');
@@ -455,6 +474,11 @@
     skinBtns.forEach(function (btn) {
       btn.classList.toggle('active', settings.skin === btn.getAttribute('data-skin'));
     });
+    // M24: language is cosmetic like theme/skin - same immediate-apply,
+    // no-chip treatment. Active-state only; the cards themselves are built
+    // once (buildLanguagePicker, called at boot) since unlike skin's two
+    // static HTML cards, these five are JS-generated.
+    renderLanguagePicker();
 
     // Dev mode (M8) dice-choice test instrument - applies immediately like
     // the preferences above, carries no "applies next lap" note. The
@@ -546,8 +570,8 @@
 
   function renderSetup() {
     var midGame = game !== null;
-    setupTitleEl.textContent = midGame ? 'Settings' : 'New Game';
-    setupSubtitleEl.textContent = midGame ? 'Match in progress' : 'Pass-and-play · 2–12 players';
+    setupTitleEl.textContent = midGame ? I18N.t('settings.title.settings') : I18N.t('settings.title.new');
+    setupSubtitleEl.textContent = midGame ? I18N.t('settings.subtitle.midgame') : I18N.t('launch.tagline');
     renderRosterList();
     renderColorSwatches();
     renderRosterEditability();
@@ -658,7 +682,7 @@
   // visible (see renderPrimaryAction), so it always needs the confirm.
   endGameBtn.addEventListener('click', function () {
     if (!game) return;
-    confirmAction('End this match?', 'Progress will be lost. This can\'t be undone.', 'End match', function () {
+    confirmAction(I18N.t('dialog.endmatch.title'), I18N.t('dialog.endmatch.body'), I18N.t('dialog.endmatch.ok'), function () {
       game = null;
       renderSetup();
       showScreen('setup');
@@ -669,7 +693,7 @@
   // whenever this button is visible.
   restartMatchBtn.addEventListener('click', function () {
     if (!game) return;
-    confirmAction('Restart this match?', 'Racks and boosts reset for everyone. This can\'t be undone.', 'Restart match', restartMatch);
+    confirmAction(I18N.t('dialog.restartmatch.title'), I18N.t('dialog.restartmatch.body'), I18N.t('dialog.restartmatch.ok'), restartMatch);
   });
 
   // Motion and tap-to-proceed can never both be off at once (§3.9) - forcing
@@ -721,6 +745,60 @@
     if (game) renderPlayRack();
   });
 
+  // M24: EFIGS list - flag emoji are placeholders pending Dominik's actual
+  // choice (schema: "Dominik picks the flags"); swapping the flag string
+  // per entry is the only change needed later. Names are each language's
+  // own name for itself (not translated via t()) - the standard convention
+  // for a language picker, so a reader can find their language even before
+  // choosing it.
+  var LANGUAGES = [
+    { code: 'en', flag: '🇬🇧', name: 'English' },
+    { code: 'fr', flag: '🇫🇷', name: 'Français' },
+    { code: 'it', flag: '🇮🇹', name: 'Italiano' },
+    { code: 'de', flag: '🇩🇪', name: 'Deutsch' },
+    { code: 'es', flag: '🇪🇸', name: 'Español' }
+  ];
+
+  // Built once (unlike skin's two static HTML cards, these five don't
+  // exist in index.html yet) - reuses .skin-card-check's markup/CSS for the
+  // checkmark so .language-card.active gets the same sand-border-plus-tick
+  // treatment for free.
+  function buildLanguagePicker() {
+    languagePickerEl.innerHTML = '';
+    LANGUAGES.forEach(function (lang) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'language-card';
+      btn.setAttribute('data-lang', lang.code);
+      btn.innerHTML =
+        '<span class="language-card-flag">' + lang.flag + '</span>' +
+        '<span class="language-card-name">' + lang.name + '</span>' +
+        '<span class="skin-card-check"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>';
+      languagePickerEl.appendChild(btn);
+    });
+  }
+
+  function renderLanguagePicker() {
+    languagePickerEl.querySelectorAll('.language-card').forEach(function (btn) {
+      btn.classList.toggle('active', settings.language === btn.getAttribute('data-lang'));
+    });
+  }
+
+  buildLanguagePicker();
+
+  languagePickerEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.language-card');
+    if (!btn) return;
+    var code = btn.getAttribute('data-lang');
+    if (code === settings.language) return;
+    queueSettingChange('language', code);
+    renderLanguagePicker();
+    I18N.setLanguage(code, function () {
+      applyStaticTranslations();
+      renderSetup();
+    });
+  });
+
   startGameBtn.addEventListener('click', function () {
     if (roster.length < 2) return;
     startNewGame();
@@ -762,7 +840,7 @@
   function queueSettingChange(key, value) {
     settings[key] = value;
     STORAGE.saveSettings(settings);
-    if (key === 'theme' || key === 'skin' || !game) return;
+    if (key === 'theme' || key === 'skin' || key === 'language' || !game) return;
     if (IMMEDIATE_SETTING_KEYS.indexOf(key) !== -1) {
       game[key] = value;
       return;
@@ -941,8 +1019,10 @@
     // a consistency cue, not independently interactive.
     turncardMiniAvatarImgEl.src = 'avatars/' + p.avatar;
     turncardMiniNameEl.textContent = p.name;
-    turncardSeatLabelEl.textContent = 'Player ' + (game.turnIndex + 1) + ' of ' + game.players.length +
-      (p.finished ? '' : ' · your turn');
+    turncardSeatLabelEl.textContent = I18N.t(p.finished ? 'turncard.header.finished' : 'turncard.header', {
+      n: game.turnIndex + 1,
+      total: game.players.length
+    });
     // Real, existing tap-to-proceed path (D-29) - shown only when tapping
     // would actually advance the turn right now (effectiveTap(), defined
     // below), not a static hint that could lie about whether tapping does
@@ -1225,7 +1305,8 @@
   // 1-for-2 to a single-die-equivalent exact match (RULES.isValidOneForTwoSelection).
 
   var BOOST_TYPES = ['overpay', 'oneForTwo'];
-  var BOOST_TYPE_LABELS = { overpay: 'Overpay', oneForTwo: '1-for-2' };
+  var BOOST_TYPE_KEYS = { overpay: 'boost.overpay.name', oneForTwo: 'boost.onefortwo.name' };
+  function boostTypeLabel(type) { return I18N.t(BOOST_TYPE_KEYS[type]); }
 
   function boostModeActive() {
     return game.overpayMode === 'A' && game.boostEnabled;
@@ -1775,7 +1856,7 @@
       var extraClass = oneForTwo ? ' ' + oneForTwoDieClass(game.currentRoll.dice, i, sum) : '';
       html += '<span class="die' + extraClass + '"' + (rolled ? '' : ' style="visibility:hidden"') + '>' + dieFaceSVG(face) + '</span>';
     }
-    var totalText = rolled ? 'Total: ' + game.currentRoll.total : 'Total: 0';
+    var totalText = I18N.t('play.total', { total: rolled ? game.currentRoll.total : 0 });
     html += '<div id="total"' + (rolled ? '' : ' style="visibility:hidden"') + '>' + totalText + '</div>';
     playDiceAreaEl.innerHTML = html;
   }
@@ -1840,13 +1921,13 @@
       return;
     }
     if (game.currentRoll.stalled && !game.currentRoll.boostOfferPending) {
-      playMessageEl.textContent = 'Stalled — no legal move for this roll.';
+      playMessageEl.textContent = I18N.t('play.message.stalled');
       playMessageEl.className = 'stalled';
     } else if (boostWholeRackBlocked()) {
-      playMessageEl.textContent = 'A boost can never close the whole rack — leave a tile open, or decline and stay stalled.';
+      playMessageEl.textContent = I18N.t('play.message.wholerackblocked');
       playMessageEl.className = 'notice';
     } else if (wholeRackOverpayBlocked()) {
-      playMessageEl.textContent = 'Closing the whole rack needs an exact match — exclude a tile to overpay instead.';
+      playMessageEl.textContent = I18N.t('play.message.wholerackoverpayblocked');
       playMessageEl.className = 'notice';
     } else {
       playMessageEl.textContent = '';
@@ -1856,7 +1937,7 @@
   // "3" if both dice show the same face, "3 or 5" otherwise - the single
   // value (or either-of-two) a 1-for-2 boost lets the player play against.
   function oneForTwoTargetLabel(dice) {
-    return dice[0] === dice[1] ? '' + dice[0] : dice[0] + ' or ' + dice[1];
+    return dice[0] === dice[1] ? '' + dice[0] : I18N.t('boost.onefortwo.target.or', { a: dice[0], b: dice[1] });
   }
 
   // M14 brand pass: the old text summary ("Overpay: N (dot) 1-for-2: N")
@@ -1922,7 +2003,9 @@
     toastEl.classList.remove('collapsing', 'traveling');
     toastEl.style.removeProperty('--travel-dx');
     toastEl.style.visibility = '';
-    toastEl.textContent = delivery.types.map(function (t) { return BOOST_TYPE_LABELS[t]; }).join(' + ');
+    toastEl.textContent = delivery.types.length === 2
+      ? I18N.t('boost.award.join', { a: boostTypeLabel(delivery.types[0]), b: boostTypeLabel(delivery.types[1]) })
+      : boostTypeLabel(delivery.types[0]);
     var travelTarget = delivery.types.length === 1 ? playBoostChipEls[delivery.types[0]] : null;
     setTimeout(function () {
       if (!boostToastState) return; // a fresh game/turn started; abandon this toast
@@ -1983,11 +2066,9 @@
       // as needing tile N specifically, which is often exactly the closed
       // tile that made the roll stall in the first place, and concluded
       // there was no escape. Spell out "any tiles" to head that off.
-      playBoostOfferTextEl.textContent = 'Stalled — spend a 1-for-2 boost to play this roll as a single ' +
-        oneForTwoTargetLabel(game.currentRoll.dice) + ' (any open tiles summing to it)?';
+      playBoostOfferTextEl.textContent = I18N.t('boost.offer.onefortwo', { target: oneForTwoTargetLabel(game.currentRoll.dice) });
     } else {
-      playBoostOfferTextEl.textContent = 'Stalled — spend an overpay boost to flip tiles summing to at most ' +
-        game.currentRoll.total + '?';
+      playBoostOfferTextEl.textContent = I18N.t('boost.offer.overpay', { total: game.currentRoll.total });
     }
   }
 
@@ -2002,11 +2083,13 @@
       // "any tiles summing to" - not "needs N", which reads as needing the
       // single tile numbered N (often exactly the closed tile that caused
       // the stall). See the boost-offer text above for the same fix.
-      playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' — any tiles summing to ' +
-        oneForTwoTargetLabel(game.currentRoll.dice);
+      playSelectionSumEl.textContent = I18N.t('play.selected.onefortwo', {
+        sum: selectedSum(),
+        target: oneForTwoTargetLabel(game.currentRoll.dice)
+      });
       return;
     }
-    playSelectionSumEl.textContent = 'Selected: ' + selectedSum() + ' / ' + game.currentRoll.total;
+    playSelectionSumEl.textContent = I18N.t('play.selected', { sum: selectedSum(), target: game.currentRoll.total });
   }
 
   // §3.3's per-turn choice, but only ever surfaced at all when dev dice-
@@ -2050,12 +2133,12 @@
     // reuses onBoostChange's own next-in-list logic so the label can never
     // drift from what tapping it actually does.
     if (boostOfferPending) {
-      playBoostSpendBtn.textContent = 'Use ' + BOOST_TYPE_LABELS[game.currentRoll.offeredBoostType];
+      playBoostSpendBtn.textContent = I18N.t('boost.use', { boost: boostTypeLabel(game.currentRoll.offeredBoostType) });
     }
     if (canChangeBoost) {
       var types = game.currentRoll.applicableBoostTypes;
       var nextType = types[(types.indexOf(game.currentRoll.boostSpentType) + 1) % types.length];
-      playBoostChangeBtn.textContent = 'Use ' + BOOST_TYPE_LABELS[nextType];
+      playBoostChangeBtn.textContent = I18N.t('boost.use', { boost: boostTypeLabel(nextType) });
     }
 
     playBoostSpendBtn.hidden = !boostOfferPending;
@@ -2198,7 +2281,7 @@
   function renderEnd() {
     var ranking = buildRanking();
     var winner = ranking.finishers[0].player;
-    resultsWinnerNameEl.textContent = winner.name + ' wins!';
+    resultsWinnerNameEl.textContent = I18N.t('result.winner', { name: winner.name });
     resultsWinnerAvatarEl.src = 'avatars/' + winner.avatar;
     applyTheme(winner);
     var entries = ranking.finishers.concat(ranking.nonFinishers);
@@ -2305,7 +2388,7 @@
     timeoutWinnerBannerEl.hidden = !winner;
     timeoutMessageEl.hidden = !!winner;
     if (winner) {
-      timeoutWinnerNameEl.textContent = winner.name + ' wins!';
+      timeoutWinnerNameEl.textContent = I18N.t('result.winner', { name: winner.name });
       timeoutWinnerAvatarEl.src = 'avatars/' + winner.avatar;
     }
 
@@ -2316,7 +2399,7 @@
     var p = currentPlayer();
     timeoutPlayerAvatarEl.src = 'avatars/' + p.avatar;
     timeoutPlayerAvatarEl.alt = '';
-    timeoutPlayerPhraseEl.textContent = p.name + ' ran out of time';
+    timeoutPlayerPhraseEl.textContent = I18N.t('timeout.ranoutoftime', { name: p.name });
 
     // When there's a winner, this points the shared --player-accent* at
     // THEM for the banner - so the chip above needs its OWN colour set
@@ -2390,6 +2473,13 @@
   });
 
   // ---- Boot ----
-  applyTheme();
-  showScreen('launch');
+  // M24: gated on the persisted language loading first (and its own
+  // static-translation pass) so there's no flash of the wrong strings -
+  // see i18n.js for why fetch() of the app's own bundled lang/*.json is
+  // treated as within CLAUDE.md's "no network calls at runtime" rule.
+  I18N.setLanguage(settings.language, function () {
+    applyStaticTranslations();
+    applyTheme();
+    showScreen('launch');
+  });
 })();

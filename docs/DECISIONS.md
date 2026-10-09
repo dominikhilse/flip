@@ -1658,3 +1658,95 @@ correct specific label with no Change button; 5 consecutive real-paced rolls (re
 sped up) completed across genuine turn transitions with zero errors; a full automated game (59 turns,
 boosts enabled) completed with zero errors. Debug harness stripped before commit; dev-server port
 reverted to 8123.
+
+### 2026-10-09 — M24 Stage A built: i18n runtime, EN extraction wired through, Language setting
+
+Dominik reviewed the Stage-A CSV extraction (`docs/localisation_extraction_en.csv`, 80 keys) in his
+own Google Sheet and approved it ("looks good to me") before this session started the code refactor.
+This entry covers that refactor: `t(key, params)`, the four flagged concatenation fixes, the
+Language setting, and the EN-only ship per Stage A's own acceptance bar.
+
+- **`app/i18n.js` (new, self-contained, loaded before `app.js`):** `I18N.t(key, params)` resolves
+  against the active language, falling back to English per-key, and to the bare key itself if
+  missing everywhere (never a blank) - matches schema §6 exactly. `{name}`-style curly-brace
+  interpolation via a single regex replace; a slot with no matching param is left as literal text
+  rather than silently blanked, so a wiring mistake stays visible. `I18N.setLanguage(code, onReady)`
+  always ensures `en` is cached first (the universal fallback), then loads `code` on top if
+  different, and calls `onReady` once settled - even if the language file 404s, so a fresh language
+  switch into an unshipped file degrades to English per-key immediately rather than hanging.
+- **`fetch('lang/<code>.json')` and CLAUDE.md's "no network calls at runtime" rule.** This fetch is a
+  same-origin, same-deploy static JSON file bundled with the app, not a request to any backend or
+  third-party service - the same class of exception the Google Fonts `<link>` already uses (M14's
+  own entry above, "the §3.1 offline-purity caveat is knowingly accepted"), just JS-initiated instead
+  of a `<link>` tag. Treating it as within the existing accepted exception rather than a new one;
+  flagging here explicitly since it's the first *JS-initiated* fetch this project has shipped, so the
+  orchestrator can confirm or push back on the next plan pass.
+- **`data-i18n` / `data-i18n-placeholder` / `data-i18n-title` attribute convention (new), walked by
+  `applyStaticTranslations()` in `app.js`.** Covers every static HTML text node, the name-input
+  placeholder, and the two avatar-button `title` tooltips - the one class of string that isn't
+  already re-set by some render function on every state change. Runs once at boot (gated before
+  `showScreen('launch')`, so there's no flash of the wrong language) and again after every language
+  switch.
+- **The four concatenations the schema's extraction pass flagged, converted to single slotted
+  templates, all in `app.js`:** roster count (`'Roster (' + n + ')'` → `settings.players.roster`,
+  `{count}`); the boost button label (`'Use ' + BOOST_TYPE_LABELS[type]` → `boost.use`, `{boost}`,
+  now fed by a new `boostTypeLabel(type)` helper that replaces the old static `BOOST_TYPE_LABELS`
+  object with an `I18N.t()` lookup); `oneForTwoTargetLabel()`'s internal `dice[0] + ' or ' +
+  dice[1]` join → `boost.onefortwo.target.or`, `{a}`/`{b}` (the matching-dice case still returns a
+  bare number with no key, per the schema's "grammatically inert number" case - unchanged); and the
+  dual-award boost toast's `Array.join(' + ')` → `boost.award.join`, `{a}`/`{b}`, now only invoked
+  when exactly two types are delivered at once (a single-type delivery just renders that one type's
+  name directly, same outcome as before, no join template applied to one argument).
+- **Every other dynamic `.textContent` assignment identified in the extraction pass converted** to
+  `I18N.t()` with the matching key from the CSV: setup title/subtitle, the mid-game confirm dialogs
+  (End match / Restart match - title, body, and OK label all now resolved via `t()` before being
+  passed to the existing generic `confirmAction()`), the three play-screen message variants, the
+  boost-offer explanatory text (two variants), the selection-sum line (two variants), the dice total
+  line, the turn-card header (now dispatches between `turncard.header` and `turncard.header.finished`
+  instead of conditionally appending `' · your turn'`), and the `{name} wins!` / `{name} ran out of
+  time` lines on the results and timeout screens (both now share `result.winner`, matching the CSV's
+  note that the winner banner is reused identically across the two screens). Player names, numeric
+  values (scores, timers, dice totals' own numbers), and the five aria-label-only strings already
+  excluded from the CSV (Settings ×2, Remove `{name}`, Avatar `{file}` (current), Close, Countdown
+  length) were deliberately left untouched, per the extraction pass's own documented exclusions.
+- **Language setting (`settings.language`, `storage.js`):** cosmetic, no-game-state treatment,
+  identical to `theme`/`skin` (`queueSettingChange` exempts it from ever touching `game`).
+  EFIGS-validated on load, falling back to `en` for anything else (an old build, a hand-edited
+  `localStorage` value). UI: a new `.language-picker` list of five `.language-card` rows in the App
+  tab (JS-built via `buildLanguagePicker()`/`renderLanguagePicker()`, since unlike the two-option
+  skin picker these don't exist as static HTML) - reuses `.skin-card-check`'s markup and CSS for the
+  active checkmark, with two new CSS rules added (`.language-card.active .skin-card-check` /
+  `...svg`) since the existing active-state rules were scoped specifically to `.skin-card.active`.
+  Selecting a language persists it, re-renders the picker's own active state, and calls
+  `I18N.setLanguage()` → `applyStaticTranslations()` + `renderSetup()` so the (currently only
+  reachable) setup screen updates immediately; other screens pick up the new language naturally on
+  their own next render, since every converted site now reads `I18N.t()` live rather than caching a
+  string.
+- **Flag codes are placeholders, not a design decision.** `LANGUAGES` in `app.js` uses plain flag
+  emoji (🇬🇧🇫🇷🇮🇹🇩🇪🇪🇸) as placeholders - the schema says "Dominik picks the flags," and swapping the
+  `flag` field per entry is the only change needed once he does. Language *names* in the picker
+  (English/Français/Italiano/Deutsch/Español) are each language's own name for itself, not run
+  through `t()` - the standard convention for a language picker, so a reader can find their own
+  language before selecting it; this is a presentation judgment call the schema doesn't explicitly
+  resolve, noted here per CLAUDE.md's "judgment call the plan doesn't resolve" rule.
+- **New key beyond the approved CSV: `settings.app.language` ("Language"), the App-tab row label
+  above the picker.** Not in the 80-key Sheet Dominik already reviewed - needs adding there (and to
+  whatever `lang/<code>.json` files Stage B eventually produces) before Stage B content work starts.
+  Already present in `app/lang/en.json`.
+- **Two discrepancies already flagged to Dominik at CSV-delivery time, unchanged by this refactor:**
+  `turncard.instruction` is keyed as implemented (no `{name}` slot), not as the schema's own worked
+  example shows it (with one) - adding the slot would be a content change beyond Stage A's
+  presentation-layer scope. `launch.title` ("Flip the Number") ships untranslated pending a Stage B
+  decision on whether a brand name should be localised at all.
+- **Verified** via a temporary `window.__debug` hook (removed before commit): EN boot renders
+  pixel-identical to pre-M24 (launch screen screenshot-compared); the Language picker renders all
+  five options with English active by default; switching to French (no `lang/fr.json` shipped yet)
+  falls back to English on every string with zero *JS* errors (one expected `404` network log for
+  the missing file, not a script error - inherent to Stage A's "ships EN only" design, not a bug);
+  switching back to English re-renders correctly; `I18N.t()` spot-checked directly for all four
+  converted concatenations plus the missing-key fallback (confirmed it returns the raw key, never
+  blank); the turn-card header, dice total line, and roster count confirmed live via the debug hook
+  mid-game. A full automated game (brute-force exact-subset solver over `RULES.isValidSelection`,
+  117 turns, 4 players, reaching the End screen with a real ranking table) completed cleanly with
+  zero console errors. Debug hook stripped before commit; dev-server port rotated to bypass
+  browser-HTTP-cache during testing, reverted to 8123 before finishing.

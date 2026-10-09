@@ -34,7 +34,13 @@
     // Tile-palette skin (M14 brand pass) - purely cosmetic, independent of
     // theme and of player identity colour, same cosmetic/no-game-state
     // treatment as theme (see queueSettingChange).
-    skin: 'colorful' // 'colorful' | 'mono'
+    skin: 'colorful', // 'colorful' | 'mono'
+    // M24: active language - same cosmetic/no-game-state treatment as
+    // theme/skin (see queueSettingChange). EFIGS only; an unrecognised
+    // stored value (an old build, a hand-edited localStorage) falls back
+    // to 'en', never a blank or an error - i18n.js's own per-key English
+    // fallback handles anything still missing once loaded.
+    language: 'en' // 'en' | 'fr' | 'it' | 'de' | 'es'
   };
 
   function loadRoster() {
@@ -72,7 +78,9 @@
         motionEnabled: parsed.motionEnabled !== false,
         tapToProceed: parsed.tapToProceed !== false,
         theme: parsed.theme === 'light' ? 'light' : DEFAULT_SETTINGS.theme,
-        skin: parsed.skin === 'mono' ? 'mono' : DEFAULT_SETTINGS.skin
+        skin: parsed.skin === 'mono' ? 'mono' : DEFAULT_SETTINGS.skin,
+        language: ['en', 'fr', 'it', 'de', 'es'].indexOf(parsed.language) !== -1
+          ? parsed.language : DEFAULT_SETTINGS.language
       };
     } catch (e) {
       return Object.assign({}, DEFAULT_SETTINGS);
