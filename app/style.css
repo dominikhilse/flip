@@ -558,42 +558,6 @@ button.secondary:active { background: var(--bg-subtle); }
 }
 .skin-card.active .skin-card-check svg { visibility: visible; }
 
-/* M24: the Language picker - same selected-card language (sand border +
-   check, exactly .skin-card's pattern) but a vertical list of rows
-   instead of a 2-up row, since 5 languages don't fit side by side at
-   mobile width. Built by JS (renderLanguagePicker) from a flat array in
-   app.js, not static HTML - flag + name per option. */
-.language-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 0.4rem;
-}
-.language-card {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 0.7rem;
-  border-radius: 12px;
-  border: 2px solid var(--border);
-  background: var(--bg-elevated);
-  color: var(--text-soft);
-  font-weight: 700;
-  font-size: 0.85rem;
-  text-align: left;
-}
-.language-card-flag { font-size: 1.2rem; line-height: 1; flex: none; }
-.language-card-name { flex: 1; }
-.language-card.active {
-  border-color: var(--accent-sand);
-  color: var(--fg);
-}
-.language-card .skin-card-check { margin-left: auto; }
-.language-card.active .skin-card-check {
-  background: var(--accent-sand);
-  border-color: var(--accent-sand);
-}
-.language-card.active .skin-card-check svg { visibility: visible; }
 /* M15: a −/value/+ stepper (Dev tab's time-challenge duration) - the same
    segmented-pill shape as .toggle-group, sand for the value in the middle. */
 .stepper {

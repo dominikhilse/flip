@@ -199,18 +199,18 @@
            allowed" above - was plain .setting-note text. -->
       <div class="menu-banner" data-i18n="settings.app.tileskin.mononote">Mono derives a 12-step ramp on each player's hue — whose turn it is reads at a glance at all times.</div>
 
-      <!-- M24 (D-?? pending plan sync): Language setting - flag + name per
-           option, same list-of-cards idiom as the skin picker above (the
-           closest existing precedent for "pick one of a short list").
-           Flags are placeholders (schema: "Dominik picks the flags") - swap
-           data-flag content for real choices whenever settled; nothing else
-           needs to change. Stage A ships lang/en.json only - selecting any
-           other language degrades gracefully to English per-key (see
-           i18n.js), not a build requirement to finish translating first. -->
+      <!-- M24 follow-up: Language moved from a list-of-cards picker (5
+           options didn't fit comfortably as cards) to a single-row dropdown,
+           same idiom as Placement above - options are built by JS
+           (renderLanguagePicker in app.js), not static HTML, so flag emoji
+           are placeholders (schema: "Dominik picks the flags") swappable in
+           one place. Stage A ships lang/en.json only - selecting any other
+           language degrades gracefully to English per-key (see i18n.js),
+           not a build requirement to finish translating first. -->
       <div class="setting-row">
         <span data-i18n="settings.app.language">Language</span>
+        <select id="language-picker"></select>
       </div>
-      <div class="language-picker" id="language-picker"></div>
     </div>
 
     <!-- 3c Dev -->

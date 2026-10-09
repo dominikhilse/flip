@@ -475,9 +475,9 @@
       btn.classList.toggle('active', settings.skin === btn.getAttribute('data-skin'));
     });
     // M24: language is cosmetic like theme/skin - same immediate-apply,
-    // no-chip treatment. Active-state only; the cards themselves are built
-    // once (buildLanguagePicker, called at boot) since unlike skin's two
-    // static HTML cards, these five are JS-generated.
+    // no-chip treatment. Sets the <select>'s value only; its <option>s are
+    // built once (buildLanguagePicker, called at boot) since unlike
+    // Placement's static HTML options, this list is JS-generated.
     renderLanguagePicker();
 
     // Dev mode (M8) dice-choice test instrument - applies immediately like
@@ -759,40 +759,31 @@
     { code: 'es', flag: '🇪🇸', name: 'Español' }
   ];
 
-  // Built once (unlike skin's two static HTML cards, these five don't
-  // exist in index.html yet) - reuses .skin-card-check's markup/CSS for the
-  // checkmark so .language-card.active gets the same sand-border-plus-tick
-  // treatment for free.
+  // Follow-up: a single-row <select> (same idiom as #placement-mode) in
+  // place of the original list-of-cards picker - 5 languages read fine as
+  // one dropdown and the row no longer pushes everything else down the
+  // App tab. Built once (options don't exist in index.html) since unlike
+  // Placement's 3 fixed options, this list is a JS array.
   function buildLanguagePicker() {
     languagePickerEl.innerHTML = '';
     LANGUAGES.forEach(function (lang) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'language-card';
-      btn.setAttribute('data-lang', lang.code);
-      btn.innerHTML =
-        '<span class="language-card-flag">' + lang.flag + '</span>' +
-        '<span class="language-card-name">' + lang.name + '</span>' +
-        '<span class="skin-card-check"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span>';
-      languagePickerEl.appendChild(btn);
+      var opt = document.createElement('option');
+      opt.value = lang.code;
+      opt.textContent = lang.flag + ' ' + lang.name;
+      languagePickerEl.appendChild(opt);
     });
   }
 
   function renderLanguagePicker() {
-    languagePickerEl.querySelectorAll('.language-card').forEach(function (btn) {
-      btn.classList.toggle('active', settings.language === btn.getAttribute('data-lang'));
-    });
+    languagePickerEl.value = settings.language;
   }
 
   buildLanguagePicker();
 
-  languagePickerEl.addEventListener('click', function (e) {
-    var btn = e.target.closest('.language-card');
-    if (!btn) return;
-    var code = btn.getAttribute('data-lang');
+  languagePickerEl.addEventListener('change', function () {
+    var code = languagePickerEl.value;
     if (code === settings.language) return;
     queueSettingChange('language', code);
-    renderLanguagePicker();
     I18N.setLanguage(code, function () {
       applyStaticTranslations();
       renderSetup();
