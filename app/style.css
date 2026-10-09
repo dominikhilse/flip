@@ -1538,6 +1538,15 @@ button.secondary:active { background: var(--bg-subtle); }
   padding: 0.6em 0.8em;
   margin-bottom: 1rem;
 }
+
+/* Plain horizontal rule splitting the App tab into Motion/Language/Design
+   groups - a solid line (unlike .menu-banner's dashed box) since this is
+   pure visual separation, not a notice. */
+.setting-section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
 /* The mid-game banner in particular is a live status, not ambient copy -
    the amber tone (same informational role as .chip) makes it read as
    "this is telling you something right now" without borrowing sand

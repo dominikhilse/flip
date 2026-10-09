@@ -155,6 +155,23 @@
       </div>
       <div class="menu-banner" data-i18n="settings.app.motiontapnotice">Turning both off isn't allowed.</div>
 
+      <hr class="setting-section-divider">
+
+      <!-- M24 follow-up: Language moved from a list-of-cards picker (5
+           options didn't fit comfortably as cards) to a single-row dropdown,
+           same idiom as Placement above - options are built by JS
+           (renderLanguagePicker in app.js), not static HTML, so flag emoji
+           are placeholders (schema: "Dominik picks the flags") swappable in
+           one place. Stage A ships lang/en.json only - selecting any other
+           language degrades gracefully to English per-key (see i18n.js),
+           not a build requirement to finish translating first. -->
+      <div class="setting-row">
+        <span data-i18n="settings.app.language">Language</span>
+        <select id="language-picker"></select>
+      </div>
+
+      <hr class="setting-section-divider">
+
       <div class="setting-row">
         <span data-i18n="settings.app.theme">Theme</span>
         <div class="toggle-group" id="theme-toggle-group">
@@ -198,19 +215,6 @@
       <!-- GH #7: same dashed info-box treatment as "Turning both off isn't
            allowed" above - was plain .setting-note text. -->
       <div class="menu-banner" data-i18n="settings.app.tileskin.mononote">Mono derives a 12-step ramp on each player's hue — whose turn it is reads at a glance at all times.</div>
-
-      <!-- M24 follow-up: Language moved from a list-of-cards picker (5
-           options didn't fit comfortably as cards) to a single-row dropdown,
-           same idiom as Placement above - options are built by JS
-           (renderLanguagePicker in app.js), not static HTML, so flag emoji
-           are placeholders (schema: "Dominik picks the flags") swappable in
-           one place. Stage A ships lang/en.json only - selecting any other
-           language degrades gracefully to English per-key (see i18n.js),
-           not a build requirement to finish translating first. -->
-      <div class="setting-row">
-        <span data-i18n="settings.app.language">Language</span>
-        <select id="language-picker"></select>
-      </div>
     </div>
 
     <!-- 3c Dev -->
