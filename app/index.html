@@ -124,16 +124,25 @@
 
     <!-- 2a Rules -->
     <div id="setup-tab-rules" class="setup-tab" hidden>
+      <!-- Follow-up: the inline "next game"/"next lap" chips (D-30's tiering)
+           became section labels instead - same two keys, just moved from a
+           badge next to the row's own label to a standalone heading above
+           it (reuses .setup-section-label, the Players tab's own idiom),
+           freeing up row width for the now-wider dropdown. One row per
+           section for now; if Rules ever gains a second next-game or
+           next-lap control, it joins the same section under one label. -->
+      <div class="setup-section-label" data-i18n="settings.chip.nextgame">next game</div>
       <div class="setting-row">
-        <span><span data-i18n="settings.rules.racksize">Rack size</span> <span class="chip" data-i18n="settings.chip.nextgame">next game</span></span>
+        <span data-i18n="settings.rules.racksize">Rack size</span>
         <div class="toggle-group" id="rack-size-toggle">
           <button type="button" class="toggle-btn" data-rack-size="9">9</button>
           <button type="button" class="toggle-btn" data-rack-size="12">12</button>
         </div>
       </div>
 
+      <div class="setup-section-label" data-i18n="settings.chip.nextlap">next lap</div>
       <div class="setting-row">
-        <span><span data-i18n="settings.rules.placement">Placement</span> <span class="chip" data-i18n="settings.chip.nextlap">next lap</span></span>
+        <span data-i18n="settings.rules.placement">Placement</span>
         <div class="select-wrap">
           <select id="placement-mode" class="setting-select">
             <option value="winner-only" data-i18n="settings.rules.placement.winneronly">Winner only</option>

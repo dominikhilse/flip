@@ -1584,7 +1584,7 @@ button.secondary:active { background: var(--bg-subtle); }
 .setting-section-divider {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 1rem 0;
+  margin: 1.75rem 0;
 }
 /* The mid-game banner in particular is a live status, not ambient copy -
    the amber tone (same informational role as .chip) makes it read as
