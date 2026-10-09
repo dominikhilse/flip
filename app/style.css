@@ -428,6 +428,41 @@ button.secondary:active { background: var(--bg-subtle); }
   font-weight: 700;
 }
 
+/* A <select> styled to match .toggle-btn's unselected look exactly (same
+   padding/border/radius/font-size/colour) and widened to fill the rest of
+   its .setting-row via flex:1, instead of shrink-to-fit content width -
+   used by Placement and Language. appearance:none is needed to get a
+   height that actually matches a <button>'s box model across browsers,
+   which means the native dropdown arrow is gone too - .select-chevron
+   replaces it, the same inline-SVG stroke="currentColor" icon idiom used
+   everywhere else in this file, not a new pattern. */
+.select-wrap {
+  position: relative;
+  flex: 1;
+  margin-left: 0.75rem;
+  color: var(--text-soft);
+}
+.setting-select {
+  width: 100%;
+  padding: 0.4em 2.2em 0.4em 0.9em;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.select-chevron {
+  position: absolute;
+  right: 0.7em;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+}
+
 /* M15: a reusable on/off pill switch (Motion, Tap-to-proceed, Boost mode,
    Tap sounds, Time challenge enable) - replaces the plain checkbox look
    with the same sand-when-on language as the segmented toggles above. The

@@ -134,11 +134,14 @@
 
       <div class="setting-row">
         <span><span data-i18n="settings.rules.placement">Placement</span> <span class="chip" data-i18n="settings.chip.nextlap">next lap</span></span>
-        <select id="placement-mode">
-          <option value="winner-only" data-i18n="settings.rules.placement.winneronly">Winner only</option>
-          <option value="top-two" data-i18n="settings.rules.placement.toptwo">Top two</option>
-          <option value="all-places" data-i18n="settings.rules.placement.allplaces">All places</option>
-        </select>
+        <div class="select-wrap">
+          <select id="placement-mode" class="setting-select">
+            <option value="winner-only" data-i18n="settings.rules.placement.winneronly">Winner only</option>
+            <option value="top-two" data-i18n="settings.rules.placement.toptwo">Top two</option>
+            <option value="all-places" data-i18n="settings.rules.placement.allplaces">All places</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
       </div>
 
     </div>
@@ -164,10 +167,20 @@
            are placeholders (schema: "Dominik picks the flags") swappable in
            one place. Stage A ships lang/en.json only - selecting any other
            language degrades gracefully to English per-key (see i18n.js),
-           not a build requirement to finish translating first. -->
+           not a build requirement to finish translating first. Follow-up:
+           widened to fill the row and restyled to match .toggle-btn (see
+           .setting-select in style.css) - the wrapping .select-wrap + its
+           own chevron <svg> exist because native select chrome can't be
+           reliably restyled without appearance:none, which also strips the
+           native arrow; the chevron here is the same inline-SVG,
+           stroke="currentColor" idiom every other icon in this file uses,
+           not a new pattern. -->
       <div class="setting-row">
         <span data-i18n="settings.app.language">Language</span>
-        <select id="language-picker"></select>
+        <div class="select-wrap">
+          <select id="language-picker" class="setting-select"></select>
+          <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
       </div>
 
       <hr class="setting-section-divider">
