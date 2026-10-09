@@ -3,7 +3,7 @@
   "avatar.hint": "Tippen zum Wechseln · Halten zum Auswählen",
   "boost.award.join": "{a} + {b}",
   "boost.decline": "Blockiert bleiben",
-  "boost.offer.onefortwo": "Blockiert - setze einen 1-für-2-Boost ein, um diesen Wurf als einzelnen Würfelwert {target} zu spielen (beliebige offene Felder, deren Summe das ergibt)?",
+  "boost.offer.onefortwo": "Blockiert - setze einen 1-für-2-Boost ein, um diesen Wurf als einzelnen Würfelwert {target} zu spielen (drehe beliebige offene Felder um, deren Summe das ergibt)?",
   "boost.offer.overpay": "Blockiert - setze einen Überschuss-Boost ein, um Felder umzudrehen, deren Summe höchstens {total} beträgt?",
   "boost.onefortwo.name": "1-für-2",
   "boost.onefortwo.target.or": "{a} oder {b}",
