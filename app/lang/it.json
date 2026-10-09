@@ -76,7 +76,7 @@
   "timeout.ranoutoftime": "{name} ha esaurito il tempo",
   "timeout.rematch": "Rivincita",
   "timeout.title": "Tempo scaduto!",
-  "turncard.header": "Giocatore {n} di {total} · tocca a te",
+  "turncard.header": "Tocca a te",
   "turncard.header.finished": "Giocatore {n} di {total}",
   "turncard.instruction": "Appoggia il telefono in piano per iniziare il tuo turno",
   "turncard.tap": "Tocca ovunque tranne l'avatar per continuare"

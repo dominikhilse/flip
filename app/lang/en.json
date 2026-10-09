@@ -76,7 +76,7 @@
   "timeout.ranoutoftime": "{name} ran out of time",
   "timeout.rematch": "Rematch",
   "timeout.title": "Time's up!",
-  "turncard.header": "Player {n} of {total} · your turn",
+  "turncard.header": "Your turn",
   "turncard.header.finished": "Player {n} of {total}",
   "turncard.instruction": "Lay the phone flat to start your turn",
   "turncard.tap": "Tap anywhere but the avatar to continue"

@@ -76,7 +76,7 @@
   "timeout.ranoutoftime": "{name} hatte keine Zeit mehr",
   "timeout.rematch": "Revanche",
   "timeout.title": "Zeit abgelaufen!",
-  "turncard.header": "Spieler {n} von {total} · du bist dran",
+  "turncard.header": "Du bist dran",
   "turncard.header.finished": "Spieler {n} von {total}",
   "turncard.instruction": "Lege das Handy flach hin, um deinen Zug zu starten",
   "turncard.tap": "Tippe irgendwo außer auf den Avatar, um fortzufahren"

@@ -358,10 +358,10 @@
       <button type="button" id="turncard-avatar-btn" class="turncard-avatar-btn" title="Tap to change · hold to choose" data-i18n-title="avatar.hint">
         <img id="turncard-avatar-img" alt="">
       </button>
-      <div class="avatar-hint avatar-hint-turncard" data-i18n="avatar.hint">Tap to change · hold to choose</div>
-      <div id="turncard-seat-label" class="turncard-seat-label"></div>
+      <div class="avatar-hint avatar-hint-turncard" data-i18n="avatar.hint" hidden>Tap to change · hold to choose</div>
       <div id="turncard-name"></div>
-      <div class="turncard-flat-hint">
+      <div id="turncard-seat-label" class="turncard-seat-label"></div>
+      <div class="turncard-flat-hint" id="turncard-flat-hint">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2.4" transform="rotate(-6 12 12)"></rect><circle cx="12" cy="12" r="1"></circle></svg>
         <div id="turncard-instruction" data-i18n="turncard.instruction">Lay the phone flat to start your turn</div>
       </div>
@@ -391,7 +391,7 @@
     </div>
     <!-- M20 (D-63): a permanent, fixed-height signpost for both avatar
          gestures - deliberately not a hidden gesture. -->
-    <div class="avatar-hint avatar-hint-play" data-i18n="avatar.hint">Tap to change · hold to choose</div>
+    <div class="avatar-hint avatar-hint-play" data-i18n="avatar.hint" hidden>Tap to change · hold to choose</div>
 
     <!-- Settings (icon-only cog now, was a text button) - two permanent
          boost chips (icon + count, always present, dimmed at 0) - a

@@ -76,7 +76,7 @@
   "timeout.ranoutoftime": "{name} n'a plus de temps",
   "timeout.rematch": "Revanche",
   "timeout.title": "Temps écoulé !",
-  "turncard.header": "Joueur {n} sur {total} · à toi de jouer",
+  "turncard.header": "À toi de jouer",
   "turncard.header.finished": "Joueur {n} sur {total}",
   "turncard.instruction": "Pose le téléphone à plat pour commencer ton tour",
   "turncard.tap": "Appuie n'importe où sauf sur l'avatar pour continuer"

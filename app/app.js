@@ -108,6 +108,7 @@
   var turncardAvatarImgEl = document.getElementById('turncard-avatar-img');
   var turncardSeatLabelEl = document.getElementById('turncard-seat-label');
   var turncardHintEl = document.getElementById('turncard-hint');
+  var turncardFlatHintEl = document.getElementById('turncard-flat-hint');
 
   var playPlayerNameEl = document.getElementById('play-player-name');
   var playAvatarBtn = document.getElementById('play-avatar-btn');
@@ -1019,6 +1020,14 @@
     // below), not a static hint that could lie about whether tapping does
     // anything.
     turncardHintEl.hidden = !effectiveTap();
+    // Cleanup pass: "Lay the phone flat..." only makes sense as an
+    // instruction when motion is actually the configured path - showing it
+    // with motion off was telling the player to do something that
+    // wouldn't do anything. Gated on the setting itself (isMotionEffectivelyEnabled,
+    // defined below), not on whether motion is *currently* delivering
+    // samples like effectiveTap()'s fallback above - unlike tap, there's
+    // no safety reason to show this instruction when motion is off.
+    turncardFlatHintEl.hidden = !isMotionEffectivelyEnabled();
     applyTheme();
     showScreen('turncard');
   }
