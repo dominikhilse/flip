@@ -106,10 +106,13 @@
 
     <!-- 3a Players -->
     <div id="setup-tab-players" class="setup-tab" hidden>
-      <div class="setup-section-label" id="roster-count-label" data-i18n="settings.players.roster">Roster</div>
+      <!-- GH #9: every menu section now gets a label-plus-line divider
+           (.section-divider), not just a plain heading - see style.css's
+           own comment on the unified component for the spacing rule. -->
+      <div class="section-divider"><span class="section-divider-label" id="roster-count-label" data-i18n="settings.players.roster">Roster</span></div>
       <ul id="roster-list"></ul>
 
-      <div class="setup-section-label" data-i18n="settings.players.addplayer">Add player</div>
+      <div class="section-divider"><span class="section-divider-label" data-i18n="settings.players.addplayer">Add player</span></div>
       <form id="add-player-form" class="add-player-row">
         <input id="player-name-input" type="text" placeholder="Name…" maxlength="20" autocomplete="off" data-i18n-placeholder="settings.players.nameplaceholder">
         <button type="submit" class="add-player-btn">
@@ -117,21 +120,20 @@
           <span data-i18n="settings.players.add">Add</span>
         </button>
       </form>
-      <div class="setup-section-label swatch-label" data-i18n="settings.players.colourlabel">Colour · taken hues are dimmed</div>
+      <div class="section-divider"><span class="section-divider-label" data-i18n="settings.players.colourlabel">Colour · taken hues are dimmed</span></div>
       <div id="color-swatches"></div>
       <div class="setting-note blocked-note" id="roster-note" hidden data-i18n="settings.players.note">Applies next game - end this game to add or remove players</div>
     </div>
 
     <!-- 2a Rules -->
     <div id="setup-tab-rules" class="setup-tab" hidden>
-      <!-- Follow-up: the inline "next game"/"next lap" chips (D-30's tiering)
-           became section labels instead - same two keys, just moved from a
-           badge next to the row's own label to a standalone heading above
-           it (reuses .setup-section-label, the Players tab's own idiom),
-           freeing up row width for the now-wider dropdown. One row per
-           section for now; if Rules ever gains a second next-game or
-           next-lap control, it joins the same section under one label. -->
-      <div class="setup-section-label" data-i18n="settings.chip.nextgame">next game</div>
+      <!-- Follow-up (GH #9): the inline "next game"/"next lap" chips (D-30's
+           tiering) are now .section-divider headings - same two keys, just
+           moved from a badge next to the row's own label to a label-plus-
+           line divider above it. One row per section for now; if Rules
+           ever gains a second next-game or next-lap control, it joins the
+           same section under one label. -->
+      <div class="section-divider"><span class="section-divider-label" data-i18n="settings.chip.nextgame">next game</span></div>
       <div class="setting-row">
         <span data-i18n="settings.rules.racksize">Rack size</span>
         <div class="toggle-group" id="rack-size-toggle">
@@ -140,7 +142,7 @@
         </div>
       </div>
 
-      <div class="setup-section-label" data-i18n="settings.chip.nextlap">next lap</div>
+      <div class="section-divider"><span class="section-divider-label" data-i18n="settings.chip.nextlap">next lap</span></div>
       <div class="setting-row">
         <span data-i18n="settings.rules.placement">Placement</span>
         <div class="select-wrap">
@@ -157,6 +159,12 @@
 
     <!-- 3b App -->
     <div id="setup-tab-app" class="setup-tab" hidden>
+      <!-- GH #9: three .section-divider groups - Navigation (Motion + Tap
+           to proceed), Language, Design (Theme + Tile skin). Each divider
+           is a label followed by a line filling the rest of that row's
+           width (style.css's .section-divider), not just a plain heading -
+           see that rule's own comment for the spacing convention. -->
+      <div class="section-divider"><span class="section-divider-label" data-i18n="settings.app.navigation">Navigation</span></div>
       <div class="setting-row">
         <span data-i18n="settings.app.motion">Motion</span>
         <label class="switch"><input type="checkbox" id="motion-toggle"><span class="switch-track"></span></label>
@@ -166,8 +174,6 @@
         <label class="switch"><input type="checkbox" id="tap-toggle"><span class="switch-track"></span></label>
       </div>
       <div class="menu-banner" data-i18n="settings.app.motiontapnotice">Turning both off isn't allowed.</div>
-
-      <hr class="setting-section-divider">
 
       <!-- M24 follow-up: Language moved from a list-of-cards picker (5
            options didn't fit comfortably as cards) to a single-row dropdown,
@@ -183,17 +189,19 @@
            reliably restyled without appearance:none, which also strips the
            native arrow; the chevron here is the same inline-SVG,
            stroke="currentColor" idiom every other icon in this file uses,
-           not a new pattern. -->
+           not a new pattern. GH #9: the row's own "Language" label is gone
+           - the section-divider heading above says the same thing, so the
+           dropdown is now this section's only row content (same pattern as
+           Players' Roster/Add player/Colour sections). -->
+      <div class="section-divider"><span class="section-divider-label" data-i18n="settings.app.language">Language</span></div>
       <div class="setting-row">
-        <span data-i18n="settings.app.language">Language</span>
         <div class="select-wrap">
           <select id="language-picker" class="setting-select"></select>
           <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
       </div>
 
-      <hr class="setting-section-divider">
-
+      <div class="section-divider"><span class="section-divider-label" data-i18n="settings.app.design">Design</span></div>
       <div class="setting-row">
         <span data-i18n="settings.app.theme">Theme</span>
         <div class="toggle-group" id="theme-toggle-group">

@@ -33,11 +33,13 @@ result.newgame,New game,Nouvelle partie,Nuova partita,Neues Spiel,Nueva partida,
 result.playagain,Play again,Rejouer,Gioca ancora,Nochmal spielen,Jugar de nuevo,,"Primary button, normal result screen."
 result.title,Final scores,Scores finaux,Punteggi finali,Endergebnis,Puntuaciones finales,,Kicker label above the podium on the normal result screen.
 result.winner,{name} wins!,{name} gagne !,{name} vince!,{name} gewinnt!,¡{name} gana!,name,"Shown on the podium banner - name is user-entered (not translated), the surrounding text is. Reused identically on the timeout screen's winner banner when a real finisher exists (GH case 2) - matches the schema's own worked example."
+settings.app.design,Design,Design,Design,Design,Diseño,,2026-10-11 (GH #9): new section-divider label grouping Theme + Tile skin in the App tab.
 settings.app.language,Language,Langue,Lingua,Sprache,Idioma,,
 settings.app.motion,Motion,Mouvement,Movimento,Bewegung,Movimiento,,App tab row label (toggle).
 settings.app.motiontapnotice,Turning both off isn't allowed.,Désactiver les deux n'est pas autorisé.,Non è possibile disattivare entrambi.,Beides gleichzeitig zu deaktivieren ist nicht erlaubt.,No se pueden desactivar ambos a la vez.,,Dashed info box under Motion/Tap to proceed.
+settings.app.navigation,Navigation,Navigation,Navigazione,Navigation,Navegación,,2026-10-11 (GH #9): new section-divider label grouping Motion + Tap to proceed in the App tab.
 settings.app.taptoproceed,Tap to proceed,Appui pour continuer,Tocco per procedere,Tippen zum Fortfahren,Toque para continuar,,App tab row label (toggle).
-settings.app.theme,Theme,Thème,Tema,Design,Tema,,App tab row label.
+settings.app.theme,Theme,Thème,Tema,Thema,Tema,,App tab row label. 2026-10-11 (GH #9): DE changed from 'Design' to 'Thema' - the new Design section-divider label (settings.app.design) would otherwise collide with this row's own text right underneath it.
 settings.app.theme.dark,Dark,Sombre,Scuro,Dunkel,Oscuro,,Toggle option.
 settings.app.theme.light,Light,Clair,Chiaro,Hell,Claro,,Toggle option.
 settings.app.tileskin,Tile skin,Style des tuiles,Stile tessere,Felder-Design,Estilo de fichas,,App tab row label.

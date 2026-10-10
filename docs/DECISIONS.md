@@ -1876,3 +1876,51 @@ proofing decision affecting the shared EN source, not a translation-only fix.
   spot-checked directly via `I18N.t()` for correct text and intact `{target}` interpolation. Debug hook
   stripped before commit (file diff confirmed net-zero against the version before this pass); dev-server
   port reverted to 8123.
+
+### 2026-10-11 — GH #9: unified section dividers across all three Settings tabs
+
+GitHub issue #9 specified a new shared "section divider" component (label + a horizontal line filling
+the rest of that row) to replace two previously-separate patterns: the plain `.setup-section-label`
+heading (Players tab's Roster/Add player/Colour, Rules tab's next-game/next-lap) and the label-less
+`hr.setting-section-divider` this session had just added to the App tab. The issue's own wording was
+rough in a few places and left real gaps - this entry records how those were read.
+
+- **Spacing ratio, resolved against the one unambiguous "current padding" in the codebase.** The issue:
+  "a section to the next section divider has 2x the current padding" / "a section divider to its
+  section content has 1x its current padding (no change)." Two candidate source values existed:
+  `.setup-section-label`'s asymmetric `margin: 1rem 0 0.5rem` (different top/bottom numbers, so no
+  single "current padding" to multiply), and `.setting-section-divider`'s `margin: 1.75rem 0`
+  (symmetric - one value, used identically on both sides) added earlier this session. Only the second
+  one is a single quantity the phrasing can cleanly reference twice at different multiples, so that's
+  the base: new `.section-divider` uses `margin: 3.5rem 0 1.75rem` (2x top, 1x/unchanged bottom).
+  **Exception not stated in the issue:** the first divider in a tab has no previous section to create
+  the "2x" gap from, so `.section-divider:first-child` keeps the 1x (1.75rem) top margin instead -
+  otherwise Players' "Roster" label would sit oddly far below the tab bar for no reason.
+- **Which rows keep their own inline label vs. fold it into the section header - not spelled out at
+  this level of detail, inferred from the issue's own Players-tab precedent.** Roster/Add player/Colour
+  (Players tab) never had a separate per-row label distinct from their section heading - the heading
+  *is* the description. Applying that same rule: a section covering exactly one row whose heading text
+  would be **identical** to that row's own label gets the label removed (just Language - the row's
+  "Language" `<span>` is gone, the "Language" section-divider heading above it already says it,
+  `.setting-row > .select-wrap:only-child` drops the now-pointless left margin). A section whose
+  heading describes something *different* from the row's own identity - "next game" vs. "Rack size",
+  "Navigation" vs. "Motion"/"Tap to proceed", "Design" vs. "Theme"/"Tile skin" - keeps every row's own
+  label; the two pieces of text aren't redundant, they answer different questions (what this control is,
+  vs. when/why it's grouped this way).
+- **A naming collision this surfaced, fixed in passing:** German's `settings.app.theme` translation was
+  "Design" (a Stage-B loanword choice). The new "Design" section heading (`settings.app.design`, grouping
+  Theme + Tile skin) would then sit directly above a row *also* reading "Design" - changed
+  `settings.app.theme`'s German value to the literal "Thema" instead, freeing "Design" for the section
+  alone. No other language had this collision (FR/IT/ES's Theme translations were already "Thème"/
+  "Tema"/"Tema"). Both new section-heading keys (`settings.app.navigation`, `settings.app.design`)
+  translated across all five languages; `docs/localisation_translation_efigs.csv` regenerated.
+- Every other converted section reuses its existing translation key unchanged (`settings.chip.nextgame`/
+  `nextlap`, `settings.players.roster`/`addplayer`/`colourlabel`, `settings.app.language`) - purely a
+  markup/CSS restructure for those, no retranslation needed.
+- **Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated
+  through the standing browser-HTTP-cache workaround, reverted to 8123): all three tabs screenshot-
+  confirmed in both EN and DE (dark and light theme) - Navigation/Language/Design sections render with
+  correct spacing and no redundant "Design"/"Design" stacking; Rules' "next game"/"next lap" and
+  Players' "Roster"/"Add player"/"Colour" all render as label-plus-line; the Language dropdown spans the
+  full row width with no stray left inset now that its own label is gone, while Placement (which still
+  has one) is unaffected. A full automated game completed cleanly with zero console errors.

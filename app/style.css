@@ -335,13 +335,36 @@ button.secondary:active { background: var(--bg-subtle); }
 }
 #roster-list .remove-player:disabled { color: var(--text-dim); }
 
-.setup-section-label {
+/* GH #9: every menu section gets one of these - a label followed by a
+   horizontal line filling the rest of that row's width, replacing both
+   the old plain .setup-section-label heading (Players/Rules tabs) and the
+   label-less hr.setting-section-divider (App tab) with a single shared
+   component. Spacing is asymmetric per the issue: the gap above a divider
+   (separating it from the PREVIOUS section's content) is 2x the gap below
+   it (down to its OWN content, unchanged from the hr's prior 1.75rem) -
+   a section heading sits close to what it introduces, with more air from
+   what came before. The first divider in a tab has no previous section to
+   separate from, so it keeps the 1x gap instead of 2x. */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  margin: 3.5rem 0 1.75rem;
+}
+.section-divider:first-child { margin-top: 1.75rem; }
+.section-divider-label {
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-dim);
-  margin: 1rem 0 0.5rem;
+  white-space: nowrap;
+}
+.section-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 .add-player-row {
   display: flex;
@@ -379,7 +402,6 @@ button.secondary:active { background: var(--bg-subtle); }
   stroke-linecap: round;
   fill: none;
 }
-.swatch-label { margin-top: 0.75rem; }
 #color-swatches {
   display: flex;
   flex-wrap: wrap;
@@ -442,6 +464,13 @@ button.secondary:active { background: var(--bg-subtle); }
   margin-left: 0.75rem;
   color: var(--text-soft);
 }
+/* GH #9: Language's row dropped its own inline label (the section-divider
+   heading above it already says "Language") - .select-wrap is then the
+   row's only child, so the margin meant to space it from that label would
+   just be a stray left inset instead. Placement still has its own label
+   (a different section-divider sits above it - "next lap" isn't the same
+   text as "Placement"), so .select-wrap keeps the margin there. */
+.setting-row > .select-wrap:only-child { margin-left: 0; }
 .setting-select {
   width: 100%;
   padding: 0.4em 2.2em 0.4em 0.9em;
@@ -1578,14 +1607,6 @@ button.secondary:active { background: var(--bg-subtle); }
   margin-bottom: 1rem;
 }
 
-/* Plain horizontal rule splitting the App tab into Motion/Language/Design
-   groups - a solid line (unlike .menu-banner's dashed box) since this is
-   pure visual separation, not a notice. */
-.setting-section-divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 1.75rem 0;
-}
 /* The mid-game banner in particular is a live status, not ambient copy -
    the amber tone (same informational role as .chip) makes it read as
    "this is telling you something right now" without borrowing sand
