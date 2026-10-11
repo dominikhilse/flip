@@ -4,6 +4,20 @@
 **Audience:** a Claude Code session with no prior context. Everything needed is in this file.
 **Supersedes:** nothing. This is the first plan for this project.
 
+**Revision note (2026-10-11):** **M24 flipped to BUILT, VERIFIED** (both stages; one finding — "rack"
+had no clean German word, forcing an English-source revision and 11-string retranslation). New
+**translation-maintenance policy (D-71):** new strings keyed immediately, translated in batched passes,
+English fallback covers the gap in between — not per-change translation. **D-72:** M20's long-press
+(500 ms) is hard for kids to trigger; re-enable Dev, add a tunable input, find a shorter two-sided-safe
+value. **New M25 — endgame escalation (anti-drag, D-73):** a silent, automatic two-step mechanic for
+matches dragging with nobody able to close. Qualifying condition branches on each player's *actual*
+forced die-mode (not an abstract reachable-sum check — `{1,2,3,6}` does not qualify, since its owner is
+already locked to one die and 12 isn't reachable on one die). Phase begins when all active players
+simultaneously qualify (not a catch-up/rubber-band mechanic). **+2 laps:** boosts-can-finish (lifts
+D-48), announced, only if boost mode is on. **+4 laps:** an always-on timer (`players×10s`, min 30s)
+feeding the existing M21 timeout path. Secretly adjusting dice odds (the discarded "option C") was
+considered and explicitly rejected as illegible dice-rigging, consistent with the earlier-cut D-22.
+
 **Revision note (M21–M23 BUILT, reconciling DECISIONS.md through 2026-10-10):** all three
 status-flipped SPECIFIED → **BUILT, VERIFIED**, with three shipped refinements. **M21:** the result
 screen shipped as **three cases, not two** — normal win (podium, numbered table), timeout *with* a real
@@ -2007,7 +2021,15 @@ roster flow; it relocates the controls, it does not re-architect how a match beg
 
 ---
 
-### M24 — Localisation (EFIGS) — SPECIFIED, two stages
+### M24 — Localisation (EFIGS) — BUILT, VERIFIED (both stages)
+
+**Status: BUILT (2026-10-09).** Stage A (i18n runtime, EN extraction through `t()`, Language setting)
+and Stage B (FR/IT/DE/ES machine translation, shipped live, then proofed/adjusted with layout + context
+fixes). One notable Stage-B finding: "rack" had no clean German translation, so the **English source was
+revised** and 11 strings retranslated — i.e. a source-language change forced a downstream re-translation,
+which is exactly the maintenance pattern D-71 addresses. Translation-maintenance policy: see D-71.
+Original two-stage spec below.
+
 
 **Goal.** Make every user-facing string translatable and add a Language setting, then ship five
 languages. **EFIGS: EN, FR, IT, DE, ES.** English is the source of truth; no locale auto-detection —
@@ -2072,6 +2094,120 @@ Tile digits and player names (not localised). The no-build / no-server constrain
 cleanly converted to one slotted template without touching game logic, **stop and report** — flag it
 rather than shipping a concatenation that breaks in DE/FR. If any string can't be reached by `t()`
 without a re-render the current architecture doesn't support, **stop and report** the specific screen.
+
+**Translation-maintenance policy (locked, post-ship — D-71).** New or changed user-facing strings do
+**NOT** require translating at the moment they're added. The rule is narrower and cheaper: **every
+new string must go through `t()` with a real key from day one — never a hardcoded literal** — even
+when only the English value exists yet. The English-fallback mechanism (schema §6) means an untranslated
+key shows correctly in every language (in English) rather than blank or broken. **Translation happens in
+batched passes** (tied to a milestone, or whenever enough new/changed keys have accumulated), not
+per-change. Reason: the project is still iterating copy — M24 Stage B itself hit this
+(`"rack"` had no clean German translation, forcing an English-source revision and an 11-string
+retranslation) — so forcing immediate per-change translation would mean repeatedly translating against
+copy that's still moving. Keyed-but-untranslated is safe and expected mid-development; a hardcoded,
+unkeyed literal is the actual bug to catch.
+
+**Also noted for Dev-tab tuning (D-72, ships with/near M25 below since it shares the Dev surface):**
+M20's tap-and-hold avatar gesture is functionally confirmed, but kids are having real difficulty
+triggering it at the current 500 ms hold. **Re-enable `CONFIG.showDevTab`; add a Dev input for the
+long-press hold duration** (currently hardcoded) to test shorter values (try 300–350 ms) with real
+small fingers. Two-sided bound, same pattern as the rest-to-flip delay (§4.4) and the dice-animation
+value (D-66): short enough that kids can trigger it, long enough that an ordinary tap doesn't
+accidentally open the grid. Measure, lock the value, flip Dev back off (D-65's hide mechanism).
+
+---
+
+### M25 — Endgame escalation (anti-drag, two-step) — SPECIFIED
+
+**Goal.** Reduce matches where several players spend 5+ laps with no one able to close a tile — the
+late-match "wind taken out of the sails" drag, reported as frequent in real play. A silent, automatic,
+two-step escalation that gets the match closed without rigging the dice (option C, considered and
+rejected — see below) and without announcing a scoreboard-shaming countdown at entry.
+
+**The qualifying condition (per player) — this is the keystone, get it exactly right:**
+A player **qualifies** when their current rack could be shut by a **single legal roll**, evaluated
+against their **actual current die-mode**, not an abstract "is the sum reachable" check:
+- **If single-die is already forced** (every open tile ≤ 6, per D-49/§3.3): qualifies iff
+  `sum(open tiles)` is in **[1, 6]**.
+- **If still rolling two dice** (at least one open tile > 6): qualifies iff `sum(open tiles)` is in
+  **[2, 12]**.
+A rack like `{1,2,3,6}` does **NOT** qualify — its owner is already forced to one die (all tiles ≤6),
+but the sum is 12, unreachable on one die. Getting this branch wrong either under- or over-triggers the
+phase; it must match the real single-die-forcing rule exactly, not a looser approximation.
+
+**The trigger — entry into the end phase:**
+- The end phase begins the moment **every currently-active player** (still in the rotation, not yet
+  finished) **simultaneously qualifies** by the condition above.
+- This is evaluated fresh after each move (tiles only ever close, never reopen — a qualifying state can
+  only persist or improve toward more players qualifying, never regress, so there's no flapping in/out
+  of the phase once reached).
+- **Not a rubber-band or catch-up mechanism.** A leader who has already whiffed several rolls and a
+  player who just reached a qualifying rack are both just "qualifying" — how each got there is
+  irrelevant; only the simultaneous state matters.
+- **Players cannot leave the active rotation without the match ending** (a finish in `winner-only` ends
+  the match immediately; other placement modes keep playing with fewer active players, who — if they
+  already all qualified — continue to qualify, since a shrinking rotation can't un-qualify anyone).
+- **Entry is NOT announced.** Silent. (Distinct from the two escalation steps below, which are
+  announced per their own rule.)
+
+**Escalation, counted in laps of the current (end-phase) rotation, from phase entry:**
+- **+2 laps — "boosts can finish" takes effect, ANNOUNCED, ONLY IF boost mode is on.** Lifts D-48's
+  "a boost-spent move may never close the whole rack" restriction, for the remainder of the match, for
+  all players. **One-way** — once triggered, stays in effect even if the phase's other conditions
+  would otherwise seem to reset (they don't; there's no reset path). **If boost mode is off, this step
+  is a silent no-op** — there are no boosts to free up, so nothing happens and nothing is announced.
+- **+4 laps — a timer starts, ANNOUNCED, ALWAYS** (regardless of boost mode or whether +2 fired).
+  Duration: `player_count × 10s`, **minimum 30s**. Reuses the existing M9 timer/HUD mechanism and, on
+  expiry, the existing **M21 timeout result path** (podium-less table if nobody's finished by then;
+  normal podium result if someone has — M21's three-case model already covers both).
+- **A real shut-the-box win at any point ends the match normally** (M21 normal-win path) — the
+  escalation only ever matters if nobody manages to close before +4's timer runs out. The two steps are
+  layered aid, not a forced ending in themselves; the timer is the actual guarantee.
+- **Gap kept tight (2/4, not a wider spread) deliberately** — by lap 2, not every qualifying player may
+  still hold a boost (some may have spent theirs already), so +2 only reliably helps some players; the
+  tight gap to +4 reflects that the goal is closing the match, not a long ceremonial countdown.
+
+**Why not option C (considered and rejected):** secretly increasing roll-success probability once the
+phase is reached was considered and explicitly rejected — it make the dice unfair without telling
+anyone, which is the same illegibility problem the project has rejected before (the cut "mode C" dynamic
+overpay, D-22; the rule that any rule-changing mode must announce itself). The two-step escalation here
+achieves the same goal (reduce drag) through mechanics that are either already-known-and-visible (boosts,
+D-48's relaxation, announced) or an honest clock (the timer, announced) — never a rigged die.
+
+**Out of scope.** Any change to dice probability. Any announcement at end-phase *entry* (only the two
+escalation steps announce). A rubber-band/catch-up mechanic for a trailing player (explicitly not what
+this is). Resetting or toggling off "boosts can finish" once triggered.
+
+**Do-not-touch on entry.** The dice RNG (`Math.random()`, unchanged — no probability manipulation). The
+single-die forcing rule (D-49/§3.3) — this milestone *reads* that state to evaluate qualification, it
+does not change when single-die is forced. The M9 timer mechanism and M21 result paths (reused, not
+rebuilt).
+
+**Acceptance criteria:**
+1. A rack of `{1,2,3,6}` (all tiles ≤6, sum 12) does **not** register as qualifying; a rack of
+   `{1,2,3}` (all ≤6, sum 6) **does**.
+2. A rack with an open tile >6 and a reachable two-dice sum (e.g. `{5,9}`, sum 14 — out of range; vs
+   `{2,9}`, sum 11, in [2,12]) qualifies correctly against the two-dice range, not the one-die range.
+3. The end phase begins only when **every** active player qualifies at the same moment; it does not
+   begin while any active player has a non-qualifying rack.
+4. No announcement appears at the moment the end phase begins.
+5. With boosts on: exactly 2 laps after phase entry, an announcement appears and a boost-spent move can
+   now close the whole rack (D-48's restriction lifted) for the rest of the match.
+6. With boosts off: at lap 2 nothing is announced and nothing changes (silent no-op).
+7. At exactly 4 laps after phase entry (regardless of the boost setting), an announcement appears and a
+   timer starts: duration = player count × 10s, floored at 30s minimum.
+8. If the timer expires with nobody having shut their box, the existing podium-less timeout table
+   appears (M21 case 3); if someone shuts first, the match ends normally via the podium path.
+9. A real shut-the-box win during the end phase (before +4) ends the match immediately via the normal
+   M21 path, with no timer ever starting.
+10. Once "boosts can finish" has triggered, it remains in effect for the rest of the match under all
+    conditions.
+
+**Stop conditions.** If evaluating the qualifying condition requires anything other than reading each
+player's current open-tile set and whether their die-mode is already forced, **stop and report** — it
+must be computable from existing rack/die state, not a new tracked variable duplicating it. If "laps of
+the current rotation" can't be counted cleanly once players have finished (in non-`winner-only` modes),
+**stop and report** the specific ambiguity rather than guessing a count.
 
 ---
 
@@ -2275,4 +2411,7 @@ and date (all since resolved); no number for any of these should appear as thoug
 | D-68 | Localisation (M24, EFIGS: EN/FR/IT/DE/ES): **entirely front-end** — per-language JSON in `lang/`, a `t(key, params)` lookup with `{slot}` interpolation + English fallback, a Language setting (flag + name, no auto-detect). Google Sheet is authoring-only, manual export to JSON. Two stages: A = code extract-to-keys + `t()` + de-concatenate sentences + setting, ships EN-only; B = MT fill (executor) → Dominik proof (DE first, as a tone rewrite) + DE/FR layout QA. Schema in `FlipTheNumber_LocalisationSchema.md`. Executor extracts (sees all strings); Dominik owns the Sheet | Locked |
 | D-69 | GH #8: **move options wait for the dice animation to settle.** The roll result is still decided immediately (D-47/M10 cosmetic-only unchanged), but tile clickability, Confirm's enabled state, the boost offer, and the stall/whole-rack/selection-sum messages gate on a new `rollRevealed()` (flips true when the animation settles, matched to the exact roll instance). Exception: Roll's own disabled state stays tied to the real roll so a double-roll is blocked instantly | Locked |
 | D-70 | GH #8: boost buttons **name their type** — "Use Boost"/"Change Boost" retired for "Use Overpay"/"Use 1-for-2". Pre-spend shows the offered default (1-for-2 first when both apply, D-37/D-56 unchanged); the second button names whichever type cycling switches *to* (label derived from the same next-in-list computation, can't drift). Single-applicable case shows the specific label directly, no Change button. Mechanic unchanged; labels only | Locked |
+| D-71 | **Translation-maintenance policy (M24, post-ship):** new/changed strings must go through `t()` with a real key immediately (never a hardcoded literal), but do **not** need translating immediately — the English fallback covers the gap. Translation happens in **batched passes** (milestone-tied or accumulation-tied), not per-change, since copy is still iterating (M24 Stage B itself needed an English-source revision for "rack") | Locked |
+| D-72 | M20 long-press hold duration (currently 500 ms, hardcoded) is hard for kids to trigger reliably. Re-enable `CONFIG.showDevTab`; add a Dev input to test shorter values (try 300–350 ms); two-sided bound (short enough for kids, long enough to not fire on an ordinary tap); measure, lock, re-hide Dev | Locked |
+| D-73 | M25 endgame escalation: qualifying condition branches on each player's **actual forced die-mode** (single-die: sum∈[1,6]; two-dice: sum∈[2,12]) — `{1,2,3,6}` does NOT qualify. Phase begins when **all active players simultaneously qualify** (not a rubber-band/catch-up mechanic; entry is silent). **+2 laps:** boosts-can-finish (lifts D-48), announced, boost-mode-on only, one-way. **+4 laps:** timer (`players×10s`, min 30s), announced, always, feeds M21's timeout path. Dice probability is never altered (option C rejected as illegible/dice-rigging, consistent with D-22) | Locked |
 | D-67 | ~~Prematch toggles on the launch screen above "Tap to start"~~ **Revised (M23, executor-flagged): "Tap to start" doesn't begin a match — it navigates to Setup.** So the launch screen stays a splash + CTA (adding a motion-permission hint), and Timer/Boosts + a full-width **Start Game** button live in a **fixed bottom footer reused on every settings tab** (same position all tabs; top tabs fixed, footer fixed, middle content scrolls). Independent toggles, four states; Timer-on reveals a picker in reserved space (button never jumps). Start follows the existing ≥2-player rule; reuses the existing start path (no Setup-skip). Timer/Boosts now live in ONE place (the footer), so they're removed from Rules — the earlier "one setting, two views" sync is moot | Locked |
