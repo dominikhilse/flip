@@ -71,6 +71,7 @@
   var devDiceChoiceRowEl = document.getElementById('dev-dice-choice-row');
   var devDiceChoiceToggleEl = document.getElementById('dev-dice-choice-toggle');
   var devDiceAnimInputEl = document.getElementById('dev-dice-anim-input');
+  var devAvatarHoldInputEl = document.getElementById('dev-avatar-hold-input');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleGroupEl = document.getElementById('theme-toggle-group');
@@ -520,6 +521,10 @@
     if (document.activeElement !== devDiceAnimInputEl) {
       devDiceAnimInputEl.value = CONFIG.diceAnimationDurationMs;
     }
+    // D-72: same live-tune pattern, same focus guard.
+    if (document.activeElement !== devAvatarHoldInputEl) {
+      devAvatarHoldInputEl.value = CONFIG.avatarLongPressMs;
+    }
   }
 
   function renderPrimaryAction() {
@@ -678,6 +683,16 @@
     var raw = parseInt(devDiceAnimInputEl.value, 10);
     if (!Number.isFinite(raw) || raw < 0) return;
     CONFIG.diceAnimationDurationMs = raw;
+  });
+
+  // D-72: live avatar long-press hold duration - takes effect on the very
+  // next press (bindAvatarGestures reads CONFIG.avatarLongPressMs fresh
+  // each pointerdown), nothing to "Set" or persist, same as the dice-
+  // animation input above.
+  devAvatarHoldInputEl.addEventListener('input', function () {
+    var raw = parseInt(devAvatarHoldInputEl.value, 10);
+    if (!Number.isFinite(raw) || raw < 0) return;
+    CONFIG.avatarLongPressMs = raw;
   });
 
   // Guarded (M11, D-51): a match is always live whenever this button is
@@ -1113,7 +1128,9 @@
   // Native long-press image callout/context menu is suppressed so it can't
   // compete. Not the D-50 roster drag: that lives on the setup roster's own
   // handle, never on these two avatar buttons.
-  var AVATAR_LONG_PRESS_MS = 500;
+  // D-72: hold duration now reads CONFIG.avatarLongPressMs live (not a
+  // cached const) so the Dev-tab input below takes effect on the very next
+  // press, same "live, no Set button" pattern as diceAnimationDurationMs.
   var AVATAR_LONG_PRESS_SLOP_PX = 10;
 
   function bindAvatarGestures(btn, onTap) {
@@ -1128,7 +1145,7 @@
         timer = null;
         longFired = true;
         openAvatarGrid();
-      }, AVATAR_LONG_PRESS_MS);
+      }, CONFIG.avatarLongPressMs);
     });
     btn.addEventListener('pointermove', function (e) {
       if (timer === null) return;

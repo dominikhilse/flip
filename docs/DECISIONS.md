@@ -2004,3 +2004,26 @@ rarely seem to "unlock" anything in practice.
   randomized automated games (boost-on/winner-only, boost-off/all-places, boost-on/top-two-with-timer)
   completed cleanly. Zero console errors throughout. Debug hook stripped before commit (file diff
   confirmed net-zero); dev-server port reverted to 8123.
+
+### 2026-10-12 — D-72 scaffolded: avatar long-press is now live-tunable; Dev tab left ON
+
+Scaffolding only, per D-72 - the actual value needs Dominik's own on-device measurement with real kids'
+hands (same class of constant as `restToFlipDelayMs`/`diceAnimationDurationMs` - never guessed here).
+
+- `CONFIG.showDevTab` flipped back to `true` (was `false` since M22/D-65) and `CONFIG.avatarLongPressMs`
+  added (500, the current/unchanged value) - same live-tune pattern as `diceAnimationDurationMs`:
+  a Dev-tab number input (`#dev-avatar-hold-input`), no "Set" button, takes effect on the very next
+  press. `AVATAR_LONG_PRESS_MS` (the old hardcoded module const) removed - `bindAvatarGestures` now reads
+  `CONFIG.avatarLongPressMs` live at the point of use, same as the dice-animation value already does.
+  `AVATAR_LONG_PRESS_SLOP_PX` (the movement-cancels-the-press threshold) is untouched - D-72 only names
+  the hold duration, not the slop.
+- **Dev tab is intentionally left ON** in this commit - needed for Dominik to actually reach the new
+  input on his device. Per M22/D-65's own rule, flip `CONFIG.showDevTab` back to `false` once the value
+  is measured and locked (the existing "hide Dev -> force every Dev-controlled setting back to
+  production defaults" mechanism in `app.js` only touches `settings`-persisted values, not this plain
+  `CONFIG` constant - no change needed there, same as `diceAnimationDurationMs`'s existing treatment).
+- **Verified**: the live binding actually works, not just the input/display sync - set
+  `CONFIG.avatarLongPressMs = 300` and dispatched real `pointerdown`/`pointerup` events on the turn-card
+  avatar button: the grid opened by 350ms elapsed (past the new threshold) and had NOT opened at 200ms
+  (before it) - confirming the shorter value is genuinely respected, not just displayed. Zero console
+  errors.

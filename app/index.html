@@ -288,6 +288,20 @@
         </div>
       </div>
       <div class="setting-note">Purely cosmetic wobble/flash duration before the dice settle on the real (already-decided) result - applies to the very next roll.</div>
+
+      <!-- D-72: live-tunable avatar tap-and-hold duration (M20) - kids are
+           having real difficulty triggering it at the shipped 500ms. Try
+           300-350ms with real small fingers; two-sided bound once measured
+           (short enough to trigger, long enough an ordinary tap doesn't
+           open the grid by accident) - see config.js's own comment. -->
+      <div class="setting-row">
+        <span>Avatar long-press</span>
+        <div class="dev-anim-input-row">
+          <input type="number" id="dev-avatar-hold-input" min="0" step="50">
+          <span class="setting-note-inline">ms</span>
+        </div>
+      </div>
+      <div class="setting-note">Hold duration before tap-and-hold on an avatar opens the picker grid - applies to the very next press.</div>
     </div>
     </div><!-- /#setup-scroll -->
 

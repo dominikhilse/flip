@@ -25,7 +25,22 @@ window.CONFIG = {
   // app.js, right after `settings` loads) - a hidden Dev tab can never
   // leave the game stuck in an experimental state with no visible control
   // to undo it.
-  showDevTab: false,
+  // TEMP (D-72): re-enabled for the avatar-long-press retune below - flip
+  // back to false once that value is measured and locked, same re-hide
+  // step this comment already describes.
+  showDevTab: true,
+
+  // D-72: kids are having real difficulty triggering the avatar tap-and-
+  // hold gesture (M20) at the current 500ms. Live-tunable via the Dev tab
+  // (same "type a number to test, no Set button" pattern as
+  // diceAnimationDurationMs below) so shorter values (try 300-350ms) can
+  // be tested with real small fingers on a real device. Two-sided bound
+  // once measured, same as restToFlipDelayMs/diceAnimationDurationMs:
+  // short enough that kids can trigger it, long enough that an ordinary
+  // tap doesn't accidentally open the grid. PENDING RETUNE - do not guess
+  // a new number here; re-measure on-device and update this file, then
+  // flip showDevTab back to false.
+  avatarLongPressMs: 500,
 
   // Boost mode (§3.6, M6). boostDryStreakWindow/Threshold are the starting
   // values from the spec, explicitly flagged there as tunable after real
