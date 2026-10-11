@@ -74,3 +74,10 @@ There is no test framework and no build step, so verification is live-browser-dr
   to take, regardless of how confident the local verification was.
 - If the change needed a `docs/DECISIONS.md` entry (see above), that entry is written and
   staged as part of the same commit-preparation pass, before running `git commit`.
+- **If the work closes a GitHub issue, close it once — and only once — the user confirms it's
+  pushed and verified on production (their phone, against the real GitHub Pages origin).**
+  Pushing is the user's own step (see above), so this is never done in the same turn as the
+  commit — it's triggered later, by the user saying the pushed change works. Close with a
+  comment naming the commit that fixed it (`gh issue close <n> --comment "Verified on
+  production and closing. Fixed in <hash> (pushed to main)."`), not a bare close. Don't close
+  on "committed locally" or "looks right to me" alone — those aren't production verification.
