@@ -16,6 +16,8 @@
   "dialog.restartmatch.body": "I progressi e i boost vengono azzerati per tutti. Azione irreversibile.",
   "dialog.restartmatch.ok": "Ricomincia la partita",
   "dialog.restartmatch.title": "Ricominciare questa partita?",
+  "endphase.announce.boosts": "I boost possono ora concludere la partita!",
+  "endphase.announce.timer": "La partita ora ha un cronometro!",
   "launch.cta": "Tocca per iniziare",
   "launch.permission": "Ti chiederemo di usare i sensori di movimento, per tenere il telefono al sicuro sul tavolo durante la partita.",
   "launch.tagline": "Gioco a turni · 2-12 giocatori",

@@ -16,6 +16,8 @@
   "dialog.restartmatch.body": "Der Fortschritt und die Boosts werden für alle zurückgesetzt. Das kann nicht rückgängig gemacht werden.",
   "dialog.restartmatch.ok": "Match neu starten",
   "dialog.restartmatch.title": "Dieses Match neu starten?",
+  "endphase.announce.boosts": "Boosts können das Match jetzt beenden!",
+  "endphase.announce.timer": "Das Match läuft jetzt gegen die Uhr!",
   "launch.cta": "Tippen zum Starten",
   "launch.permission": "Wir fragen nach dem Zugriff auf die Bewegungssensoren, damit dein Handy während des Spiels sicher auf dem Tisch liegen bleibt.",
   "launch.tagline": "Reihum spielen · 2–12 Spieler",

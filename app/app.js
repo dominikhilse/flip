@@ -109,6 +109,7 @@
   var turncardSeatLabelEl = document.getElementById('turncard-seat-label');
   var turncardHintEl = document.getElementById('turncard-hint');
   var turncardFlatHintEl = document.getElementById('turncard-flat-hint');
+  var turncardEndPhaseBannerEl = document.getElementById('turncard-endphase-banner');
 
   var playPlayerNameEl = document.getElementById('play-player-name');
   var playAvatarBtn = document.getElementById('play-avatar-btn');
@@ -943,7 +944,13 @@
       pendingSettings: null,
       finishedOrder: [],
       currentRoll: null,
-      selected: new Set()
+      selected: new Set(),
+      // M25/D-73: null until every active player simultaneously qualifies
+      // (see advanceEndPhase) - the whole mechanism is inert whenever a
+      // Timer-mode match is running (timeChallenge above is non-null for
+      // its entire duration, per Dominik's clarification), so this never
+      // even gets evaluated in that case.
+      endPhase: null
     };
     beginTurn();
   }
@@ -982,6 +989,7 @@
     game.timeChallenge = settings.timeChallengeSeconds > 0
       ? { remainingMs: settings.timeChallengeSeconds * 1000 }
       : null;
+    game.endPhase = null;
     beginTurn();
   }
 
@@ -1028,6 +1036,18 @@
     // samples like effectiveTap()'s fallback above - unlike tap, there's
     // no safety reason to show this instruction when motion is off.
     turncardFlatHintEl.hidden = !isMotionEffectivelyEnabled();
+    // M25/D-73: shown once, to whichever player's turn card is up when the
+    // escalation step actually fires (not broadcast to every player) -
+    // cleared immediately after reading so it doesn't repeat on the next
+    // turn card. Entry into the end phase itself is silent (no banner) -
+    // only the two escalation steps announce.
+    if (game.endPhase && game.endPhase.announce) {
+      turncardEndPhaseBannerEl.textContent = I18N.t('endphase.announce.' + game.endPhase.announce);
+      turncardEndPhaseBannerEl.hidden = false;
+      game.endPhase.announce = null;
+    } else {
+      turncardEndPhaseBannerEl.hidden = true;
+    }
     applyTheme();
     showScreen('turncard');
   }
@@ -1238,6 +1258,14 @@
     return total;
   }
 
+  // M25/D-73: whether this match's endgame escalation has lifted D-48's
+  // "a boost-spent move may never close the whole rack" restriction - true
+  // from the moment the +2-laps step fires, for the rest of the match
+  // (one-way, never reset - see advanceEndPhase).
+  function boostsCanFinish() {
+    return !!(game.endPhase && game.endPhase.boostsUnlocked);
+  }
+
   // The single validity check for the current selection, covering all
   // three move shapes: a spent 1-for-2 (exact match to one die face,
   // RULES.isValidOneForTwoSelection), a spent overpay or native D mode
@@ -1250,9 +1278,10 @@
     var openVals = RULES.openValues(p.rack);
     // A boost-spent move (either type) may never be the move that shuts the
     // whole rack, even on an exact match - the game must not be completed
-    // with a boost (real-device report/DECISIONS.md). Checked once here,
-    // ahead of the per-type shape checks below, so it applies uniformly.
-    if (game.currentRoll.boostSpentType && selectedVals.length === openVals.length) return false;
+    // with a boost (real-device report/DECISIONS.md) - UNLESS M25/D-73's
+    // escalation has lifted this for the match. Checked once here, ahead of
+    // the per-type shape checks below, so it applies uniformly.
+    if (game.currentRoll.boostSpentType && selectedVals.length === openVals.length && !boostsCanFinish()) return false;
     if (game.currentRoll.boostSpentType === 'oneForTwo') {
       return RULES.isValidOneForTwoSelection(selectedVals, game.currentRoll.dice);
     }
@@ -1265,7 +1294,7 @@
   // drives the explanatory message so Confirm being disabled isn't silent.
   function boostWholeRackBlocked() {
     if (!game.currentRoll || game.currentRoll.stalled || game.currentRoll.boostOfferPending) return false;
-    if (!game.currentRoll.boostSpentType) return false;
+    if (!game.currentRoll.boostSpentType || boostsCanFinish()) return false;
     var openVals = RULES.openValues(currentPlayer().rack);
     return game.selected.size === openVals.length;
   }
@@ -1405,7 +1434,11 @@
   // default instead of only ever getting it.
   function applicableBoostTypes(p, openVals, dice, total) {
     var types = [];
-    if (p.boosts.oneForTwo >= 1 && RULES.oneForTwoResolvable(openVals, dice)) types.push('oneForTwo');
+    // M25/D-73: once boosts-can-finish has triggered, a 1-for-2 that only
+    // resolves by closing the whole rack is now a real offer, not withheld
+    // (see oneForTwoResolvable's own comment) - overpay's anyLegalMoveExists
+    // under 'D' was already whole-rack-permissive, so it needs no change.
+    if (p.boosts.oneForTwo >= 1 && RULES.oneForTwoResolvable(openVals, dice, boostsCanFinish())) types.push('oneForTwo');
     if (p.boosts.overpay >= 1 && RULES.anyLegalMoveExists(openVals, total, 'D')) types.push('overpay');
     return types;
   }
@@ -1637,7 +1670,49 @@
     }
     advanceTurn();
     applyPendingSettingsAtLapStart();
+    advanceEndPhase();
     beginTurn();
+  }
+
+  // ---- M25/D-73: endgame escalation (anti-drag) ----
+  // Finished players are excluded (p.finished short-circuits true) -
+  // per D-73, removing a player from the active rotation can never
+  // un-qualify anyone still active, since qualification only depends on a
+  // player's own rack, never on who else is still playing.
+  function allActiveQualify() {
+    return game.players.every(function (p) {
+      return p.finished || RULES.qualifiesForEndPhase(RULES.openValues(p.rack));
+    });
+  }
+
+  // Called right after advanceTurn() (same point as applyPendingSettingsAtLapStart,
+  // for the same reason: game.turnIndex already reflects the NEW turn, so
+  // comparing it to firstActiveSeatIndex() here detects "a lap of the
+  // active rotation just completed"). Entry is silent (D-73) - only the two
+  // escalation steps below announce themselves, via game.endPhase.announce,
+  // read and cleared once by showTurnCardFor.
+  function advanceEndPhase() {
+    // Dominik's clarification (2026-10-12, see DECISIONS.md): this entire
+    // mechanism is inert for a Timer-mode match - it only ever applies when
+    // the player never turned Timer on for this match. timeChallenge is
+    // non-null for a Timer match's whole duration (the Timer setting is
+    // blocked-until-next-game, so this can't flip mid-match), making this a
+    // simple, stable, match-long gate.
+    if (game.timeChallenge) return;
+    if (!game.endPhase) {
+      if (allActiveQualify()) game.endPhase = { lapsElapsed: 0, boostsUnlocked: false, announce: null };
+      return;
+    }
+    if (game.turnIndex !== firstActiveSeatIndex()) return;
+    game.endPhase.lapsElapsed++;
+    if (game.endPhase.lapsElapsed === 2 && boostModeActive() && !game.endPhase.boostsUnlocked) {
+      game.endPhase.boostsUnlocked = true;
+      game.endPhase.announce = 'boosts';
+    }
+    if (game.endPhase.lapsElapsed === 4 && !game.timeChallenge) {
+      game.timeChallenge = { remainingMs: Math.max(30000, game.players.length * 10000) };
+      game.endPhase.announce = 'timer';
+    }
   }
 
   // ---- M14 brand pass: skins + player-accent colour ----

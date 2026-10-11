@@ -103,10 +103,34 @@
   // let a boost close it out), so this must use properSubsetSumExists, not
   // subsetSumExists - a die face that only resolves via every open tile
   // isn't a real offer. Only meaningful with two dice rolled; there is
-  // nothing to "ignore" with one.
-  function oneForTwoResolvable(openValues, dice) {
+  // nothing to "ignore" with one. M25/D-73's "boosts can finish" escalation
+  // lifts exactly this restriction (allowWholeRack true) once triggered -
+  // the offer then uses subsetSumExists instead, so a stall only resolvable
+  // by closing the whole rack is actually offered, not silently withheld
+  // while app.js's whole-rack confirm-time block (currentSelectionValid) has
+  // separately been lifted too.
+  function oneForTwoResolvable(openValues, dice, allowWholeRack) {
     if (dice.length < 2) return false;
-    return properSubsetSumExists(openValues, dice[0]) || properSubsetSumExists(openValues, dice[1]);
+    var check = allowWholeRack ? subsetSumExists : properSubsetSumExists;
+    return check(openValues, dice[0]) || check(openValues, dice[1]);
+  }
+
+  // M25/D-73: whether this rack could be shut by a SINGLE roll, evaluated
+  // against the die-mode the rack itself would force - not an abstract
+  // "is the sum reachable by two dice" check. A rack like {1,2,3,6} (every
+  // tile <=6, so single-die-forced per singleDieUnlocked) does NOT qualify
+  // even though 12 is a valid two-dice sum, because this player can no
+  // longer roll two dice. Checking the open-tile sum against the reachable
+  // range alone is sufficient for "closeable in one roll": selecting every
+  // open tile is always a legal exact-match move regardless of overpay mode
+  // (D-45 requires the whole-rack close to be exact under every mode), so a
+  // reachable roll total equal to the rack's own open-tile sum always
+  // resolves to a legal whole-rack-closing selection.
+  function qualifiesForEndPhase(openValues) {
+    if (openValues.length === 0) return false;
+    var total = sum(openValues);
+    var forcedSingleDie = openValues.every(function (v) { return v <= 6; });
+    return forcedSingleDie ? (total >= 1 && total <= 6) : (total >= 2 && total <= 12);
   }
 
   // Whether any legal move exists for this roll, under the given overpay
@@ -133,6 +157,7 @@
     isValidSelection: isValidSelection,
     isValidOneForTwoSelection: isValidOneForTwoSelection,
     oneForTwoResolvable: oneForTwoResolvable,
-    anyLegalMoveExists: anyLegalMoveExists
+    anyLegalMoveExists: anyLegalMoveExists,
+    qualifiesForEndPhase: qualifiesForEndPhase
   };
 })();

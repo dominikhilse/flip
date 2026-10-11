@@ -1611,10 +1611,20 @@ button.secondary:active { background: var(--bg-subtle); }
    the amber tone (same informational role as .chip) makes it read as
    "this is telling you something right now" without borrowing sand
    (system-chrome/active-control) or red (destructive-only). */
-#setup-midgame-banner {
+#setup-midgame-banner,
+#turncard-endphase-banner {
   color: var(--accent-amber-text);
   background: var(--accent-amber-bg);
   border: 1px dashed var(--accent-amber-border);
+}
+/* The turn card is otherwise fixed white/translucent on the player's own
+   colour background (see #screen-turncard's override block) - this banner
+   is a system notice, not identity chrome, so it keeps its own amber
+   tone rather than inheriting that override. Margin matches .menu-banner's
+   sibling spacing (margin-bottom) but also needs a top margin here, since
+   it follows the chrome row directly rather than another bordered box. */
+#turncard-endphase-banner {
+  margin: 0.75rem 1.25rem 0;
 }
 /* M15: dev tooling isn't destructive, so it no longer borrows
    --accent-danger (red is reserved for destructive actions) - same amber

@@ -1924,3 +1924,83 @@ rough in a few places and left real gaps - this entry records how those were rea
   Players' "Roster"/"Add player"/"Colour" all render as label-plus-line; the Language dropdown spans the
   full row width with no stray left inset now that its own label is gone, while Placement (which still
   has one) is unaffected. A full automated game completed cleanly with zero console errors.
+
+### 2026-10-12 — M25 built: endgame escalation (anti-drag), with the plan's own gaps resolved first
+
+M25 (§5, D-73) was reviewed before building - two real gaps were found and raised with Dominik rather
+than guessed past (AC9 contradicted the plan's own body text on placement modes; the +4-lap timer's
+interaction with the player's own M9 Timer setting was unaddressed). His answers, which this entry
+records since they resolve/narrow what's written in the plan itself:
+
+- **AC9 was wrong, not the body text.** "A real shut-the-box win during the end phase ends the match
+  immediately" only holds for `winner-only`. Confirmed: existing placement-mode rules are untouched by
+  this milestone - a finish during the end phase follows `checkGameEnd()` exactly as it already does
+  (immediate end for `winner-only`; `top-two`/`all-places` keep playing with the finisher removed from
+  rotation). **The end phase keeps counting laps for the remaining active players** - explicitly
+  confirmed, not left to inference.
+- **The whole mechanism is gated on Timer mode being off for the match, full stop - not addressed in the
+  plan at all.** "According to the idea the end game mechanism does not apply to the timer mode at all."
+  With Timer on: no qualifying-condition tracking, no entry, nothing. Without it: no-boost matches go
+  straight to "+4 laps → timer"; boost-on matches get "+2 laps → boosts can finish (until the end) → +4
+  laps → timer", exactly as originally specified. This fully resolves the coexistence question raised in
+  review (M9's Timer is a real production footer toggle, not dev-only) - since Timer mode is
+  blocked-until-next-game (already disabled mid-match in the UI), `game.timeChallenge === null` is a
+  simple, stable, match-long gate, checked first thing in `advanceEndPhase()`.
+- **The Settings Timer toggle stays off even while the escalation's own timer is visibly running** -
+  confirmed as intended, not a gap: "The timer toggle remains off, yes." `game.timeChallenge` (game
+  state) and `settings.timeChallengeSeconds` (the toggle's own persisted value) are already separate in
+  this codebase; the escalation only ever touches the former.
+
+**A finding from implementing the qualifying condition, worth flagging even though it doesn't block
+anything:** the "+2 laps - boosts can finish" step's practical effect on the **1-for-2** boost type is
+structurally unreachable in real (non-Dev-test) play. Two dice are only ever rolled when some open tile
+is >6 (`effectiveDiceCount`); that same tile then makes the whole-rack sum >6, which can never match a
+single die face (max 6) - the exact shape 1-for-2 needs to resolve via the whole rack. It's only
+reachable through the Dev-tab two-dice-force test toggle (the same technique the original D-48 bug
+report in this file used to reproduce its scenario). The **overpay** type has a parallel but different
+gap: a boost-spent whole-rack close must be exact (D-45), and if an exact whole-rack match existed the
+roll would never have been "stalled" under strict mode in the first place - so overpay is never even
+*offered* in the scenario where this restriction would matter. In short: **the +4-lap timer is the
+mechanism that actually guarantees a match ends**, exactly as the plan's own wording already says
+("layered aid... the timer is the actual guarantee") - +2 is real, correctly implemented, and will
+matter if the rack/dice shapes ever line up (confirmed working via the Dev-test two-dice path below),
+but won't be the thing that visibly saves most real drawn-out matches. Not treated as a stop condition
+since the plan already frames +2 as secondary - flagging so this isn't mistaken for a bug if boosts
+rarely seem to "unlock" anything in practice.
+
+**Implementation:**
+- `RULES.qualifiesForEndPhase(openValues)` (`rules.js`) - single-die-forced: sum∈[1,6]; else sum∈[2,12].
+  Sufficient for "closeable in one roll" without a separate overpay-mode branch, since selecting every
+  open tile is always a legal exact-match move regardless of overpay mode (D-45).
+- `game.endPhase` (null until triggered) - `{ lapsElapsed, boostsUnlocked, announce }`. Set/advanced in a
+  new `advanceEndPhase()`, called from `proceedAfterTurn()` right after `advanceTurn()`/
+  `applyPendingSettingsAtLapStart()` - lap-boundary detection reuses the exact same
+  `turnIndex === firstActiveSeatIndex()` check `applyPendingSettingsAtLapStart` already uses, so it
+  naturally adapts to a shrinking active roster with no extra logic.
+- D-48's whole-rack-boost restriction lifted in **two** places once `boostsUnlocked`, not one:
+  `currentSelectionValid`'s confirm-time block, and - easy to miss - `oneForTwoResolvable`'s own
+  offer-eligibility check (`rules.js`, now takes an `allowWholeRack` param, switching
+  `properSubsetSumExists` → `subsetSumExists`). Lifting only the confirm-time check would have left the
+  boost never actually *offered* in the one scenario it's meant to unlock.
+- Announcements ("Boosts can now finish the match!" / "The match is now on the clock!", 5 languages) are
+  per-match, not per-player - shown once, on whichever turn card is up when the step fires
+  (`#turncard-endphase-banner`, read-and-cleared by `showTurnCardFor`), not broadcast to every player
+  individually. Reuses `#setup-midgame-banner`'s amber "live status" tone. Entry into the end phase
+  itself is silent, per spec - only the two steps announce.
+- Timer duration: `player_count × 10s`, floored at 30s - used **total** player count, not just
+  currently-active (the plan says "players×10s" without specifying; total is the simpler, stable choice
+  and was not treated as needing a stop-and-ask).
+- **Verified** via a temporary `window.__debug` hook (removed before commit): `qualifiesForEndPhase`
+  unit-checked directly against both of the plan's own worked examples (`{1,2,3,6}` → false, `{1,2,3}` →
+  true) plus the two-dice range boundary (`{5,9}` → false, `{2,9}` → true); a full lap-by-lap trace
+  confirmed entry is silent, +2/+4 fire on schedule with the correct announce text, and the Settings
+  Timer toggle stays off throughout; the boost-on and boost-off paths both traced correctly (no-boost
+  skips straight to +4, confirmed over 8 laps with `boostsUnlocked` staying false); the Timer-mode gate
+  confirmed fully inert over 8 laps of a qualifying rack with Timer on; the lifted-restriction fix
+  verified as an actual legal move (not just a flag) via the Dev-test two-dice scenario - offered,
+  spent, and closed the whole rack only once unlocked, correctly still blocked and not even offered
+  before; the `all-places` mid-phase-finish case confirmed the match does NOT end and lap-counting
+  continues for the remaining active players, matching Dominik's clarification exactly. Three full
+  randomized automated games (boost-on/winner-only, boost-off/all-places, boost-on/top-two-with-timer)
+  completed cleanly. Zero console errors throughout. Debug hook stripped before commit (file diff
+  confirmed net-zero); dev-server port reverted to 8123.

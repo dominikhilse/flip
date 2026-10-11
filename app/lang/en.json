@@ -16,6 +16,8 @@
   "dialog.restartmatch.body": "Progress and boosts reset for everyone. This can't be undone.",
   "dialog.restartmatch.ok": "Restart match",
   "dialog.restartmatch.title": "Restart this match?",
+  "endphase.announce.boosts": "Boosts can now finish the match!",
+  "endphase.announce.timer": "The match is now on the clock!",
   "launch.cta": "Tap to start",
   "launch.permission": "We'll ask to use motion sensing, to keep your phone safely on the table during gameplay.",
   "launch.tagline": "Pass-and-play · 2–12 players",

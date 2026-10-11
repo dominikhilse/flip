@@ -16,6 +16,8 @@
   "dialog.restartmatch.body": "El progreso y los boosts se reinician para todos. Esta acción no se puede deshacer.",
   "dialog.restartmatch.ok": "Reiniciar partida",
   "dialog.restartmatch.title": "¿Reiniciar esta partida?",
+  "endphase.announce.boosts": "¡Los boosts ya pueden terminar la partida!",
+  "endphase.announce.timer": "¡La partida ahora corre contra el reloj!",
   "launch.cta": "Toca para empezar",
   "launch.permission": "Te pediremos usar los sensores de movimiento, para mantener tu teléfono seguro sobre la mesa durante la partida.",
   "launch.tagline": "Juego por turnos · 2-12 jugadores",

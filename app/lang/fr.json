@@ -16,6 +16,8 @@
   "dialog.restartmatch.body": "La progression et les boosts sont réinitialisés pour tout le monde. Action irréversible.",
   "dialog.restartmatch.ok": "Recommencer le match",
   "dialog.restartmatch.title": "Recommencer ce match ?",
+  "endphase.announce.boosts": "Les boosts peuvent maintenant terminer la partie !",
+  "endphase.announce.timer": "La partie est maintenant chronométrée !",
   "launch.cta": "Appuie pour commencer",
   "launch.permission": "Nous te demanderons d'utiliser les capteurs de mouvement, pour garder ton téléphone en sécurité sur la table pendant la partie.",
   "launch.tagline": "Jeu à tour de rôle · 2 à 12 joueurs",
