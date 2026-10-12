@@ -2155,3 +2155,42 @@ null/`'overpay'`/`'oneForTwo'`), so both types now trigger the flip identically.
 (dice forced via the Dev two-dice-test toggle, matching this project's standing technique for exercising
 that path) flipped `document.body`'s theme class from dark to light the instant `onBoostSpend` ran,
 confirmed both via direct state inspection and a screenshot. Zero console errors.
+
+### 2026-10-13 — GH #10 reopened: escalated overpay still didn't flip the Play-screen theme for a
+### single-tile rack - corrects a conclusion in the 2026-10-12 entry above
+
+Dominik pushed the GH #10/#11 fixes above and re-tested on production: "when overpay mode triggers during
+the end phase, it works but the theme doesn't flip" - specifically the **Play** screen, not the turn card
+(an initial hypothesis about the turn card's CSS-specificity theme-independence, raised and investigated
+first, was explicitly wrong per his correction - that's a separate, real, but unrelated fact about
+`#screen-turncard`'s fixed white token overrides).
+
+Root cause: `overpayFlipActive()`'s D-mode branch has always suppressed the flip whenever the current
+player has exactly one tile open - a carve-out reasoned (correctly, for *native* D mode) as "the last
+remaining tile is always exact-only, even under D, so flipping the theme for it would be misleading." The
+2026-10-12 entry above re-examined this exact carve-out while investigating GH #10's bug 2 and concluded it
+was "unchanged, correct, predates this milestone" - **that conclusion was wrong for the escalated case and
+is superseded by this entry.** The carve-out's premise - a lone open tile can only ever be closed by an
+exact match - stops holding the moment M25/D-73's `+2 laps` escalation fires: `overpayForced()` lifts
+D-45's whole-rack-exactness requirement for the rest of the match, so a single remaining tile becomes
+closeable by *any* roll `>= ` its value, not just an exact one. `overpayFlipActive()` was never updated to
+know about `overpayForced()`, so it kept suppressing the flip for exactly the players most likely to be in
+that state - and `qualifiesForEndPhase()`'s own entry condition tends to produce very small racks right as
+the phase fires, so a one-tile active player at that moment is a common case in real play, not a rare edge
+case. This is why Dominik's organic playtest hit it reliably while my own synthetic multi-tile-rack repro
+(run right before this fix) did not reproduce it - the bug only shows for a current player down to exactly
+one open tile, and I had initially tested with 3-tile racks throughout.
+
+Fixed: `overpayFlipActive()`'s D-mode branch now short-circuits on `overpayForced()` before checking rack
+length - `return overpayForced() || RULES.openValues(currentPlayer().rack).length !== 1;`. Native D mode
+(no escalation) is unaffected: the single-tile suppression still applies exactly as before.
+
+**Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated to 8417
+for the session, reverted to 8123 after). Reproduced precisely first: theme set to light, one player's rack
+forced to a single tile `[4]`, escalation driven to fire (`+2 laps`) - `bodyThemeLight` stayed `true` (bug)
+under the pre-fix code's logic (`length !== 1` is `false` for a 1-tile rack, so `showLight` stays at the
+player's own preference). Confirmed `false` (correctly inverted to dark) for that same player's Play screen
+after the fix, both via state inspection and a screenshot. Also ran three full automated games via a
+brute-force solver over `RULES.isValidSelection`/`isValidOneForTwoSelection` (varying placement mode and
+boost settings) to completion - one of them organically reached the `+2 laps` escalation without any forced
+racks - all three completed cleanly with zero console errors throughout.

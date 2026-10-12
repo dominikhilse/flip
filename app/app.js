@@ -195,13 +195,17 @@
   // actually available to the current player right now - which excludes
   // the one carve-out where it isn't: the last remaining tile is always
   // exact-only, even under D, so the flip momentarily drops while a player
-  // is down to that single tile. A spent boost is the one genuinely
-  // per-roll case - it relaxes only the roll it was spent on, so the flip
-  // tracks it for exactly that long.
+  // is down to that single tile. GH #10/#11 follow-up (2026-10-13): that
+  // carve-out assumes D-45's whole-rack-exactness rule still applies -
+  // once M25/D-73's endgame escalation has force-switched the table and
+  // lifted it (overpayForced()), the last tile is no longer exact-only
+  // either, so the single-tile suppression must not apply anymore. A spent
+  // boost is the one genuinely per-roll case - it relaxes only the roll it
+  // was spent on, so the flip tracks it for exactly that long.
   function overpayFlipActive() {
     if (!game) return false;
     if (game.overpayMode === 'D') {
-      return RULES.openValues(currentPlayer().rack).length !== 1;
+      return overpayForced() || RULES.openValues(currentPlayer().rack).length !== 1;
     }
     // GH #11: any spent boost signals "doing something against the normal
     // rules," not just overpay specifically - 1-for-2 is just as much a
