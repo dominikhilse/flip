@@ -2027,3 +2027,69 @@ hands (same class of constant as `restToFlipDelayMs`/`diceAnimationDurationMs` -
   avatar button: the grid opened by 350ms elapsed (past the new threshold) and had NOT opened at 200ms
   (before it) - confirming the shorter value is genuinely respected, not just displayed. Zero console
   errors.
+
+### 2026-10-12 — M25's +2-laps step redesigned: force-switch to overpay mode, not a boost unlock
+
+**Supersedes the +2-laps half of the "M25 built" entry above (2026-10-12).** The +4-laps timer step is
+unchanged. Prompted by Dominik's own question ("can I test overpay ending the game?") after that entry
+flagged 1-for-2's unlock as practically unreachable - working through the answer surfaced that **overpay
+was never reachable either, for a stronger reason** (not just practically, but logically): a boost-spent
+whole-rack close must be exact (D-45), and an exact whole-rack match is, by definition, not a "stall" -
+so the boost offer (gated on `stalled`) never even appears for that case. Reported this plainly; Dominik's
+response was to redesign the step rather than patch around it.
+
+**The new design, confirmed in conversation:**
+- **+2 laps is now unconditional** - not gated on `boostEnabled`, not tied to any player holding a
+  specific boost. It **force-switches the whole table's `overpayMode` to `'D'`** and **lifts D-45's
+  whole-rack-must-be-exact requirement** for the rest of the match (one-way, same as the original design's
+  "never reset" framing). "Lifting D-45" was Dominik's own phrase, confirmed to mean literally that - a
+  whole-rack selection is now just treated like any other D-mode selection (`sum <= total`), not forced to
+  `sum === total`.
+- **Boosts stop mattering as a side effect, confirmed as the intended trade-off** (asked directly, since
+  `boostModeActive()` hard-requires `overpayMode === 'A'`): once the table flips to `'D'`, boost offers,
+  spending, and the chip UI all stop - even for a player sitting on unspent boosts. Dominik: "Yes, boosts
+  stop mattering... once the table is in D mode, overpay's own permissiveness... is strictly more powerful
+  than what a boost offered anyway." No new code needed for this - `boostModeActive()`'s existing
+  definition already produces it, and every boost-UI render path already gates on that same function.
+- **The visual signal is D-34's existing theme-inversion mechanic, triggered for free.** Dominik: "We have
+  it available in code, just need to trigger it and with it the inverted theme state." D-34's predicate
+  (`mode D active AND current player has >1 tile open`) fires automatically the instant `game.overpayMode`
+  becomes `'D'` - confirmed live (screenshot: dark -> light flip, "Roll" button ink inverted, the instant a
+  player with >1 open tile reached the Play screen after the switch). No separate trigger was written.
+- **Announcement reframed from "boosts can now finish" to naming the mode switch itself**
+  (`endphase.announce.overpay`, replacing the removed `endphase.announce.boosts` key) - "Overpay mode is on
+  - any roll can finish the match now!", `{mode}` reusing the existing `boost.overpay.name` translation
+  rather than hand-translating "Overpay" a second time.
+
+**Reverted from the superseded design** (now dead code once a table reaches +2, since `boostModeActive()`
+going false makes the boost-spent code path unreachable from then on): `oneForTwoResolvable`'s
+`allowWholeRack` parameter (back to always using `properSubsetSumExists`); `applicableBoostTypes`'s call
+site; the `boostsCanFinish()`/whole-rack bypass in `currentSelectionValid` and `boostWholeRackBlocked`.
+D-48 (boosts may never close the whole rack, even exact) is **never lifted** under the new design - it
+simply stops being reachable once `'D'` is forced, same as it always was outside boost mode.
+
+**New plumbing:** `RULES.isValidSelection` gained a 5th param, `allowInexactWholeRack` - when true, the
+whole-rack branch is skipped entirely and a whole-rack selection is checked identically to a partial one
+(`sum <= total`). Threaded through from `game.endPhase.overpayForced` via a renamed `overpayForced()`
+helper (was `boostsCanFinish()`). `wholeRackOverpayBlocked()` (the UI message explaining why Confirm is
+disabled) now also checks `overpayForced()` so the message stops appearing once lifted.
+`applyPendingSettingsAtLapStart()` re-forces `overpayMode` back to `'D'` immediately after applying any
+pending Rules change, in case a player queues a change back to `'A'` mid-match after the force-switch
+already fired - the escalation's one-way guarantee would otherwise be undoable through an unrelated
+Settings path.
+
+**Verified** via a temporary `window.__debug` hook (removed before commit; `RULES.isValidSelection`
+exposed directly for unit checks): the whole-rack-exactness lift confirmed both ways (`allowInexact=false`
+→ still blocked, `allowInexact=true` → allowed, exact-match unaffected either way, partial selections
+always `sum<=total` regardless); **a real, fully organic move verified end-to-end** - rack `[2,3]` (sum 5,
+single-die forced, no Dev-forcing needed this time), rolled a genuine single die showing 6, selected the
+whole rack, confirmed, rack closed - proving the fix is actually reachable in ordinary play, unlike the
+superseded design; the inverse confirmed too (same exact scenario, native `overpayMode:'D'` chosen
+manually with no escalation ever triggered - whole-rack selection correctly still invalid, D-45 intact for
+non-escalated games); `+2` confirmed firing with `boostEnabled:false` the whole match (was previously the
+gating condition, now irrelevant); boost chips confirmed present before the flip and gone after, even with
+unspent boosts still held; the `all-places` mid-phase-finish continuation re-verified unaffected by the
+rewrite; three full randomized automated games (including one started in native `'D'` with no escalation
+at all) completed cleanly; the German announcement spot-checked live, correctly interpolating `{mode}` as
+"Überschuss". Zero console errors throughout. Debug hook stripped before commit; dev-server port reverted
+to 8123.

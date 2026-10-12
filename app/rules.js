@@ -68,18 +68,24 @@
   // Whether a selection of open-tile values is a legal move under the given
   // overpay mode (§3.5). openValues are the player's open tiles BEFORE this
   // move, used only to detect a selection that would shut the whole rack.
-  function isValidSelection(openValues, selectedValues, total, overpayMode) {
+  // allowInexactWholeRack (M25/D-73, revised 2026-10-12): once the endgame
+  // escalation's +2-laps step has fired, D-45's whole-rack-must-be-exact
+  // rule is lifted for the rest of the match - a whole-rack selection is
+  // then just treated like any other D-mode selection (sum <= total).
+  function isValidSelection(openValues, selectedValues, total, overpayMode, allowInexactWholeRack) {
     if (selectedValues.length === 0) return false;
     var selectedSum = sum(selectedValues);
     if (overpayMode !== 'D') return selectedSum === total;
     // D: any subset summing to <= total is legal, except a selection that
     // shuts the whole rack (selects every currently open tile), which must
     // still be paid exactly (mandatory exception established in testing -
-    // overpay may not finish the game, or the endgame loses all tension).
-    // This is a property of the MOVE, not of the rack size: closing the
-    // last two tiles at once via a big overpaid roll is exactly as
-    // tension-free as closing a literal last single tile would be.
-    if (selectedValues.length === openValues.length) return selectedSum === total;
+    // overpay may not finish the game, or the endgame loses all tension) -
+    // UNLESS allowInexactWholeRack lifts it (the match has dragged on long
+    // enough that tension is no longer the point). This is a property of
+    // the MOVE, not of the rack size: closing the last two tiles at once
+    // via a big overpaid roll is exactly as tension-free as closing a
+    // literal last single tile would be.
+    if (selectedValues.length === openValues.length && !allowInexactWholeRack) return selectedSum === total;
     return selectedSum <= total;
   }
 
@@ -103,16 +109,13 @@
   // let a boost close it out), so this must use properSubsetSumExists, not
   // subsetSumExists - a die face that only resolves via every open tile
   // isn't a real offer. Only meaningful with two dice rolled; there is
-  // nothing to "ignore" with one. M25/D-73's "boosts can finish" escalation
-  // lifts exactly this restriction (allowWholeRack true) once triggered -
-  // the offer then uses subsetSumExists instead, so a stall only resolvable
-  // by closing the whole rack is actually offered, not silently withheld
-  // while app.js's whole-rack confirm-time block (currentSelectionValid) has
-  // separately been lifted too.
-  function oneForTwoResolvable(openValues, dice, allowWholeRack) {
+  // nothing to "ignore" with one. D-48 (boosts may never close the whole
+  // rack) is never lifted - see app.js's DECISIONS.md note on why the
+  // M25/D-73 escalation now force-switches the table to native overpay
+  // instead of relaxing boost-specific rules.
+  function oneForTwoResolvable(openValues, dice) {
     if (dice.length < 2) return false;
-    var check = allowWholeRack ? subsetSumExists : properSubsetSumExists;
-    return check(openValues, dice[0]) || check(openValues, dice[1]);
+    return properSubsetSumExists(openValues, dice[0]) || properSubsetSumExists(openValues, dice[1]);
   }
 
   // M25/D-73: whether this rack could be shut by a SINGLE roll, evaluated

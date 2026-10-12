@@ -867,6 +867,10 @@
     if (!game.pendingSettings) return;
     if (game.turnIndex !== firstActiveSeatIndex()) return;
     Object.assign(game, game.pendingSettings.changes);
+    // M25/D-73: the endgame escalation's +2-laps overpay force is one-way -
+    // a queued Rules change (overpayMode back to 'A', say) must not be able
+    // to undo it.
+    if (game.endPhase && game.endPhase.overpayForced) game.overpayMode = 'D';
     game.pendingSettings = null;
   }
 
@@ -1057,7 +1061,11 @@
     // turn card. Entry into the end phase itself is silent (no banner) -
     // only the two escalation steps announce.
     if (game.endPhase && game.endPhase.announce) {
-      turncardEndPhaseBannerEl.textContent = I18N.t('endphase.announce.' + game.endPhase.announce);
+      // {mode} reuses the existing boost.overpay.name translation (ignored,
+      // harmless, for the 'timer' key which has no such slot).
+      turncardEndPhaseBannerEl.textContent = I18N.t('endphase.announce.' + game.endPhase.announce, {
+        mode: I18N.t('boost.overpay.name')
+      });
       turncardEndPhaseBannerEl.hidden = false;
       game.endPhase.announce = null;
     } else {
@@ -1279,8 +1287,12 @@
   // "a boost-spent move may never close the whole rack" restriction - true
   // from the moment the +2-laps step fires, for the rest of the match
   // (one-way, never reset - see advanceEndPhase).
-  function boostsCanFinish() {
-    return !!(game.endPhase && game.endPhase.boostsUnlocked);
+  // M25/D-73 (revised 2026-10-12 - see DECISIONS.md): whether this match's
+  // endgame escalation has force-switched the table to overpayMode 'D' and
+  // lifted D-45's whole-rack-exactness requirement - true from the moment
+  // the +2-laps step fires, for the rest of the match (one-way).
+  function overpayForced() {
+    return !!(game.endPhase && game.endPhase.overpayForced);
   }
 
   // The single validity check for the current selection, covering all
@@ -1295,15 +1307,18 @@
     var openVals = RULES.openValues(p.rack);
     // A boost-spent move (either type) may never be the move that shuts the
     // whole rack, even on an exact match - the game must not be completed
-    // with a boost (real-device report/DECISIONS.md) - UNLESS M25/D-73's
-    // escalation has lifted this for the match. Checked once here, ahead of
-    // the per-type shape checks below, so it applies uniformly.
-    if (game.currentRoll.boostSpentType && selectedVals.length === openVals.length && !boostsCanFinish()) return false;
+    // with a boost (real-device report/DECISIONS.md). Unconditional - once
+    // the endgame escalation reaches +2 laps it force-switches the whole
+    // table to 'D' instead (overpayForced below), which makes boostModeActive()
+    // false and this branch unreachable from then on; D-48 itself is never
+    // lifted anymore (see DECISIONS.md for why the original "lift D-48"
+    // design was replaced).
+    if (game.currentRoll.boostSpentType && selectedVals.length === openVals.length) return false;
     if (game.currentRoll.boostSpentType === 'oneForTwo') {
       return RULES.isValidOneForTwoSelection(selectedVals, game.currentRoll.dice);
     }
     var effectiveMode = game.currentRoll.boostSpentType === 'overpay' ? 'D' : game.overpayMode;
-    return RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, effectiveMode);
+    return RULES.isValidSelection(openVals, selectedVals, game.currentRoll.total, effectiveMode, overpayForced());
   }
 
   // Whether the current selection is blocked specifically because it's a
@@ -1311,7 +1326,7 @@
   // drives the explanatory message so Confirm being disabled isn't silent.
   function boostWholeRackBlocked() {
     if (!game.currentRoll || game.currentRoll.stalled || game.currentRoll.boostOfferPending) return false;
-    if (!game.currentRoll.boostSpentType || boostsCanFinish()) return false;
+    if (!game.currentRoll.boostSpentType) return false;
     var openVals = RULES.openValues(currentPlayer().rack);
     return game.selected.size === openVals.length;
   }
@@ -1321,10 +1336,12 @@
   // rack) with an inexact sum. With only one tile open there's nothing to
   // exclude - that case is just a plain mismatch, same as strict play, so
   // it's not called out here. A spent 1-for-2 is never this case - it's
-  // always an exact match to a die face, so it can never "overpay".
+  // always an exact match to a die face, so it can never "overpay". M25/
+  // D-73: never blocked once the endgame escalation has lifted D-45 for
+  // this match (overpayForced) - an inexact whole-rack close is legal then.
   function wholeRackOverpayBlocked() {
     if (!game.currentRoll || game.currentRoll.stalled || game.currentRoll.boostOfferPending) return false;
-    if (game.currentRoll.boostSpentType === 'oneForTwo') return false;
+    if (game.currentRoll.boostSpentType === 'oneForTwo' || overpayForced()) return false;
     var effectiveMode = game.currentRoll.boostSpentType === 'overpay' ? 'D' : game.overpayMode;
     if (effectiveMode !== 'D') return false;
     var openVals = RULES.openValues(currentPlayer().rack);
@@ -1451,11 +1468,7 @@
   // default instead of only ever getting it.
   function applicableBoostTypes(p, openVals, dice, total) {
     var types = [];
-    // M25/D-73: once boosts-can-finish has triggered, a 1-for-2 that only
-    // resolves by closing the whole rack is now a real offer, not withheld
-    // (see oneForTwoResolvable's own comment) - overpay's anyLegalMoveExists
-    // under 'D' was already whole-rack-permissive, so it needs no change.
-    if (p.boosts.oneForTwo >= 1 && RULES.oneForTwoResolvable(openVals, dice, boostsCanFinish())) types.push('oneForTwo');
+    if (p.boosts.oneForTwo >= 1 && RULES.oneForTwoResolvable(openVals, dice)) types.push('oneForTwo');
     if (p.boosts.overpay >= 1 && RULES.anyLegalMoveExists(openVals, total, 'D')) types.push('overpay');
     return types;
   }
@@ -1717,14 +1730,22 @@
     // simple, stable, match-long gate.
     if (game.timeChallenge) return;
     if (!game.endPhase) {
-      if (allActiveQualify()) game.endPhase = { lapsElapsed: 0, boostsUnlocked: false, announce: null };
+      if (allActiveQualify()) game.endPhase = { lapsElapsed: 0, overpayForced: false, announce: null };
       return;
     }
     if (game.turnIndex !== firstActiveSeatIndex()) return;
     game.endPhase.lapsElapsed++;
-    if (game.endPhase.lapsElapsed === 2 && boostModeActive() && !game.endPhase.boostsUnlocked) {
-      game.endPhase.boostsUnlocked = true;
-      game.endPhase.announce = 'boosts';
+    // +2 laps (revised 2026-10-12, see DECISIONS.md): unconditional, not
+    // tied to boostEnabled or to any individual player holding a boost -
+    // force-switches the whole table to overpayMode 'D' and lifts D-45's
+    // whole-rack-exactness requirement (the `true` arg threaded through
+    // currentSelectionValid/wholeRackOverpayBlocked via overpayForced()).
+    // D-34's existing theme-inversion signal fires automatically the
+    // moment overpayMode becomes 'D' - no separate trigger needed here.
+    if (game.endPhase.lapsElapsed === 2 && !game.endPhase.overpayForced) {
+      game.endPhase.overpayForced = true;
+      game.overpayMode = 'D';
+      game.endPhase.announce = 'overpay';
     }
     if (game.endPhase.lapsElapsed === 4 && !game.timeChallenge) {
       game.timeChallenge = { remainingMs: Math.max(30000, game.players.length * 10000) };
