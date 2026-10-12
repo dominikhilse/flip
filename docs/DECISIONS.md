@@ -2093,3 +2093,65 @@ rewrite; three full randomized automated games (including one started in native 
 at all) completed cleanly; the German announcement spot-checked live, correctly interpolating `{mode}` as
 "Überschuss". Zero console errors throughout. Debug hook stripped before commit; dev-server port reverted
 to 8123.
+
+### 2026-10-12 — GH #10: two real bugs in the M25 overpay force-switch, both found and fixed
+
+Dominik's real-device report described the +2-laps step as "all there and somewhat working (technically),
+but all mixed up and not triggered correctly" across a match and its rematch. Investigated by reproducing
+each symptom directly rather than guessing - found **two separate, confirmed bugs**, not one.
+
+**Bug 1 - `restartMatch()` never reset `game.overpayMode`.** `startNewGame()` correctly initialises
+`game.overpayMode` from `settings.overpayMode`; `restartMatch()` resets `timeChallenge`, `endPhase`, every
+player's boosts, etc., but never touched `overpayMode` - so a match that had escalated to `'D'` carried
+that straight into the rematch, exactly matching the report ("upon rematch, overpay... was active... when
+it should be disabled again"). Fixed: `game.overpayMode = settings.overpayMode;` added alongside the other
+resets, re-deriving from the same source `startNewGame()` uses - **not** a hardcoded `'A'`, so a match
+deliberately started in native `D` correctly stays in `D` on restart; only the escalation's own override is
+undone. Verified both directions: an escalated match's rematch now starts in `'A'`; a match manually started
+in `'D'` (no escalation involved) stays in `'D'` after a mid-match restart.
+
+**Bug 2 - a single-remaining-tile player could never actually use the lifted rule, even though it was
+correctly lifted underneath.** This is the one that explains "overpay mode was correctly announced, but not
+actually active" in the *first* match, no rematch involved - and it needed live testing to find, not just a
+code read. `RULES.isValidSelection` was correctly updated (previous entry) to accept `allowInexactWholeRack`,
+but **stall detection runs through a separate function, `RULES.anyLegalMoveExists`, which was never given
+the same parameter.** For a rack down to exactly one tile, that function's `openValues.length === 1` branch
+*is* the whole-rack question (the one tile is the whole rack) - and it still hard-required an exact match,
+so a player down to one tile after the escalation got marked `stalled` on anything but an exact roll and
+never even reached a Confirm button, regardless of what `isValidSelection` would have allowed had they been
+able to select something. **This is also the likely full explanation for the "visual overlay didn't trigger"
+half of the same report**, without needing a separate bug: `qualifiesForEndPhase`'s own condition tends to
+produce very small racks right as the phase entry condition is met, so by the time `+2 laps` actually fires
+it's entirely plausible every active player is down to exactly one tile - and D-34's own pre-existing
+`>1 tile open` carve-out (unchanged, correct, predates this milestone) means the theme genuinely does not
+invert for a one-tile player, exactly as designed. Reproduced precisely: rack `[3]`, escalation fired, rolled
+a single die showing `5` (not exact) - `stalled` was `true` before the fix, `false` after, and the tile
+correctly closed via `onConfirm` once fixed. Threaded through the one call site that matters
+(`onRoll`'s stall check, now passing `overpayForced()`) - the other two `anyLegalMoveExists` call sites
+(the boost-offer eligibility check, the dry-streak roll-history check) are both unaffected: boost offers
+can never fire once `overpayForced` is true anyway (same reasoning as the previous entry), and the
+dry-streak check is hardcoded to `'A'`, never reaching the `'D'` branch at all.
+
+**Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated twice -
+the standing browser-HTTP-cache issue showed up again and needed a full tab close/reopen, not just a
+reload, to actually clear): both bugs reproduced before the fix and confirmed resolved after, on a freshly
+loaded origin to rule out stale state; four full randomized automated games across different
+boost/placement/overpay-mode combinations completed cleanly; zero console errors throughout.
+
+### 2026-10-12 — GH #11: 1-for-2 now triggers the same theme-inversion signal as overpay
+
+Straightforward, per the issue: `overpayFlipActive()`'s boost-in-progress branch only checked
+`boostSpentType === 'overpay'`, deliberately excluding 1-for-2 at the time (the comment reasoned 1-for-2 is
+"always exact, never relaxed, so it doesn't trigger the signal"). Dominik's ask reframes the signal's
+actual purpose: it's not specifically about overpay, it's "you are doing something against the normal
+rules" - and spending any boost qualifies, 1-for-2 included (it still bypasses strict validation, just via
+a different mechanism - matching a die face instead of the total, rather than relaxing the sum). **This is
+an explicit, confirmed revision of D-34's locked predicate** (`... OR a boost overpay move in progress` →
+now any boost-spent move), not a bug fix - flagging per the usual "reinterprets a locked rule" bar. Changed
+`boostSpentType === 'overpay'` to a bare truthiness check on `boostSpentType` (only ever
+null/`'overpay'`/`'oneForTwo'`), so both types now trigger the flip identically.
+
+**Verified** via the same debug session as GH #10's fix: a 1-for-2 offer spent on a genuinely stalled roll
+(dice forced via the Dev two-dice-test toggle, matching this project's standing technique for exercising
+that path) flipped `document.body`'s theme class from dark to light the instant `onBoostSpend` ran,
+confirmed both via direct state inspection and a screenshot. Zero console errors.

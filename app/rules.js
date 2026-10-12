@@ -137,14 +137,20 @@
   }
 
   // Whether any legal move exists for this roll, under the given overpay
-  // mode - drives stall detection.
-  function anyLegalMoveExists(openValues, total, overpayMode) {
+  // mode - drives stall detection. GH #10: with exactly one tile open, that
+  // tile IS the whole rack, so this is the one branch where "any legal
+  // move" and "the whole-rack close" are the same question -
+  // allowInexactWholeRack (M25/D-73) must reach it the same way it reaches
+  // isValidSelection's whole-rack branch, or a single-tile player whose
+  // match has escalated past D-45 gets wrongly marked stalled and never
+  // even reaches a Confirm button to use the lifted rule. With more than
+  // one tile open this distinction doesn't apply - a single open tile
+  // already being <= total is always a legal PARTIAL (non-whole-rack) move
+  // regardless of D-45, so that branch is unaffected.
+  function anyLegalMoveExists(openValues, total, overpayMode, allowInexactWholeRack) {
     if (overpayMode !== 'D') return subsetSumExists(openValues, total);
     if (openValues.length === 0) return true;
-    if (openValues.length === 1) return openValues[0] === total;
-    // With more than one tile open, a single open tile is the smallest
-    // possible non-empty selection; if even that clears <= total, a legal
-    // (non-rack-closing) move exists.
+    if (openValues.length === 1) return allowInexactWholeRack ? openValues[0] <= total : openValues[0] === total;
     return openValues.some(function (v) { return v <= total; });
   }
 

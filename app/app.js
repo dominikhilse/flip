@@ -203,10 +203,12 @@
     if (game.overpayMode === 'D') {
       return RULES.openValues(currentPlayer().rack).length !== 1;
     }
-    // 1-for-2 is never "overpay" in the rules sense - always an exact
-    // match, never a relaxed/wasteful one - so it doesn't trigger the
-    // signal, only a spent overpay boost does.
-    return !!(game.currentRoll && game.currentRoll.boostSpentType === 'overpay');
+    // GH #11: any spent boost signals "doing something against the normal
+    // rules," not just overpay specifically - 1-for-2 is just as much a
+    // relaxation (matching a single die face instead of the total) as
+    // overpay is. boostSpentType is only ever null/'overpay'/'oneForTwo',
+    // so a bare truthiness check covers both types directly.
+    return !!(game.currentRoll && game.currentRoll.boostSpentType);
   }
 
   // Theme is purely cosmetic (never stored on `game`) but doubles as the
@@ -1009,6 +1011,14 @@
       ? { remainingMs: settings.timeChallengeSeconds * 1000 }
       : null;
     game.endPhase = null;
+    // GH #10: the M25 escalation can force game.overpayMode to 'D' mid-
+    // match (advanceEndPhase) - that's a per-match-instance anti-drag
+    // state, not part of "every setting the live game was started with"
+    // (the comment above this function), so a restart must not carry it
+    // over. Re-derives from settings.overpayMode, same source startNewGame
+    // uses, not a hardcoded 'A' - a match deliberately started in native D
+    // stays in D on restart, only the escalation's own override is undone.
+    game.overpayMode = settings.overpayMode;
     beginTurn();
   }
 
@@ -1524,7 +1534,11 @@
     var dice = RULES.rollDice(effectiveDiceCount(p));
     var total = RULES.sum(dice);
     var openVals = RULES.openValues(p.rack);
-    var stalled = !RULES.anyLegalMoveExists(openVals, total, game.overpayMode);
+    // GH #10: the single-tile branch of anyLegalMoveExists IS the whole-
+    // rack question (see its own comment) - must see the same escalation
+    // lift isValidSelection does, or a single-tile player never reaches a
+    // confirmable move at all once the match has escalated past D-45.
+    var stalled = !RULES.anyLegalMoveExists(openVals, total, game.overpayMode, overpayForced());
 
     if (boostModeActive()) {
       var strictlyLegal = RULES.anyLegalMoveExists(openVals, total, 'A');
