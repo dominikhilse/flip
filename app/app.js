@@ -72,6 +72,9 @@
   var devDiceChoiceToggleEl = document.getElementById('dev-dice-choice-toggle');
   var devDiceAnimInputEl = document.getElementById('dev-dice-anim-input');
   var devAvatarHoldInputEl = document.getElementById('dev-avatar-hold-input');
+  var devConfettiCountInputEl = document.getElementById('dev-confetti-count-input');
+  var devConfettiSpeedMinInputEl = document.getElementById('dev-confetti-speed-min-input');
+  var devConfettiSpeedMaxInputEl = document.getElementById('dev-confetti-speed-max-input');
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleGroupEl = document.getElementById('theme-toggle-group');
@@ -534,6 +537,18 @@
     if (document.activeElement !== devAvatarHoldInputEl) {
       devAvatarHoldInputEl.value = CONFIG.avatarLongPressMs;
     }
+    // M26/D-74: same live-tune pattern, same focus guard (one per input,
+    // each guarded independently so editing one doesn't clobber the other
+    // mid-keystroke).
+    if (document.activeElement !== devConfettiCountInputEl) {
+      devConfettiCountInputEl.value = CONFIG.confettiParticleCount;
+    }
+    if (document.activeElement !== devConfettiSpeedMinInputEl) {
+      devConfettiSpeedMinInputEl.value = CONFIG.confettiSpeedMinPxPerSec;
+    }
+    if (document.activeElement !== devConfettiSpeedMaxInputEl) {
+      devConfettiSpeedMaxInputEl.value = CONFIG.confettiSpeedMaxPxPerSec;
+    }
   }
 
   function renderPrimaryAction() {
@@ -702,6 +717,28 @@
     var raw = parseInt(devAvatarHoldInputEl.value, 10);
     if (!Number.isFinite(raw) || raw < 0) return;
     CONFIG.avatarLongPressMs = raw;
+  });
+
+  // M26/D-74: live confetti particle count + speed range - fireConfetti()
+  // reads CONFIG fresh on every fire, nothing to "Set" or persist, same
+  // pattern as the two inputs above. Count is hard-clamped to
+  // confettiParticleCountMax here (not just the input's own max="150",
+  // which a typed value can still exceed) - the spec calls for a real
+  // upper limit, not just a UI hint.
+  devConfettiCountInputEl.addEventListener('input', function () {
+    var raw = parseInt(devConfettiCountInputEl.value, 10);
+    if (!Number.isFinite(raw) || raw < 0) return;
+    CONFIG.confettiParticleCount = Math.min(raw, CONFIG.confettiParticleCountMax);
+  });
+  devConfettiSpeedMinInputEl.addEventListener('input', function () {
+    var raw = parseInt(devConfettiSpeedMinInputEl.value, 10);
+    if (!Number.isFinite(raw) || raw < 1) return;
+    CONFIG.confettiSpeedMinPxPerSec = raw;
+  });
+  devConfettiSpeedMaxInputEl.addEventListener('input', function () {
+    var raw = parseInt(devConfettiSpeedMaxInputEl.value, 10);
+    if (!Number.isFinite(raw) || raw < 1) return;
+    CONFIG.confettiSpeedMaxPxPerSec = raw;
   });
 
   // Guarded (M11, D-51): a match is always live whenever this button is
@@ -2412,9 +2449,6 @@
     return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
-  var CONFETTI_BURST_COUNT = 36;
-  var CONFETTI_RAIN_COUNT = 24;
-
   function spawnConfettiLayer(modifierClass) {
     var layer = document.createElement('div');
     layer.className = 'confetti-layer ' + modifierClass;
@@ -2422,13 +2456,29 @@
     return layer;
   }
 
+  // Each piece picks its own random speed (px/s) from CONFIG's Dev-tunable
+  // range and divides its own travel distance by it, so a piece that
+  // travels further takes proportionally longer rather than visually
+  // "teleporting" - a real velocity, not a fixed duration regardless of
+  // distance (see config.js's confettiSpeed Min/MaxPxPerSec comment for
+  // why: the original fixed-duration version read as way too fast on a
+  // real device). Reads CONFIG fresh every call, not cached.
+  function confettiDurationMs(distancePx) {
+    var lo = Math.min(CONFIG.confettiSpeedMinPxPerSec, CONFIG.confettiSpeedMaxPxPerSec);
+    var hi = Math.max(CONFIG.confettiSpeedMinPxPerSec, CONFIG.confettiSpeedMaxPxPerSec);
+    var speed = lo + Math.random() * (hi - lo);
+    var ms = (distancePx / Math.max(1, speed)) * 1000;
+    return Math.max(200, Math.min(6000, Math.round(ms)));
+  }
+
   // left/top are the particle's CSS spawn point (px, viewport coords); mx/my
   // is the offset reached at the animation's midpoint (the outward "pop" for
   // a burst particle, a partial fall for a rain particle); ex/ey is the
-  // offset at animation end. `remaining` is a shared {count} for the whole
-  // layer - the layer's own empty wrapper div is removed once every particle
-  // inside it has removed itself (self-cleaning, no orphaned nodes left for
-  // a rematch to stack onto - see D-74).
+  // offset at animation end - its magnitude is also this particle's travel
+  // distance, feeding confettiDurationMs above. `remaining` is a shared
+  // {count} for the whole layer - the layer's own empty wrapper div is
+  // removed once every particle inside it has removed itself (self-
+  // cleaning, no orphaned nodes left for a rematch to stack onto - D-74).
   function addConfettiParticle(layer, left, top, mx, my, ex, ey, remaining) {
     var piece = document.createElement('div');
     piece.className = 'confetti-piece';
@@ -2441,7 +2491,7 @@
     piece.style.setProperty('--ey', ey + 'px');
     piece.style.setProperty('--rx', ((Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540)) + 'deg');
     piece.style.setProperty('--rz', ((Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540)) + 'deg');
-    piece.style.animationDuration = Math.round(1100 + Math.random() * 600) + 'ms';
+    piece.style.animationDuration = confettiDurationMs(Math.sqrt(ex * ex + ey * ey)) + 'ms';
     piece.style.animationDelay = Math.round(Math.random() * 250) + 'ms';
     piece.addEventListener('animationend', function () {
       piece.remove();
@@ -2465,13 +2515,21 @@
     var originY = rect.top + rect.height / 2;
     var vh = window.innerHeight;
 
+    // M26/D-74: Dev-tunable total (see config.js), hard-capped regardless
+    // of what's configured, split ~60/40 burst/rain - the same ratio as
+    // the original fixed 36/24.
+    var total = Math.min(CONFIG.confettiParticleCountMax, Math.max(0, Math.round(CONFIG.confettiParticleCount)));
+    var burstCount = Math.round(total * 0.6);
+    var rainCount = total - burstCount;
+
     // Burst (behind the winner, z-index below - see .confetti-layer--burst):
     // explodes outward in a random direction, then falls/tumbles the rest
     // of the way off the bottom of the screen regardless of that initial
     // direction (a constant downward "gravity" term swamps any upward pop).
     var burstLayer = spawnConfettiLayer('confetti-layer--burst');
-    var burstRemaining = { count: CONFETTI_BURST_COUNT };
-    for (var i = 0; i < CONFETTI_BURST_COUNT; i++) {
+    if (burstCount === 0) { burstLayer.remove(); }
+    var burstRemaining = { count: burstCount };
+    for (var i = 0; i < burstCount; i++) {
       var angle = Math.random() * Math.PI * 2;
       var dist = 50 + Math.random() * 90;
       var mx = Math.cos(angle) * dist;
@@ -2486,9 +2544,10 @@
     // .confetti-layer--rain): spawns off the top edge in a band roughly
     // centered on the winner's x, tumbles straight down past them.
     var rainLayer = spawnConfettiLayer('confetti-layer--rain');
-    var rainRemaining = { count: CONFETTI_RAIN_COUNT };
+    if (rainCount === 0) { rainLayer.remove(); }
+    var rainRemaining = { count: rainCount };
     var rainTop = -20;
-    for (var j = 0; j < CONFETTI_RAIN_COUNT; j++) {
+    for (var j = 0; j < rainCount; j++) {
       var rainLeft = originX + (Math.random() * 220 - 110);
       var rainFall = vh - rainTop + 80;
       var drift = Math.random() * 40 - 20;

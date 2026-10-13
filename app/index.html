@@ -302,6 +302,28 @@
         </div>
       </div>
       <div class="setting-note">Hold duration before tap-and-hold on an avatar opens the picker grid - applies to the very next press.</div>
+
+      <!-- M26/D-74: live-tunable confetti particle count + speed range -
+           first real-device test found the original fixed-duration version
+           way too fast (see config.js). No "Set" button, same pattern as
+           the two inputs above - takes effect on the very next win/timeout
+           screen. -->
+      <div class="setting-row">
+        <span>Confetti particles</span>
+        <div class="dev-anim-input-row">
+          <input type="number" id="dev-confetti-count-input" min="0" max="150" step="5">
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>Confetti speed</span>
+        <div class="dev-anim-input-row">
+          <input type="number" id="dev-confetti-speed-min-input" min="1" step="20">
+          <span class="setting-note-inline">–</span>
+          <input type="number" id="dev-confetti-speed-max-input" min="1" step="20">
+          <span class="setting-note-inline">px/s</span>
+        </div>
+      </div>
+      <div class="setting-note">Total burst + rain particles (capped at 150) and the per-particle speed range - each piece picks its own random speed from it, so a slow min and a fast max gives a more varied flutter. Applies to the next result screen.</div>
     </div>
     </div><!-- /#setup-scroll -->
 

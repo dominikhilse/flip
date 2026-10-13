@@ -2219,3 +2219,49 @@ string exactly ("Overpay mode is on — every player can use it to finish the ma
 escalation fires. Ran two full automated games via the same brute-force-solver technique as the entry above
 (winner-only + boosts; all-places + no boosts) to completion - the second organically re-reached the new
 `+3 laps` threshold without any forced racks - both completed cleanly with zero console errors.
+
+### 2026-10-13 — M26 confetti: real-device playtest found it "way too fast"; made particle count and
+### speed live-tunable (Dev tab), same D-72 pattern
+
+Dominik tested M26 on production and initially couldn't reproduce the confetti at all - root cause was his
+device's own **Reduce Motion** accessibility setting being on, which `fireConfetti()` correctly honors by
+suppressing entirely (working as specced, not a bug). With it off, the confetti did fire, but at the
+original fixed-1100-1700ms-per-particle duration (b146862) it read as **"way too fast."**
+
+M26's own spec locks particle *style* and *behavior* tightly (burst/rain shape, trigger, self-cleaning,
+palette) but says nothing numeric about timing beyond "~40-80 particles, not hundreds" - it doesn't resolve
+what the right speed feel is, and that can only be judged on a real device, the same situation D-72's
+avatar long-press was in. Rather than guess a single new fixed duration, added two Dev-tunable controls
+(same "type a number to test, no Set button" pattern as every other Dev-tab live constant):
+
+- **Confetti particles** - a single total (replaces the old fixed 36 burst / 24 rain split, still kept at
+  the same ~60/40 ratio), **hard-capped at 150** regardless of what's typed (`confettiParticleCountMax` in
+  config.js, enforced in both the input's own `max` and the change listener, not just a UI hint) - per
+  Dominik's explicit ask, extending well past the spec's own "~40-80" guidance, which is fine: that
+  guidance was a *default* starting point, not a locked ceiling, and the real ceiling is now an explicit,
+  intentional product decision instead of an unstated assumption.
+- **Confetti speed (px/s), min and max** - replaces the old fixed per-particle duration entirely with a
+  genuine velocity: each particle independently picks a random speed in the configured range, then divides
+  its own actual travel distance by that speed to get its animation duration (`confettiDurationMs` in
+  app.js) - a piece that travels further now takes proportionally longer instead of visually
+  "teleporting," which a flat random-duration-regardless-of-distance approach can't express. Duration is
+  clamped to [200ms, 6000ms] defensively (an extreme min=max=very-high-speed or very-low-speed Dev value
+  can't freeze a piece forever or make it vanish instantly).
+
+**Starting defaults (120-280 px/s, 60 total) are a deliberate slower guess, not a measured result** -
+flagged `PENDING RETUNE` in config.js, same convention as `avatarLongPressMs`/`restToFlipDelayMs`: re-test
+on a real device via the Dev tab and update the constants once a good feel is found, don't guess further
+from here. `showDevTab` was already left `true` for the D-72 retune in progress, so no separate flip was
+needed to expose these.
+
+**Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated to 8591
+for the session - the standing browser-HTTP-cache issue showed up again on this file, a full server
+restart + tab close/reopen was needed to pick up the new config.js fields, a plain reload was not enough -
+reverted to 8123 after): Dev-tab inputs confirmed synced from `CONFIG` on render and update it live via
+both a synthetic `input` event and a real click+type (focus-guard holds, no clobbering mid-edit); particle
+count confirmed hard-clamped to 150 when 999 was typed; a matched min=max=50px/s test produced the expected
+6000ms-clamped duration on every particle, computed independently per piece (58 distinct durations out of
+60 at the real default range, confirming genuine per-particle randomization, not one shared value); an
+extreme 10000-20000px/s range produced the 200ms floor on every piece; particle count set to 0 produced
+zero pieces and zero leftover layer divs (the empty-layer self-clean path, not exercised by earlier tests
+since the default count is never 0). Zero console errors throughout.

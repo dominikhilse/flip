@@ -73,5 +73,26 @@ window.CONFIG = {
   // list its own directory at runtime. D-55 originally locked 20; the set
   // has since grown (see app/avatars/README.md and DECISIONS.md) - update
   // this whenever a file is added or removed, nothing else needs to change.
-  avatarCount: 36
+  avatarCount: 36,
+
+  // Winner confetti (M26/D-74). Purely cosmetic "tune by feel" values, same
+  // category as diceAnimationDurationMs above - live-tunable via the Dev
+  // tab (see fireConfetti in app.js, which reads these fresh on every
+  // fire, nothing cached). confettiParticleCount is the TOTAL spawned
+  // (split ~60/40 burst/rain, same ratio as the original 36/24 split);
+  // hard-capped at 150 regardless of what's typed into the Dev input
+  // (M26's own spec calls for "phone-sane", not hundreds). confettiSpeed
+  // Min/MaxPxPerSec is the per-particle velocity range (px/s) each piece's
+  // own travel distance is divided by to get its animation duration - a
+  // real speed, not a fixed duration, so a piece that travels further
+  // takes proportionally longer rather than visually "teleporting" faster.
+  // PENDING RETUNE: first real-device test (2026-10-13) found the
+  // original fixed-1100-1700ms-duration version "way too fast" - these
+  // starting values are a deliberately slower guess, not a measured
+  // result; re-test on-device via the Dev tab and update here once a good
+  // feel is found, same as every other Dev-tunable constant in this file.
+  confettiParticleCount: 60,
+  confettiParticleCountMax: 150,
+  confettiSpeedMinPxPerSec: 120,
+  confettiSpeedMaxPxPerSec: 280
 };
