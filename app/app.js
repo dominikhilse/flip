@@ -74,6 +74,8 @@
   var devAvatarHoldInputEl = document.getElementById('dev-avatar-hold-input');
   var devConfettiSpeedMinInputEl = document.getElementById('dev-confetti-speed-min-input');
   var devConfettiSpeedMaxInputEl = document.getElementById('dev-confetti-speed-max-input');
+  var devConfettiTopScatterMinInputEl = document.getElementById('dev-confetti-top-scatter-min-input');
+  var devConfettiTopScatterMaxInputEl = document.getElementById('dev-confetti-top-scatter-max-input');
   // M26/D-74: one count + delay input pair per spawn point - built from a
   // list instead of 8 hand-repeated declarations, matching each pair's own
   // CONFIG field (confettiSpawn<Capitalized key>Count/DelayMs, see
@@ -569,6 +571,12 @@
     if (document.activeElement !== devConfettiSpeedMaxInputEl) {
       devConfettiSpeedMaxInputEl.value = CONFIG.confettiSpeedMaxPxPerSec;
     }
+    if (document.activeElement !== devConfettiTopScatterMinInputEl) {
+      devConfettiTopScatterMinInputEl.value = CONFIG.confettiTopScatterDelayMinMs;
+    }
+    if (document.activeElement !== devConfettiTopScatterMaxInputEl) {
+      devConfettiTopScatterMaxInputEl.value = CONFIG.confettiTopScatterDelayMaxMs;
+    }
   }
 
   function renderPrimaryAction() {
@@ -766,6 +774,16 @@
     var raw = parseInt(devConfettiSpeedMaxInputEl.value, 10);
     if (!Number.isFinite(raw) || raw < 1) return;
     CONFIG.confettiSpeedMaxPxPerSec = raw;
+  });
+  devConfettiTopScatterMinInputEl.addEventListener('input', function () {
+    var raw = parseInt(devConfettiTopScatterMinInputEl.value, 10);
+    if (!Number.isFinite(raw) || raw < 0) return;
+    CONFIG.confettiTopScatterDelayMinMs = raw;
+  });
+  devConfettiTopScatterMaxInputEl.addEventListener('input', function () {
+    var raw = parseInt(devConfettiTopScatterMaxInputEl.value, 10);
+    if (!Number.isFinite(raw) || raw < 0) return;
+    CONFIG.confettiTopScatterDelayMaxMs = raw;
   });
 
   // Guarded (M11, D-51): a match is always live whenever this button is
@@ -2723,13 +2741,23 @@
     // `originX + (random * 220 - 110)`, a ~220px strip.
     var topCount = countFor('top');
     var topDelay = delayFor('top');
+    var scatterLo = Math.min(CONFIG.confettiTopScatterDelayMinMs, CONFIG.confettiTopScatterDelayMaxMs);
+    var scatterHi = Math.max(CONFIG.confettiTopScatterDelayMinMs, CONFIG.confettiTopScatterDelayMaxMs);
     var rainParticles = [];
     var rainTop = -20;
     for (var j = 0; j < topCount; j++) {
       var rainX0 = Math.random() * vw;
       var rainFall = vh - rainTop + 80;
       var drift = Math.random() * 40 - 20;
-      rainParticles.push(makeConfettiParticle(rainX0, rainTop, drift * 0.3, rainFall * 0.2, drift, rainFall, topDelay));
+      // 2026-10-14: an extra per-particle delay on top of topDelay (not a
+      // replacement for the usual small per-particle stagger
+      // makeConfettiParticle already adds) - without it every top piece
+      // starts falling at roughly the same moment and, since they all
+      // share the same starting y, reads as one falling block rather than
+      // scattered rain. Dev-tunable (see config.js's confettiTopScatter
+      // Delay Min/MaxMs).
+      var scatterDelay = scatterLo + Math.random() * (scatterHi - scatterLo);
+      rainParticles.push(makeConfettiParticle(rainX0, rainTop, drift * 0.3, rainFall * 0.2, drift, rainFall, topDelay + scatterDelay));
     }
     var rain = rainParticles.length > 0 ? makeConfettiCanvas('confetti-canvas--rain', vw, vh) : null;
 

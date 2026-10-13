@@ -2462,3 +2462,27 @@ motion are unchanged.
 confirmed the spawned x values spanned from ~22px to ~1020px on a 1024px-wide test viewport - essentially
 the full width, not the old ~220px strip. Full self-cleaning reconfirmed after a complete animation run.
 Zero console errors.
+
+### 2026-10-14 — M26 confetti: top spawn gets a per-particle "scatter delay" so it rains scattered, not
+### as a block
+
+Explicit request: even with the full-width x spread (entry above), the top spawn's particles all start
+falling from the same y at roughly the same moment (give or take the small per-particle stagger every
+spawn point already gets), so they read as one falling block moving down in lockstep rather than scattered
+rain. Dominik's proposed fix - a small additional per-particle delay, randomly picked from a range - is
+exactly what shipped: `confettiTopScatterDelayMinMs`/`MaxMs` (default 1-50ms), added on top of
+`confettiSpawnTopDelayMs` for each top particle only (not the three bursting spawns, which don't have this
+"block" problem - they already scatter in random directions). Exposed as a new Dev-tab row ("Confetti - top
+scatter"), same live-tunable pattern as every other confetti control.
+
+Also swept up in this commit: Dominik's own prior manual `config.js` edits (spawn counts/delays, speed
+range, the particle-count cap) that had been sitting uncommitted in the working tree since the four-spawn-
+points build - touching the file for the new fields was a natural point to commit those too, rather than
+leaving a deliberate on-device tuning result permanently uncommitted.
+
+**Verified** via a temporary `window.__debug` hook plus a one-line in-code capture of the spawned top
+particles' final delays (both removed before commit; dev-server port rotated once more, reverted to 8123
+after): confirmed delays landed in the expected combined range (`topDelay` + scatter range + the existing
+0-250ms per-particle jitter) with 63 distinct values out of 70 particles - genuine per-particle variation,
+not a shared block value. Confirmed the two new Dev-tab inputs render correctly and sync from `CONFIG`.
+Full self-cleaning reconfirmed after a complete animation run. Zero console errors.

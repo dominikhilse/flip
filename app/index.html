@@ -346,6 +346,16 @@
       </div>
       <div class="setting-note">Each spawn point's own particle count × start delay (ms after the screen shows). Avatar bursts from the winner's own avatar/name; random 1/2 pick a fresh in-view point each time; top falls from off the top edge. Defaults fire the three bursts in quick succession, with top landing last.</div>
       <div class="setting-row">
+        <span>Confetti - top scatter</span>
+        <div class="dev-anim-input-row">
+          <input type="number" id="dev-confetti-top-scatter-min-input" min="0" step="5">
+          <span class="setting-note-inline">–</span>
+          <input type="number" id="dev-confetti-top-scatter-max-input" min="0" step="5">
+          <span class="setting-note-inline">ms</span>
+        </div>
+      </div>
+      <div class="setting-note">Extra random delay range added per top particle, on top of its start delay above - without it every top piece falls in lockstep as a single block; this peels them apart so they land scattered down the screen instead.</div>
+      <div class="setting-row">
         <span>Confetti speed</span>
         <div class="dev-anim-input-row">
           <input type="number" id="dev-confetti-speed-min-input" min="1" step="20">

@@ -115,5 +115,17 @@ window.CONFIG = {
   confettiSpawnRandom2Count: 40,
   confettiSpawnRandom2DelayMs: 410,
   confettiSpawnTopCount: 70,
-  confettiSpawnTopDelayMs: 450
+  confettiSpawnTopDelayMs: 450,
+
+  // top-only (2026-10-14): without this, every top particle starts
+  // falling at roughly the same moment (give or take the usual small
+  // per-particle stagger baked into every spawn point), which reads as a
+  // single falling block instead of a scattered rain - each top particle
+  // gets an extra random delay from this range, on top of
+  // confettiSpawnTopDelayMs, so they peel off and fall at visibly
+  // different moments (which, since they all start at the same y and
+  // fall together, is what actually spreads them down the y axis instead
+  // of landing in a tight horizontal band).
+  confettiTopScatterDelayMinMs: 1,
+  confettiTopScatterDelayMaxMs: 50
 };
