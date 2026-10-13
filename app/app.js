@@ -72,9 +72,23 @@
   var devDiceChoiceToggleEl = document.getElementById('dev-dice-choice-toggle');
   var devDiceAnimInputEl = document.getElementById('dev-dice-anim-input');
   var devAvatarHoldInputEl = document.getElementById('dev-avatar-hold-input');
-  var devConfettiCountInputEl = document.getElementById('dev-confetti-count-input');
   var devConfettiSpeedMinInputEl = document.getElementById('dev-confetti-speed-min-input');
   var devConfettiSpeedMaxInputEl = document.getElementById('dev-confetti-speed-max-input');
+  // M26/D-74: one count + delay input pair per spawn point - built from a
+  // list instead of 8 hand-repeated declarations, matching each pair's own
+  // CONFIG field (confettiSpawn<Capitalized key>Count/DelayMs, see
+  // confettiConfigKey below).
+  var CONFETTI_SPAWNS = ['avatar', 'random1', 'random2', 'top'];
+  var devConfettiInputEls = {};
+  CONFETTI_SPAWNS.forEach(function (key) {
+    devConfettiInputEls[key] = {
+      count: document.getElementById('dev-confetti-' + key + '-count-input'),
+      delay: document.getElementById('dev-confetti-' + key + '-delay-input')
+    };
+  });
+  function confettiConfigKey(spawnKey, suffix) {
+    return 'confettiSpawn' + spawnKey.charAt(0).toUpperCase() + spawnKey.slice(1) + suffix;
+  }
   var motionToggleEl = document.getElementById('motion-toggle');
   var tapToggleEl = document.getElementById('tap-toggle');
   var themeToggleGroupEl = document.getElementById('theme-toggle-group');
@@ -538,11 +552,17 @@
       devAvatarHoldInputEl.value = CONFIG.avatarLongPressMs;
     }
     // M26/D-74: same live-tune pattern, same focus guard (one per input,
-    // each guarded independently so editing one doesn't clobber the other
+    // each guarded independently so editing one doesn't clobber another
     // mid-keystroke).
-    if (document.activeElement !== devConfettiCountInputEl) {
-      devConfettiCountInputEl.value = CONFIG.confettiParticleCount;
-    }
+    CONFETTI_SPAWNS.forEach(function (key) {
+      var els = devConfettiInputEls[key];
+      if (document.activeElement !== els.count) {
+        els.count.value = CONFIG[confettiConfigKey(key, 'Count')];
+      }
+      if (document.activeElement !== els.delay) {
+        els.delay.value = CONFIG[confettiConfigKey(key, 'DelayMs')];
+      }
+    });
     if (document.activeElement !== devConfettiSpeedMinInputEl) {
       devConfettiSpeedMinInputEl.value = CONFIG.confettiSpeedMinPxPerSec;
     }
@@ -719,16 +739,23 @@
     CONFIG.avatarLongPressMs = raw;
   });
 
-  // M26/D-74: live confetti particle count + speed range - fireConfetti()
-  // reads CONFIG fresh on every fire, nothing to "Set" or persist, same
-  // pattern as the two inputs above. Count is hard-clamped to
-  // confettiParticleCountMax here (not just the input's own max="150",
-  // which a typed value can still exceed) - the spec calls for a real
-  // upper limit, not just a UI hint.
-  devConfettiCountInputEl.addEventListener('input', function () {
-    var raw = parseInt(devConfettiCountInputEl.value, 10);
-    if (!Number.isFinite(raw) || raw < 0) return;
-    CONFIG.confettiParticleCount = Math.min(raw, CONFIG.confettiParticleCountMax);
+  // M26/D-74: live per-spawn-point confetti count + delay, plus the shared
+  // speed range - fireConfetti() reads CONFIG fresh on every fire, nothing
+  // to "Set" or persist, same pattern as the two inputs above. Each
+  // spawn's count is hard-clamped to confettiParticleCountMax here (not
+  // just the input's own min/max, which a typed value can still exceed).
+  CONFETTI_SPAWNS.forEach(function (key) {
+    var els = devConfettiInputEls[key];
+    els.count.addEventListener('input', function () {
+      var raw = parseInt(els.count.value, 10);
+      if (!Number.isFinite(raw) || raw < 0) return;
+      CONFIG[confettiConfigKey(key, 'Count')] = Math.min(raw, CONFIG.confettiParticleCountMax);
+    });
+    els.delay.addEventListener('input', function () {
+      var raw = parseInt(els.delay.value, 10);
+      if (!Number.isFinite(raw) || raw < 0) return;
+      CONFIG[confettiConfigKey(key, 'DelayMs')] = raw;
+    });
   });
   devConfettiSpeedMinInputEl.addEventListener('input', function () {
     var raw = parseInt(devConfettiSpeedMinInputEl.value, 10);
@@ -2483,24 +2510,29 @@
   }
 
   // x0/y0 is this particle's spawn point (px, viewport coords, absolute -
-  // burst particles all share the winner's origin, rain particles each
-  // have their own x along a band plus the shared top-of-screen y). mx/my
-  // is the offset reached at 20% progress (a burst's outward "pop", or a
-  // rain piece's partial fall); ex/ey is the offset at 100% - its
-  // magnitude is also this particle's travel distance, feeding
-  // confettiDurationMs. rx/rz are the total rotation reached by 100%.
-  // `done` is flipped by the draw loop once this particle's progress
-  // reaches 1 - checked there to know when every particle (and so the
-  // whole canvas) can be torn down (self-cleaning, no orphaned canvases
-  // left for a rematch to stack onto - D-74).
-  function makeConfettiParticle(x0, y0, mx, my, ex, ey) {
+  // set per spawn point by fireConfetti: the avatar/random1/random2 points
+  // all share their own fixed origin, top's particles each get their own x
+  // along a band plus the shared top-of-screen y). mx/my is the offset
+  // reached at 20% progress (a burst's outward "pop", or top's partial
+  // fall); ex/ey is the offset at 100% - its magnitude is also this
+  // particle's travel distance, feeding confettiDurationMs. rx/rz are the
+  // total rotation reached by 100%. baseDelayMs is this particle's spawn
+  // point's own start delay (config.js's confettiSpawn<Point>DelayMs) -
+  // added to the usual small per-particle random stagger so a whole spawn
+  // point can be held back/fired early relative to the others (the
+  // fireworks-style default ordering - see config.js). `done` is flipped
+  // by the draw loop once this particle's progress reaches 1 - checked
+  // there to know when every particle (and so the whole canvas) can be
+  // torn down (self-cleaning, no orphaned canvases left for a rematch to
+  // stack onto - D-74).
+  function makeConfettiParticle(x0, y0, mx, my, ex, ey, baseDelayMs) {
     return {
       x0: x0, y0: y0, mx: mx, my: my, ex: ex, ey: ey,
       rx: (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540),
       rz: (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540),
       color: THEME.playerColors[Math.floor(Math.random() * THEME.playerColors.length)],
       duration: confettiDurationMs(Math.sqrt(ex * ex + ey * ey)),
-      delay: Math.round(Math.random() * 250),
+      delay: Math.max(0, Math.round(baseDelayMs)) + Math.round(Math.random() * 250),
       done: false
     };
   }
@@ -2611,6 +2643,48 @@
   // toast-travel). No-op under prefers-reduced-motion (suppressed entirely,
   // not just toned down - simplest reading of the locked "suppress or
   // heavily tone down" requirement).
+  // Explodes `count` particles outward from (x0,y0) in random directions,
+  // then falls/tumbles the rest of the way off the bottom of the screen
+  // regardless of that initial direction (a constant downward "gravity"
+  // term swamps any upward pop). Shared by all three bursting spawn
+  // points (avatar, random1, random2) - only the origin and count differ.
+  function burstParticlesAt(x0, y0, count, baseDelayMs, vh) {
+    var particles = [];
+    for (var i = 0; i < count; i++) {
+      var angle = Math.random() * Math.PI * 2;
+      var dist = 50 + Math.random() * 90;
+      var mx = Math.cos(angle) * dist;
+      var my = Math.sin(angle) * dist;
+      var fall = vh - y0 + 100;
+      var ex = mx + (Math.random() * 60 - 30);
+      var ey = my + fall;
+      particles.push(makeConfettiParticle(x0, y0, mx, my, ex, ey, baseDelayMs));
+    }
+    return particles;
+  }
+
+  // A point guaranteed to land somewhere comfortably inside the current
+  // viewport (not pinned to an edge, so a burst from it has room to be
+  // seen before falling off) - used fresh for random1/random2 every fire.
+  function confettiRandomInViewPoint(vw, vh) {
+    return {
+      x: vw * 0.15 + Math.random() * vw * 0.7,
+      y: vh * 0.12 + Math.random() * vh * 0.55
+    };
+  }
+
+  // M26/D-74: four spawn points (2026-10-13 revision - was two, burst+
+  // rain): avatar (the winner's own avatar/name), random1/random2 (two
+  // fresh in-view points picked each fire), and top (off the top edge,
+  // falling past the winner). avatar/random1/random2 all burst and share
+  // the back canvas (behind the winner, z-index below - see
+  // .confetti-canvas--burst); top alone keeps the original "rain" motion
+  // and the front canvas (in front of the winner, z-index above - see
+  // .confetti-canvas--rain), spawning in a band roughly centered on the
+  // winner's x and tumbling straight down past them. Each spawn point has
+  // its own Dev-tunable particle count and start delay (config.js) - the
+  // defaults fire the three bursts in quick succession and land top last,
+  // like a fireworks show.
   function fireConfetti(originEl) {
     if (!originEl || prefersReducedMotion()) return;
     var rect = originEl.getBoundingClientRect();
@@ -2618,44 +2692,34 @@
     var originY = rect.top + rect.height / 2;
     var vw = window.innerWidth;
     var vh = window.innerHeight;
-
-    // M26/D-74: Dev-tunable total (see config.js), hard-capped regardless
-    // of what's configured, split ~60/40 burst/rain - the same ratio as
-    // the original fixed 36/24.
-    var total = Math.min(CONFIG.confettiParticleCountMax, Math.max(0, Math.round(CONFIG.confettiParticleCount)));
-    var burstCount = Math.round(total * 0.6);
-    var rainCount = total - burstCount;
-
-    // Burst (behind the winner, z-index below - see .confetti-canvas--
-    // burst): explodes outward in a random direction, then falls/tumbles
-    // the rest of the way off the bottom of the screen regardless of that
-    // initial direction (a constant downward "gravity" term swamps any
-    // upward pop).
-    var burst = burstCount > 0 ? makeConfettiCanvas('confetti-canvas--burst', vw, vh) : null;
-    var burstParticles = [];
-    for (var i = 0; i < burstCount; i++) {
-      var angle = Math.random() * Math.PI * 2;
-      var dist = 50 + Math.random() * 90;
-      var mx = Math.cos(angle) * dist;
-      var my = Math.sin(angle) * dist;
-      var fall = vh - originY + 100;
-      var ex = mx + (Math.random() * 60 - 30);
-      var ey = my + fall;
-      burstParticles.push(makeConfettiParticle(originX, originY, mx, my, ex, ey));
+    var cap = CONFIG.confettiParticleCountMax;
+    function countFor(key) {
+      return Math.min(cap, Math.max(0, Math.round(CONFIG[confettiConfigKey(key, 'Count')])));
+    }
+    function delayFor(key) {
+      return CONFIG[confettiConfigKey(key, 'DelayMs')];
     }
 
-    // Rain (in front of the winner, z-index above - see
-    // .confetti-canvas--rain): spawns off the top edge in a band roughly
-    // centered on the winner's x, tumbles straight down past them.
-    var rain = rainCount > 0 ? makeConfettiCanvas('confetti-canvas--rain', vw, vh) : null;
+    var random1 = confettiRandomInViewPoint(vw, vh);
+    var random2 = confettiRandomInViewPoint(vw, vh);
+
+    var burstParticles = []
+      .concat(burstParticlesAt(originX, originY, countFor('avatar'), delayFor('avatar'), vh))
+      .concat(burstParticlesAt(random1.x, random1.y, countFor('random1'), delayFor('random1'), vh))
+      .concat(burstParticlesAt(random2.x, random2.y, countFor('random2'), delayFor('random2'), vh));
+    var burst = burstParticles.length > 0 ? makeConfettiCanvas('confetti-canvas--burst', vw, vh) : null;
+
+    var topCount = countFor('top');
+    var topDelay = delayFor('top');
     var rainParticles = [];
     var rainTop = -20;
-    for (var j = 0; j < rainCount; j++) {
+    for (var j = 0; j < topCount; j++) {
       var rainX0 = originX + (Math.random() * 220 - 110);
       var rainFall = vh - rainTop + 80;
       var drift = Math.random() * 40 - 20;
-      rainParticles.push(makeConfettiParticle(rainX0, rainTop, drift * 0.3, rainFall * 0.2, drift, rainFall));
+      rainParticles.push(makeConfettiParticle(rainX0, rainTop, drift * 0.3, rainFall * 0.2, drift, rainFall, topDelay));
     }
+    var rain = rainParticles.length > 0 ? makeConfettiCanvas('confetti-canvas--rain', vw, vh) : null;
 
     runConfettiLoop(burst, burstParticles, rain, rainParticles, performance.now());
   }

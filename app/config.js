@@ -78,21 +78,42 @@ window.CONFIG = {
   // Winner confetti (M26/D-74). Purely cosmetic "tune by feel" values, same
   // category as diceAnimationDurationMs above - live-tunable via the Dev
   // tab (see fireConfetti in app.js, which reads these fresh on every
-  // fire, nothing cached). confettiParticleCount is the TOTAL spawned
-  // (split ~60/40 burst/rain, same ratio as the original 36/24 split);
-  // hard-capped at 150 regardless of what's typed into the Dev input
-  // (M26's own spec calls for "phone-sane", not hundreds). confettiSpeed
-  // Min/MaxPxPerSec is the per-particle velocity range (px/s) each piece's
-  // own travel distance is divided by to get its animation duration - a
-  // real speed, not a fixed duration, so a piece that travels further
-  // takes proportionally longer rather than visually "teleporting" faster.
+  // fire, nothing cached). confettiSpeedMin/MaxPxPerSec is the per-
+  // particle velocity range (px/s), shared by every spawn point - each
+  // piece's own travel distance is divided by a speed randomly picked from
+  // this range to get its animation duration, so a piece that travels
+  // further takes proportionally longer rather than visually "teleporting"
+  // faster.
+  //
+  // Four spawn points (2026-10-13 revision - was two, burst+rain): avatar
+  // (the winner's own avatar/name, bursts behind them), random1/random2
+  // (two fresh in-view points picked each fire, also bursting), and top
+  // (off the top edge, falling past the winner like the original "rain" -
+  // the only one still drawn on the front canvas, the other three share
+  // the back one - see fireConfetti). Each has its own particle count
+  // (hard-capped per spawn at confettiParticleCountMax, not a shared
+  // total) and its own start delay in ms, relative to the moment
+  // fireConfetti is called. Default delays fire the three bursts in quick
+  // succession like a fireworks show, with top timed to land last, after
+  // them - a deliberate ordering, not an arbitrary one, but the exact gaps
+  // are a feel call like the speed range below.
+  //
   // PENDING RETUNE: first real-device test (2026-10-13) found the
   // original fixed-1100-1700ms-duration version "way too fast" - these
-  // starting values are a deliberately slower guess, not a measured
-  // result; re-test on-device via the Dev tab and update here once a good
-  // feel is found, same as every other Dev-tunable constant in this file.
-  confettiParticleCount: 40,
+  // starting values (speed range, per-spawn counts and delays alike) are a
+  // deliberately slower/sparser guess, not a measured result; re-test on-
+  // device via the Dev tab and update here once a good feel is found, same
+  // as every other Dev-tunable constant in this file.
   confettiParticleCountMax: 200,
   confettiSpeedMinPxPerSec: 60,
-  confettiSpeedMaxPxPerSec: 120
+  confettiSpeedMaxPxPerSec: 120,
+
+  confettiSpawnAvatarCount: 14,
+  confettiSpawnAvatarDelayMs: 0,
+  confettiSpawnRandom1Count: 7,
+  confettiSpawnRandom1DelayMs: 90,
+  confettiSpawnRandom2Count: 7,
+  confettiSpawnRandom2DelayMs: 180,
+  confettiSpawnTopCount: 12,
+  confettiSpawnTopDelayMs: 360
 };

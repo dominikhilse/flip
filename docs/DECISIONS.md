@@ -2381,3 +2381,50 @@ elements exist); confirmed full self-cleaning (0 canvases) after the animation w
 prefers-reduced-motion gate and the particle-count-0 edge case both still produce zero canvases (no
 dangling empty canvas elements, mirroring the DOM version's zero-piece behavior). Zero console errors
 throughout.
+
+### 2026-10-13 — M26 confetti: four spawn points, each independently Dev-tunable - supersedes the locked
+### "two sources / two layers" design
+
+Explicit request, not a bug fix or an inferred judgment call: M26's spec locked "two sources" (burst
+behind the winner, rain from the top). Dominik asked for four - avatar (the winner's own avatar/name,
+unchanged from the old "burst"), two fresh random in-view points per fire, and top (off the top edge,
+unchanged motion from the old "rain") - each with its own Dev-tunable particle count and start delay,
+defaulting to a fireworks-style quick succession with top landing last. Flagging per the usual "contradicts
+a locked plan decision" bar, for the orchestrator to fold into M26's next revision pass.
+
+**Kept:** exactly two canvas layers/z-indexes (burst behind the winner at z-index 1, rain in front at
+z-index 3 - see the 2026-10-13 canvas-port entry above) - avatar/random1/random2 all draw on the back
+canvas (all three use the original "burst" motion: explode outward, then fall), top alone draws on the
+front canvas (the original "rain" motion: fall from off-screen-top). The depth-sandwich effect around the
+winner is unchanged; only how many burst origins feed the back canvas changed.
+
+**New:** `confettiRandomInViewPoint` picks a fresh point inside a comfortable central band of the viewport
+(15-85% width, 12-67% height) for random1/random2, independently each fire. `burstParticlesAt` generalizes
+the old single inline burst-generation loop so avatar/random1/random2 can share it, parameterized by
+origin. `makeConfettiParticle` gained a `baseDelayMs` parameter - added to the existing small per-particle
+random stagger (0-250ms), not replacing it, so a whole spawn point can be held back or fired early relative
+to the others while each spawn's own particles still pop in with a little organic spread. Eight new
+Dev-tab inputs (one count + one delay per spawn point, built from a `CONFETTI_SPAWNS` list rather than
+hand-repeated code, matching each pair to its CONFIG field via `confettiConfigKey`) replace the old single
+"Confetti particles" total field; the shared speed range input is unchanged (speed was never asked to be
+per-spawn). Each spawn's count is still hard-clamped to `confettiParticleCountMax` (unchanged field,
+currently 200 per Dominik's own prior manual edit - not reverted, see the system reminder on this session's
+config.js note).
+
+**Defaults** (avatar 14×0ms, random1 7×90ms, random2 7×180ms, top 12×360ms - same 40-particle total as the
+prior single-count default, now split across four points): a deliberate feel guess, not measured - flagged
+PENDING RETUNE in config.js, same convention as every other confetti constant and D-72/restToFlipDelayMs
+before it.
+
+**Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated twice
+more this round for the standing browser-cache reason, reverted to 8123 after) plus a short-lived in-code
+capture of each fire's actual particle data (also removed before commit): confirmed the four spawn origins
+are genuinely distinct per fire (avatar center, two different random in-view points, top-of-screen band);
+confirmed per-spawn-point counts sum correctly into the two canvases' particle totals (14+7+7=28 burst,
+12 rain, matching config); confirmed each spawn's particles' delays cluster around that spawn's own base
+delay plus the expected 0-250ms stagger, correctly ordered avatar < random1 < random2 < top on average;
+confirmed all Dev-tab inputs sync from and write back to the right CONFIG fields (verified via the real
+UI - a tab click + direct DOM read, not just a synthetic event); confirmed the reduced-motion gate,
+all-spawns-zero, and a single-spawn-nonzero (burst-side all zero, top alone populated, exercising the
+null-burst-canvas branch) edge cases all still behave correctly; confirmed full self-cleaning (0 canvases)
+after a real animation run to completion. Zero console errors throughout.

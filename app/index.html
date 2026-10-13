@@ -303,17 +303,48 @@
       </div>
       <div class="setting-note">Hold duration before tap-and-hold on an avatar opens the picker grid - applies to the very next press.</div>
 
-      <!-- M26/D-74: live-tunable confetti particle count + speed range -
-           first real-device test found the original fixed-duration version
-           way too fast (see config.js). No "Set" button, same pattern as
-           the two inputs above - takes effect on the very next win/timeout
-           screen. -->
+      <!-- M26/D-74: live-tunable confetti - four spawn points (avatar,
+           two random in-view points, and one off the top edge), each with
+           its own particle count + start delay, plus a shared speed range.
+           No "Set" button, same pattern as the two inputs above - takes
+           effect on the very next win/timeout screen. -->
       <div class="setting-row">
-        <span>Confetti particles</span>
+        <span>Confetti - avatar</span>
         <div class="dev-anim-input-row">
-          <input type="number" id="dev-confetti-count-input" min="0" max="150" step="5">
+          <input type="number" id="dev-confetti-avatar-count-input" min="0" step="2">
+          <span class="setting-note-inline">×</span>
+          <input type="number" id="dev-confetti-avatar-delay-input" min="0" step="20">
+          <span class="setting-note-inline">ms</span>
         </div>
       </div>
+      <div class="setting-row">
+        <span>Confetti - random 1</span>
+        <div class="dev-anim-input-row">
+          <input type="number" id="dev-confetti-random1-count-input" min="0" step="2">
+          <span class="setting-note-inline">×</span>
+          <input type="number" id="dev-confetti-random1-delay-input" min="0" step="20">
+          <span class="setting-note-inline">ms</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>Confetti - random 2</span>
+        <div class="dev-anim-input-row">
+          <input type="number" id="dev-confetti-random2-count-input" min="0" step="2">
+          <span class="setting-note-inline">×</span>
+          <input type="number" id="dev-confetti-random2-delay-input" min="0" step="20">
+          <span class="setting-note-inline">ms</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>Confetti - top</span>
+        <div class="dev-anim-input-row">
+          <input type="number" id="dev-confetti-top-count-input" min="0" step="2">
+          <span class="setting-note-inline">×</span>
+          <input type="number" id="dev-confetti-top-delay-input" min="0" step="20">
+          <span class="setting-note-inline">ms</span>
+        </div>
+      </div>
+      <div class="setting-note">Each spawn point's own particle count × start delay (ms after the screen shows). Avatar bursts from the winner's own avatar/name; random 1/2 pick a fresh in-view point each time; top falls from off the top edge. Defaults fire the three bursts in quick succession, with top landing last.</div>
       <div class="setting-row">
         <span>Confetti speed</span>
         <div class="dev-anim-input-row">
@@ -323,7 +354,7 @@
           <span class="setting-note-inline">px/s</span>
         </div>
       </div>
-      <div class="setting-note">Total burst + rain particles (capped at 150) and the per-particle speed range - each piece picks its own random speed from it, so a slow min and a fast max gives a more varied flutter. Applies to the next result screen.</div>
+      <div class="setting-note">Per-particle speed range, shared by every spawn point - each piece picks its own random speed from it, so a slow min and a fast max gives a more varied flutter.</div>
     </div>
     </div><!-- /#setup-scroll -->
 
