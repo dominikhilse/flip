@@ -104,16 +104,16 @@ window.CONFIG = {
   // deliberately slower/sparser guess, not a measured result; re-test on-
   // device via the Dev tab and update here once a good feel is found, same
   // as every other Dev-tunable constant in this file.
-  confettiParticleCountMax: 200,
-  confettiSpeedMinPxPerSec: 60,
-  confettiSpeedMaxPxPerSec: 120,
+  confettiParticleCountMax: 300,
+  confettiSpeedMinPxPerSec: 5,
+  confettiSpeedMaxPxPerSec:60,
 
-  confettiSpawnAvatarCount: 40,
-  confettiSpawnAvatarDelayMs: 0,
-  confettiSpawnRandom1Count: 23,
-  confettiSpawnRandom1DelayMs: 90,
-  confettiSpawnRandom2Count: 18,
-  confettiSpawnRandom2DelayMs: 140,
-  confettiSpawnTopCount: 40,
-  confettiSpawnTopDelayMs: 200
+  confettiSpawnAvatarCount: 50,
+  confettiSpawnAvatarDelayMs: 80,
+  confettiSpawnRandom1Count: 33,
+  confettiSpawnRandom1DelayMs: 130,
+  confettiSpawnRandom2Count: 40,
+  confettiSpawnRandom2DelayMs: 410,
+  confettiSpawnTopCount: 70,
+  confettiSpawnTopDelayMs: 450
 };
