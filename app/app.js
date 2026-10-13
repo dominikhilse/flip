@@ -2682,8 +2682,9 @@
   // the back canvas (behind the winner, z-index below - see
   // .confetti-canvas--burst); top alone keeps the original "rain" motion
   // and the front canvas (in front of the winner, z-index above - see
-  // .confetti-canvas--rain), spawning in a band roughly centered on the
-  // winner's x and tumbling straight down past them. Each spawn point has
+  // .confetti-canvas--rain), scattered across the full viewport width
+  // (2026-10-13 tweak - was a narrow band centered on the winner's x) and
+  // tumbling straight down past them. Each spawn point has
   // its own Dev-tunable particle count and start delay (config.js) - the
   // defaults fire the three bursts in quick succession and land top last,
   // like a fireworks show.
@@ -2717,12 +2718,15 @@
       .concat(burstParticlesAt(random2.x, random2.y, countFor('random2'), delayFor('random2'), vh));
     var burst = burstParticles.length > 0 ? makeConfettiCanvas('confetti-canvas--burst', vw, vh) : null;
 
+    // top (2026-10-13 tweak): x is scattered across the FULL viewport
+    // width now, not a narrow band centered on the winner - was
+    // `originX + (random * 220 - 110)`, a ~220px strip.
     var topCount = countFor('top');
     var topDelay = delayFor('top');
     var rainParticles = [];
     var rainTop = -20;
     for (var j = 0; j < topCount; j++) {
-      var rainX0 = originX + (Math.random() * 220 - 110);
+      var rainX0 = Math.random() * vw;
       var rainFall = vh - rainTop + 80;
       var drift = Math.random() * 40 - 20;
       rainParticles.push(makeConfettiParticle(rainX0, rainTop, drift * 0.3, rainFall * 0.2, drift, rainFall, topDelay));

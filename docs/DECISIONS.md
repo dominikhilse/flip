@@ -2448,3 +2448,17 @@ browser-cache reason, reverted to 8123 after): confirmed `random2.x` exactly equ
 exactly `vw/2` in the test viewport, so the mirror also lined up with true screen center as expected;
 confirmed `random2.y` was independently random and distinct from `random1.y`. Full self-cleaning
 reconfirmed after a complete animation run. Zero console errors.
+
+### 2026-10-13 — M26 confetti: top spawn point scattered across the full viewport width
+
+Another small follow-up, explicit request: the top spawn point's particles were spawning in a ~220px band
+centered on the winner's x (`originX + (random * 220 - 110)`, left over from the original "rain" design
+when it was the only non-burst spawn tied visually to the winner below it). Changed to `Math.random() * vw`
+- scattered across the full viewport width, no longer tied to the winner's x at all. y and the fall/drift
+motion are unchanged.
+
+**Verified** via a temporary `window.__debug` hook plus a one-line in-code capture of the spawned
+`rainX0` values (both removed before commit; dev-server port rotated once more, reverted to 8123 after):
+confirmed the spawned x values spanned from ~22px to ~1020px on a 1024px-wide test viewport - essentially
+the full width, not the old ~220px strip. Full self-cleaning reconfirmed after a complete animation run.
+Zero console errors.
