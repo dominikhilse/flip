@@ -4,6 +4,22 @@
 **Audience:** a Claude Code session with no prior context. Everything needed is in this file.
 **Supersedes:** nothing. This is the first plan for this project.
 
+**Revision note (2026-10-13):** **M25 flipped to BUILT**, with its first escalation step **redesigned
+during the build** — the executor (prompted by Dominik's "can overpay end the game?" question) found the
+originally-specced boost-unlock was *logically* unreachable (a boost whole-rack close must be exact per
+D-45, an exact match isn't a stall, so the offer never fired). The shipped design **force-switches the
+whole table to overpay `D`** at the threshold instead (lifting D-45's whole-rack-exact rule one-way;
+boosts stop mattering once in `D`, accepted; D-48 never lifted, just unreachable; D-34's theme-inversion
+fires as the free visual signal). **Thresholds moved +2/+4 → +3/+5** (D-73 updated; §7's old text lives
+only inside M25's superseded-spec `<details>`). Post-build fixes folded: GH #9 (settings dividers),
+GH #10 + #10-reopened (force-switch bugs; the single-tile theme-flip corner), GH #11 (1-for-2 theme
+inversion) — D-75. D-72 scaffolded (avatar long-press now live-tunable, Dev tab left ON while tuning).
+**New M26 — winner confetti (D-74):** JS-spawned paper-strip particles, one CSS keyframe, 12-player-color
+palette, burst-behind + rain-in-front from the winner's live position; fires on M21 cases 1 & 2 only
+(a real winner), **never case 3** (honors the no-crown-at-timeout rule); one-shot, self-cleaning,
+reduced-motion-aware. **Translation debt noted:** M25's new overpay announcement is English-only; the
+other four locales are intentionally stale pending a batched pass (per D-71).
+
 **Revision note (2026-10-11):** **M24 flipped to BUILT, VERIFIED** (both stages; one finding — "rack"
 had no clean German word, forcing an English-source revision and 11-string retranslation). New
 **translation-maintenance policy (D-71):** new strings keyed immediately, translated in batched passes,
@@ -2117,7 +2133,54 @@ accidentally open the grid. Measure, lock the value, flip Dev back off (D-65's h
 
 ---
 
-### M25 — Endgame escalation (anti-drag, two-step) — SPECIFIED
+### M25 — Endgame escalation (anti-drag, two-step) — BUILT, VERIFIED
+
+**Status: BUILT (2026-10-12/13), with the first escalation step REDESIGNED during build and the
+thresholds moved from +2/+4 to +3/+5.** The trigger (simultaneous qualification, die-mode-branched) and
+the +N-laps/timer skeleton shipped as specced. The escalation mechanics changed as follows — read this
+block; the original spec below is superseded on these two points.
+
+**What changed, and why (the executor surfaced a real logic flaw, not just a tuning issue):**
+- **Both originally-specced +2 mechanisms were *unreachable*, not merely impractical.** The 1-for-2
+  unlock was practically unreachable; working through "can overpay end the game?" surfaced that the
+  **overpay-boost path was logically unreachable too** — a boost-spent whole-rack close must be exact
+  (D-45), an exact whole-rack match is by definition **not a stall**, and the boost offer is gated on
+  `stalled` — so the offer never appears for that case at all. Lifting D-48/D-45 "for boosts" therefore
+  freed a code path nothing could reach.
+- **The redesign (shipped): the first step now force-switches the whole table to overpay mode `D`**,
+  rather than unlocking a boost. At the threshold, `game.overpayMode` is forced to `'D'` for the rest of
+  the match (one-way), and D-45's whole-rack-must-be-exact requirement is lifted (a whole-rack selection
+  becomes an ordinary D-mode `sum ≤ total` check, via a new `allowInexactWholeRack` param on
+  `RULES.isValidSelection`, threaded from `game.endPhase.overpayForced`). This is **reachable and does
+  the job** — any player can now finish on an inexact roll.
+- **Boosts stop mattering once forced to `D`, and that's the intended trade.** `boostModeActive()`
+  requires `overpayMode === 'A'`, so flipping to `'D'` turns off boost offers/spending/UI even for a
+  player holding unspent boosts — accepted, because D-mode's permissiveness is strictly stronger than
+  any boost anyway. No new code; the existing gate produces it.
+- **D-48 is never lifted** under the new design — it simply becomes unreachable once `'D'` is forced
+  (same as it always was outside boost mode). Only D-45's whole-rack-exact rule is lifted, and only via
+  the overpay-forced path.
+- **The visual signal is D-34's existing theme-inversion, triggered for free** — forcing `overpayMode`
+  to `'D'` makes D-34's predicate (mode-D active AND current player has >1 open tile) fire
+  automatically. (See GH #10-reopened below for the one-tile corner that needed a fix.)
+
+**Final thresholds (D-73 updated): +3 laps and +5 laps** (moved from +2/+4 — a deliberate tuning change,
+not a bug). At **+3 laps**: force-switch to `'D'`, announced. At **+5 laps**: the always-on timer
+(`players × 10s`, min 30s) → M21 timeout path. Mechanism otherwise as below.
+
+**Announcement (English):** *"Overpay mode is on — every player can use it to finish the match now!"*
+(`endphase.announce.overpay`, `{mode}` reusing `boost.overpay.name`). **Translation debt noted:** the
+other four locales are intentionally left on an earlier wording pending a follow-up pass — stale
+relative to D-71, by explicit instruction, not an oversight.
+
+**Post-build fixes folded in:** GH #10 (two bugs in the force-switch) and GH #10-reopened (escalated
+overpay wasn't flipping the Play-screen theme for a *single-tile* rack — the one case D-34's >1-tile
+carve-out excludes; fixed so the forced-overpay signal shows even at one tile). GH #11 (1-for-2 now
+triggers the same theme-inversion as overpay — a consistency fix in normal boost play, independent of
+M25).
+
+<details>
+<summary>Original M25 spec (superseded on the +N mechanics and thresholds — kept for the record)</summary>
 
 **Goal.** Reduce matches where several players spend 5+ laps with no one able to close a tile — the
 late-match "wind taken out of the sails" drag, reported as frequent in real play. A silent, automatic,
@@ -2208,6 +2271,82 @@ player's current open-tile set and whether their die-mode is already forced, **s
 must be computable from existing rack/die state, not a new tracked variable duplicating it. If "laps of
 the current rotation" can't be counted cleanly once players have finished (in non-`winner-only` modes),
 **stop and report** the specific ambiguity rather than guessing a count.
+
+</details>
+
+---
+
+### M26 — Winner confetti on the score screen — SPECIFIED
+
+**Goal.** A one-shot celebratory confetti burst framing the winner on the result screen — a small,
+dependency-free flourish, not a system.
+
+**Technique (locked):** **JS-spawned DOM particles animated by a single CSS `@keyframes`** — not pure
+CSS (can't do believable randomized multi-particle explosion without hand-authoring dozens of keyframe
+sets), not canvas (overkill, and splits the celebration off the themed DOM surface). JS creates the
+confetti `<div>`s and gives each randomized values (angle, distance, rotation, duration, delay) via
+inline CSS custom properties; one shared `@keyframes` reads those properties. No library (consistent
+with no-build).
+
+**Particle (locked):** emulated colored paper strips — small thin rectangles (~8×14px, tune to feel),
+each a solid fill, **tumbling in 3D** (`rotateX`/`rotateZ`, not a flat spin — the tumble reads as paper,
+a flat spin reads as spark).
+
+**Palette (locked):** the **12 player colors** (`theme.js` player set), random per particle, using each
+color's `fill` (not `edge`). Ties the celebration to the game's identity; works in both themes.
+
+**Two sources / two layers (locked):**
+1. **Burst behind the winner** — spawns *behind* the avatar/name combo (z-index below them, so the
+   winner stays legible). **Spawn origin = the winner element's actual on-screen center, read live via
+   `getBoundingClientRect()`** — it is NOT a fixed point: the avatar/name sits differently on the
+   normal-win podium (M21 case 1) than on the timeout-with-finisher banner (M21 case 2), and moves with
+   screen size. (Same live-rect pattern M19's toast-travel and M21's chip color already use.) Particles
+   explode outward in all directions from that origin, then fall/tumble down and off-screen.
+2. **Rain from the top** — a second batch spawns above the avatar/name (z-index *above* them) from off
+   the top edge, tumbling down past the winner (passing in front adds depth).
+
+**Trigger (locked — stated as a FACT, not a screen):** confetti fires **if and only if at least one
+player actually shut their box this match** — i.e. the engine's finisher list (`finishedOrder` or
+equivalent) is non-empty. Zero finishers → no confetti.
+- This is independent of the placement setting (winner-only / top-two / all-places) and of how many
+  players finished — **one real finisher is enough**, trailing non-finishers are irrelevant.
+- Mapped to M21's three result cases it currently means: **fires on case 1 (normal win) and case 2
+  (timeout with a finisher)** — both guarantee ≥1 shut box — and **not on case 3 (timeout, nobody shut)**,
+  the sole zero-finisher outcome, which is deliberately podium-less/un-crowned (D-02/D-64's
+  no-fabricated-champion rule). **But the trigger is coded against the finisher-count fact, not the case
+  label**, so it stays correct if the result-screen plumbing ever changes.
+
+**Behaviour (locked):**
+- **One-shot**, fires on entry to the score screen; no loop.
+- **Self-cleaning:** remove each particle's DOM node on `animationend`, so a rematch doesn't stack
+  orphaned confetti divs across repeated games.
+- **Respects `prefers-reduced-motion`** — suppress or heavily tone down under that media query.
+- **Particle count kept phone-sane** (~40–80, not hundreds).
+- **No re-fire** on returning to the same score screen, *unless* suppressing a re-fire proves more than
+  trivially complex — in which case re-fire on genuine re-entry is acceptable (it's harmless). Don't
+  spend real effort preventing it.
+
+**Out of scope.** Confetti on case 3. A looping/continuous effect. A particle library. Canvas rendering.
+Sound. Any change to the result-screen content itself (this is a visual overlay).
+
+**Do-not-touch on entry.** The result-screen ranking/content (M21); the winner-element markup (confetti
+reads its position, doesn't alter it); the no-crown-at-timeout rule (confetti honors it by skipping
+case 3).
+
+**Acceptance criteria:**
+1. A normal win shows confetti bursting from behind the winner's avatar/name and raining from the top;
+   the winner stays clearly legible (burst is behind, rain is in front).
+2. The burst originates at the winner component's actual position — correct on both the podium (case 1)
+   and the timeout-finisher banner (case 2), and at different screen sizes.
+3. Confetti fires whenever ≥1 player shut their box (any placement mode, however many finished), and
+   does **not** fire when zero players shut — which is only the nobody-finished timeout (case 3).
+4. Particles are colored paper strips that tumble (not flat-spin), colored from the 12 player colors.
+5. It fires once and finishes (no loop); particle nodes are gone after the animation (verify no buildup
+   across several rematches).
+6. With `prefers-reduced-motion` set, confetti is suppressed or strongly reduced.
+
+**Stop conditions.** If spawning from the live winner position requires restructuring the result-screen
+layout, **stop and report** — confetti is an overlay reading an existing element's rect, not a re-layout.
 
 ---
 
@@ -2412,6 +2551,8 @@ and date (all since resolved); no number for any of these should appear as thoug
 | D-69 | GH #8: **move options wait for the dice animation to settle.** The roll result is still decided immediately (D-47/M10 cosmetic-only unchanged), but tile clickability, Confirm's enabled state, the boost offer, and the stall/whole-rack/selection-sum messages gate on a new `rollRevealed()` (flips true when the animation settles, matched to the exact roll instance). Exception: Roll's own disabled state stays tied to the real roll so a double-roll is blocked instantly | Locked |
 | D-70 | GH #8: boost buttons **name their type** — "Use Boost"/"Change Boost" retired for "Use Overpay"/"Use 1-for-2". Pre-spend shows the offered default (1-for-2 first when both apply, D-37/D-56 unchanged); the second button names whichever type cycling switches *to* (label derived from the same next-in-list computation, can't drift). Single-applicable case shows the specific label directly, no Change button. Mechanic unchanged; labels only | Locked |
 | D-71 | **Translation-maintenance policy (M24, post-ship):** new/changed strings must go through `t()` with a real key immediately (never a hardcoded literal), but do **not** need translating immediately — the English fallback covers the gap. Translation happens in **batched passes** (milestone-tied or accumulation-tied), not per-change, since copy is still iterating (M24 Stage B itself needed an English-source revision for "rack") | Locked |
-| D-72 | M20 long-press hold duration (currently 500 ms, hardcoded) is hard for kids to trigger reliably. Re-enable `CONFIG.showDevTab`; add a Dev input to test shorter values (try 300–350 ms); two-sided bound (short enough for kids, long enough to not fire on an ordinary tap); measure, lock, re-hide Dev | Locked |
-| D-73 | M25 endgame escalation: qualifying condition branches on each player's **actual forced die-mode** (single-die: sum∈[1,6]; two-dice: sum∈[2,12]) — `{1,2,3,6}` does NOT qualify. Phase begins when **all active players simultaneously qualify** (not a rubber-band/catch-up mechanic; entry is silent). **+2 laps:** boosts-can-finish (lifts D-48), announced, boost-mode-on only, one-way. **+4 laps:** timer (`players×10s`, min 30s), announced, always, feeds M21's timeout path. Dice probability is never altered (option C rejected as illegible/dice-rigging, consistent with D-22) | Locked |
+| D-72 | M20 long-press hold duration (500 ms) is hard for kids to trigger reliably. **Scaffolded (built):** avatar long-press is now **live-tunable via a Dev input; Dev tab left ON** for now to find the value. Two-sided bound (short enough for kids, long enough to not fire on a tap); measure, lock, then re-hide Dev (D-65). Dev being left on is temporary, tied to this tuning | Locked (tuning open) |
+| D-74 | Winner confetti on the score screen (M26): JS-spawned DOM paper-strip particles (3D tumble) animated by one shared CSS `@keyframes`, randomized per particle via inline CSS vars; no library, no canvas. 12-player-color palette (`fill`). Two layers: burst **behind** the winner (origin = winner element's live `getBoundingClientRect()` center, differs podium vs banner) + rain **in front** from the top. **Trigger is a fact, not a screen: fires iff ≥1 player actually shut their box** (`finishedOrder` non-empty) — independent of placement mode and finisher count; zero finishers (the nobody-shut timeout, case 3) → none, honoring D-02/D-64. Maps to cases 1 & 2 today but coded against the finisher fact so it survives result-screen changes. One-shot, self-cleaning on `animationend`, respects `prefers-reduced-motion`, ~40–80 particles. No re-fire on re-entry unless non-trivial to prevent | Locked |
+| D-75 | M25 post-build fixes: GH #10 (two bugs in the overpay force-switch), GH #10-reopened (forced overpay wasn't flipping the Play-screen theme for a **single-tile** rack — the case D-34's >1-tile carve-out excludes; fixed so the signal shows at one tile too), GH #11 (1-for-2 now triggers the same theme-inversion as overpay in normal boost play — consistency fix, independent of M25). GH #9: unified section dividers across all three Settings tabs | Locked |
+| D-73 | M25 endgame escalation (BUILT). Qualifying condition branches on each player's **actual forced die-mode** (single-die: sum∈[1,6]; two-dice: sum∈[2,12]) — `{1,2,3,6}` does NOT qualify. Phase begins when **all active players simultaneously qualify** (not a rubber-band; entry silent). **First step REDESIGNED during build** (the original boost-unlock was logically unreachable — a boost-spent whole-rack close must be exact (D-45), an exact match isn't a stall, so the offer never appeared): now **force-switches the whole table to overpay `D`** and lifts D-45's whole-rack-exact rule (one-way, via `allowInexactWholeRack`). Boosts stop mattering once in `D` (accepted — D's permissiveness exceeds any boost); **D-48 is never lifted, just becomes unreachable**; D-34's theme-inversion fires for free as the signal. **Thresholds moved +2/+4 → +3/+5.** At +3: force-D, announced. At +5: timer (`players×10s`, min 30s), always, → M21 timeout. Dice odds never altered (option C rejected, consistent with D-22) | Locked |
 | D-67 | ~~Prematch toggles on the launch screen above "Tap to start"~~ **Revised (M23, executor-flagged): "Tap to start" doesn't begin a match — it navigates to Setup.** So the launch screen stays a splash + CTA (adding a motion-permission hint), and Timer/Boosts + a full-width **Start Game** button live in a **fixed bottom footer reused on every settings tab** (same position all tabs; top tabs fixed, footer fixed, middle content scrolls). Independent toggles, four states; Timer-on reveals a picker in reserved space (button never jumps). Start follows the existing ≥2-player rule; reuses the existing start path (no Setup-skip). Timer/Boosts now live in ONE place (the footer), so they're removed from Rules — the earlier "one setting, two views" sync is moot | Locked |
