@@ -1435,38 +1435,23 @@ button.secondary:active { background: var(--bg-subtle); }
 .confetti-layer--rain { z-index: 3; }
 
 /* Each piece is positioned at its JS-computed spawn point (left/top) and
-   animated purely via transform/opacity, driven by four JS-randomized
-   custom properties: --mx/--my (offset reached at the animation's
-   midpoint - a burst's outward "pop", or a rain piece's partial fall) and
-   --ex/--ey (offset at animation end - always carries the piece well past
-   the bottom of the viewport, see fireConfetti). --rx/--rz are the total
-   rotation reached by the end, also JS-randomized per piece. One shared
-   keyframe set for both burst and rain pieces - only the vars differ. */
+   animated via app.js's addConfettiParticle, which calls the piece's own
+   .animate() (Web Animations API) with plain numeric transform/opacity
+   keyframes computed in JS - not a declarative @keyframes rule reading
+   CSS custom properties, as M26 originally shipped (2026-10-13 revision,
+   see DECISIONS.md: a real-device test found that version janked badly -
+   froze, then jumped near-finished - because a transform driven by
+   var(--custom-property) generally can't run on the compositor thread,
+   forcing a full style recompute on the MAIN thread every frame for every
+   particle; WAAPI with literal numbers avoids that entirely). No
+   animation-* properties needed here as a result - will-change is still a
+   valid hint regardless of which engine drives the animation. */
 .confetti-piece {
   position: absolute;
   width: 8px;
   height: 14px;
   border-radius: 1px;
   will-change: transform, opacity;
-  animation-name: confetti-fly;
-  animation-timing-function: ease-out;
-  animation-fill-mode: forwards;
-}
-@keyframes confetti-fly {
-  0% { transform: translate(0, 0) rotateX(0deg) rotateZ(0deg); opacity: 1; }
-  20% {
-    transform: translate(var(--mx), var(--my)) rotateX(calc(var(--rx) * 0.25)) rotateZ(calc(var(--rz) * 0.25));
-    opacity: 1;
-  }
-  85% { opacity: 1; }
-  100% { transform: translate(var(--ex), var(--ey)) rotateX(var(--rx)) rotateZ(var(--rz)); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  /* Belt-and-braces: app.js's fireConfetti already checks this media query
-     and skips spawning entirely, so this rule should never have anything
-     to catch in practice - kept as a hard backstop in case a piece is ever
-     spawned some other way. */
-  .confetti-piece { animation: none; opacity: 0; }
 }
 
 .results-list {

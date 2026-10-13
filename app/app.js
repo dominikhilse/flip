@@ -2471,6 +2471,15 @@
     return Math.max(200, Math.min(6000, Math.round(ms)));
   }
 
+  // transform string builder shared by every keyframe below - kept as a
+  // plain literal string (no var()/custom properties) so the Web
+  // Animations API call in addConfettiParticle can run off the main
+  // thread - see that function's own comment for why this replaced the
+  // original custom-property-driven @keyframes approach.
+  function confettiTransform(x, y, rxDeg, rzDeg) {
+    return 'translate(' + x + 'px,' + y + 'px) rotateX(' + rxDeg + 'deg) rotateZ(' + rzDeg + 'deg)';
+  }
+
   // left/top are the particle's CSS spawn point (px, viewport coords); mx/my
   // is the offset reached at the animation's midpoint (the outward "pop" for
   // a burst particle, a partial fall for a rain particle); ex/ey is the
@@ -2479,26 +2488,46 @@
   // {count} for the whole layer - the layer's own empty wrapper div is
   // removed once every particle inside it has removed itself (self-
   // cleaning, no orphaned nodes left for a rematch to stack onto - D-74).
+  //
+  // Driven by Element.animate() (Web Animations API) with plain numbers
+  // baked into each keyframe's transform string, NOT a declarative
+  // @keyframes rule reading CSS custom properties (M26's original
+  // 2026-10-13 build). Real-device testing found that version froze mid-
+  // flight and jumped to near-finished right before landing, and cutting
+  // particle count/speed didn't help - the classic signature of a
+  // transform animation running on the MAIN thread instead of the
+  // compositor, which happens when the animated transform's value depends
+  // on var(--custom-property) (the browser can't hand an animation off to
+  // the compositor without first resolving the cascade every frame). WAAPI
+  // with literal, pre-resolved numbers has no such dependency and is the
+  // standard fix for exactly this class of many-simultaneous-particles
+  // jank - see DECISIONS.md for the full writeup.
   function addConfettiParticle(layer, left, top, mx, my, ex, ey, remaining) {
     var piece = document.createElement('div');
     piece.className = 'confetti-piece';
     piece.style.left = left + 'px';
     piece.style.top = top + 'px';
     piece.style.background = THEME.playerColors[Math.floor(Math.random() * THEME.playerColors.length)];
-    piece.style.setProperty('--mx', mx + 'px');
-    piece.style.setProperty('--my', my + 'px');
-    piece.style.setProperty('--ex', ex + 'px');
-    piece.style.setProperty('--ey', ey + 'px');
-    piece.style.setProperty('--rx', ((Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540)) + 'deg');
-    piece.style.setProperty('--rz', ((Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540)) + 'deg');
-    piece.style.animationDuration = confettiDurationMs(Math.sqrt(ex * ex + ey * ey)) + 'ms';
-    piece.style.animationDelay = Math.round(Math.random() * 250) + 'ms';
-    piece.addEventListener('animationend', function () {
+    layer.appendChild(piece);
+
+    var rx = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540);
+    var rz = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540);
+    var anim = piece.animate([
+      { offset: 0, transform: confettiTransform(0, 0, 0, 0), opacity: 1 },
+      { offset: 0.2, transform: confettiTransform(mx, my, rx * 0.25, rz * 0.25), opacity: 1 },
+      { offset: 0.85, opacity: 1 },
+      { offset: 1, transform: confettiTransform(ex, ey, rx, rz), opacity: 0 }
+    ], {
+      duration: confettiDurationMs(Math.sqrt(ex * ex + ey * ey)),
+      delay: Math.round(Math.random() * 250),
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
+    anim.onfinish = function () {
       piece.remove();
       remaining.count--;
       if (remaining.count <= 0) layer.remove();
-    });
-    layer.appendChild(piece);
+    };
   }
 
   // originEl's LIVE getBoundingClientRect() decides the spawn point - not a

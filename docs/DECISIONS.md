@@ -2265,3 +2265,57 @@ count confirmed hard-clamped to 150 when 999 was typed; a matched min=max=50px/s
 extreme 10000-20000px/s range produced the 200ms floor on every piece; particle count set to 0 produced
 zero pieces and zero leftover layer divs (the empty-layer self-clean path, not exercised by earlier tests
 since the default count is never 0). Zero console errors throughout.
+
+### 2026-10-13 — M26 confetti: switched from CSS custom-property keyframes to the Web Animations API -
+### corrects a locked technique after a real-device jank report
+
+Dominik pushed the tunable-speed build (71918d0) and reported it performed badly on his phone: "the
+confetti spawns, freezes for a moment and only appears animated again once it almost fell to the floor" -
+and critically, **cutting particle count and lowering velocity didn't improve it.** That last point rules
+out plain per-particle CPU cost (which would scale down with fewer particles) and points at a qualitative
+rendering-path problem instead.
+
+**Diagnosis:** M26's locked technique (`§5`, "M26 - Winner confetti") specifies "JS creates the confetti
+divs and gives each randomized values... via inline CSS custom properties; one shared `@keyframes` reads
+those properties." A `transform` animated via a declarative `@keyframes` that reads `var(--custom-
+property)` generally cannot be handed off to the compositor thread - the browser has to re-resolve the
+cascade (custom property -> `calc()` -> `transform`) on the **main thread, every frame, for every
+animating element**. With up to 150 simultaneous particles, that's enough main-thread work to miss frames.
+Critically, a CSS animation's internal clock advances in real wall-clock time regardless of whether frames
+actually get painted - so if the main thread is too busy to paint for a stretch, the *next* frame that does
+get painted shows wherever the clock says the animation should be *right now*, which can be most of the
+way to the end. That is an exact match for "freezes, then jumps to near-finished" - and explains why
+turning the dial on count/speed didn't help, since neither changes the render *path*, only the per-frame
+cost on it.
+
+**Fix (supersedes the locked technique, not the rest of M26's spec):** `addConfettiParticle` in app.js now
+drives each particle via `Element.animate()` (Web Animations API) with **plain, pre-resolved numeric
+`transform` strings baked into each keyframe in JS** - no CSS custom properties, no `var()`, no declarative
+`@keyframes` rule at all (style.css's `confetti-fly` keyframe and the `--mx/--my/--ex/--ey/--rx/--rz`
+custom properties are removed entirely). This is still plain native browser API (no library, no build
+step - CLAUDE.md's constraints are unaffected) and is the standard fix for exactly this class of
+many-simultaneous-particle jank: a transform with no custom-property dependency has no cascade-resolution
+step blocking it from the compositor. Everything else about M26 is unchanged - particle look, burst/rain
+shape and trigger, palette, self-cleaning (now via the Animation's `onfinish` instead of the `animationend`
+DOM event, same `remaining.count` bookkeeping), reduced-motion gate, and the Dev-tunable count/speed
+controls (`confettiDurationMs` is untouched - it still computes a per-particle ms figure from distance and
+a randomized speed, now consumed as `Element.animate()`'s `duration` option instead of a CSS
+`animation-duration` inline style).
+
+**Caveat, stated plainly: I cannot reproduce or measure jank from this environment** (desktop headless
+Chrome handles both versions trivially regardless of render path, and my own tooling repeatedly hit
+page-visibility-related animation stalls of its own that are a harness artifact, not a confetti bug - see
+the verification note below). This fix is the textbook-correct one for the reported symptom and verified
+correct at the DOM/CSS level, but whether it actually resolves the jank ***on Dominik's device*** can only
+be confirmed by him re-testing on production.
+
+**Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated twice
+more this round - 8123 and 8591 both turned out to be serving a stale cached `config.js`/`app.js` despite
+fresh files on disk and a brand-new server process each time, confirming (again) that the browser's HTTP
+cache is keyed by URL regardless of which server process is behind it; a genuinely never-used port (9273)
+was needed, then reverted to 8123 after): confirmed every spawned piece's `Animation.effect.getKeyframes()`
+contains literal numeric `transform` strings with no `var()` anywhere, `playState: "running"` with the
+expected duration/delay; confirmed 60/2 piece/layer counts fire correctly; confirmed the reduced-motion
+gate, the zero-finisher (case 3) gate, and the particle-count-0 self-clean path are all still intact
+(none of that logic changed - only how the per-particle transform is computed and driven). Zero console
+errors. Full self-cleaning (0 pieces, 0 layers) reconfirmed after the animation window.
