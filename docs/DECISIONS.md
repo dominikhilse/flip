@@ -2319,3 +2319,65 @@ expected duration/delay; confirmed 60/2 piece/layer counts fire correctly; confi
 gate, the zero-finisher (case 3) gate, and the particle-count-0 self-clean path are all still intact
 (none of that logic changed - only how the per-particle transform is computed and driven). Zero console
 errors. Full self-cleaning (0 pieces, 0 layers) reconfirmed after the animation window.
+
+### 2026-10-13 — M26 confetti: ported from DOM particles (WAAPI) to two `<canvas>` layers - supersedes
+### the locked "JS-spawned DOM particles" technique, orchestrator-approved
+
+Dominik confirmed the WAAPI fix (3600b71) was pushed and loading, but the jank was **identical** on real
+mobile devices - froze, then jumped near-finished - on both mobile Safari and mobile Chrome, while desktop
+Safari ran it fine throughout. He consulted the orchestrator, which gave a layered recommendation: (1)
+confirm the WAAPI port itself was correct, (2) confirm only `transform`/`opacity` are in the animated
+keyframes (color/size set statically at spawn) - "the part that determines whether the fix actually
+works", (3) keep the live `getBoundingClientRect()` spawn, (4) **if it still janks after that, fall back
+to a single-canvas rAF particle loop - accepted as a documented divergence from M26's DOM-particle
+technique**, the same category of real-device-finding-overrides-locked-decision as the M25 redesign.
+
+**Checked (1)-(3) before deciding anything - all already true:** `addConfettiParticle`'s `.animate()` call
+only ever included `transform` and `opacity` in its keyframe objects; `left`/`top`/`background` were set as
+static inline styles before the call, never inside a keyframe; `fireConfetti` still read
+`originEl.getBoundingClientRect()` fresh on every fire. Re-verified by reading the live code, not assumed.
+
+**Why this means "fall back to canvas," not "try a fourth DOM variant":** two *independent* rendering
+engines (WebKit and Blink) showing the identical failure mode, while a third engine instance of the same
+underlying WebKit (desktop Safari) does not, points at a shared constraint that both mobile engines hit and
+desktop doesn't - GPU/compositor throughput, not a WAAPI-vs-CSS-animation engine quirk (which WOULD have
+been engine-specific and which the WAAPI port already ruled out as the *sole* cause, since it fixed nothing
+on either mobile engine). Compositing up to 150 simultaneously `perspective`+`rotateX`/`rotateZ`-
+transformed, `will-change`-promoted DOM layers is real GPU work per layer regardless of which JS API
+produced the transform's numbers - mobile GPUs have far less of that budget than desktop ones. Continuing
+to tune DOM-particle parameters would have meant more guess-push-and-wait cycles against a problem class
+canvas sidesteps structurally.
+
+**What changed:** `fireConfetti` now creates two `<canvas>` elements (`.confetti-canvas--burst`/`--rain`,
+same z-index 1/3 sandwich around `.results-winner`'s z-index 2 as before) instead of two DOM-particle
+layers, sized to the viewport at `devicePixelRatio` for crisp mobile rendering. A single shared
+`requestAnimationFrame` loop (`runConfettiLoop`) now does what the browser's animation engine used to do:
+for every still-active particle each frame, compute eased progress by hand (`confettiEaseOut`,
+`confettiLerp`, `confettiStateAt` - a faithful hand-evaluated re-implementation of the old WAAPI keyframe
+shape: 0%->20% then 20%->100% for position/rotation, flat-then-drop for opacity at 85%->100%) and draw it
+(`drawConfettiPiece` - `ctx.translate`/`rotate`/`scale`/`fillRect`, faking the rotateX "tumble" via
+vertically squashing the rect by `|cos(rxDeg)|`, since a flat 2D canvas has no real depth). Stops itself and
+removes both canvases the moment every particle across both layers reaches progress 1 - same self-cleaning
+guarantee, now implemented by hand instead of relying on `animationend`/`onfinish`. **Unchanged:** the
+particle look (8x14px paper-strip rectangles, 12 player colors), the burst/rain motion math (same random
+angle/distance/fall/drift formulas, byte-for-byte carried over), the live spawn position, the
+prefers-reduced-motion gate, the case-1/2/3 trigger gating in `renderEnd`/`timeoutGame` (untouched - this
+round only replaced how a fire *renders*, not when one happens), and the Dev-tunable particle-count/speed-
+range controls (`confettiDurationMs` is identical, now consumed as a per-particle lifetime in the rAF loop
+instead of a WAAPI `duration` option).
+
+**Caveat, same as the WAAPI entry: I still cannot reproduce or measure jank from this environment** - my
+tooling runs a desktop-class Chromium regardless of what URL it's pointed at, so neither the original nor
+either fix could be jank-tested here; this is the best-available, orchestrator-approved technical answer to
+a confirmed real-device regression, verified correct at the DOM/canvas/console level, but Dominik's own
+re-test on his phone is still the only real confirmation that it resolves the jank.
+
+**Verified** via a temporary `window.__debug` hook (removed before commit; dev-server port rotated to 7461
+for the session - yet another fresh port needed for the same standing browser-HTTP-cache reason as every
+prior round - reverted to 8123 after): confirmed exactly 2 canvases spawn with the correct `--burst`/
+`--rain` classes, z-indexes (1/3), and DPR-scaled backing resolution; a screenshot mid-fire shows an actual
+drawn particle at the winner's position (visual confirmation the 2D draw path itself works, not just that
+elements exist); confirmed full self-cleaning (0 canvases) after the animation window; confirmed the
+prefers-reduced-motion gate and the particle-count-0 edge case both still produce zero canvases (no
+dangling empty canvas elements, mirroring the DOM version's zero-piece behavior). Zero console errors
+throughout.

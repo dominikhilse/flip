@@ -2440,29 +2440,40 @@
   }
 
   // ---- M26/D-74: winner confetti ----
-  // One-shot, JS-spawned DOM particles animated by a single shared
-  // @keyframes (style.css's confetti-fly) - no library, no canvas. Fires
-  // whenever a real winner exists (M21 cases 1 & 2); never on case 3 (the
-  // nobody-shut timeout), honoring D-02/D-64's no-fabricated-champion rule
-  // - callers gate that, this function only needs an element to frame.
+  // One-shot particle burst+rain framing the winner, drawn on two <canvas>
+  // layers via a single shared requestAnimationFrame loop - no library.
+  // Fires whenever a real winner exists (M21 cases 1 & 2); never on case 3
+  // (the nobody-shut timeout), honoring D-02/D-64's no-fabricated-champion
+  // rule - callers gate that, this function only needs an element to frame.
+  //
+  // Third technique for this feature (2026-10-13, see DECISIONS.md for the
+  // full writeup): the original build used a declarative @keyframes rule
+  // reading CSS custom properties; that froze on real mobile devices
+  // (main-thread-bound transform recompute every frame) so it was ported
+  // to the Web Animations API with literal numeric keyframes instead -
+  // which STILL froze identically on both mobile Safari and mobile Chrome
+  // (desktop Safari was fine throughout). Two independent engines choking
+  // while desktop doesn't points at mobile GPU/compositor throughput, not
+  // which JS API computes the numbers: up to 150 simultaneously
+  // perspective+rotateX/rotateZ-transformed, will-change-promoted DOM
+  // layers is expensive to composite regardless of how the transform value
+  // is produced. Canvas sidesteps this entirely - one compositor layer per
+  // canvas, all particle math is plain JS/CPU work (cheap even for
+  // hundreds of particles), drawn via 2D canvas calls each frame. This is
+  // the orchestrator-approved fallback, a documented divergence from
+  // M26's original DOM-particle technique - the design (paper strips, 12
+  // colors, two layers sandwiching the winner, live spawn position, fires-
+  // on-real-winner) is unchanged, only the rendering mechanism.
   function prefersReducedMotion() {
     return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  }
-
-  function spawnConfettiLayer(modifierClass) {
-    var layer = document.createElement('div');
-    layer.className = 'confetti-layer ' + modifierClass;
-    document.body.appendChild(layer);
-    return layer;
   }
 
   // Each piece picks its own random speed (px/s) from CONFIG's Dev-tunable
   // range and divides its own travel distance by it, so a piece that
   // travels further takes proportionally longer rather than visually
   // "teleporting" - a real velocity, not a fixed duration regardless of
-  // distance (see config.js's confettiSpeed Min/MaxPxPerSec comment for
-  // why: the original fixed-duration version read as way too fast on a
-  // real device). Reads CONFIG fresh every call, not cached.
+  // distance (see config.js's confettiSpeed Min/MaxPxPerSec comment).
+  // Reads CONFIG fresh every call, not cached.
   function confettiDurationMs(distancePx) {
     var lo = Math.min(CONFIG.confettiSpeedMinPxPerSec, CONFIG.confettiSpeedMaxPxPerSec);
     var hi = Math.max(CONFIG.confettiSpeedMinPxPerSec, CONFIG.confettiSpeedMaxPxPerSec);
@@ -2471,63 +2482,126 @@
     return Math.max(200, Math.min(6000, Math.round(ms)));
   }
 
-  // transform string builder shared by every keyframe below - kept as a
-  // plain literal string (no var()/custom properties) so the Web
-  // Animations API call in addConfettiParticle can run off the main
-  // thread - see that function's own comment for why this replaced the
-  // original custom-property-driven @keyframes approach.
-  function confettiTransform(x, y, rxDeg, rzDeg) {
-    return 'translate(' + x + 'px,' + y + 'px) rotateX(' + rxDeg + 'deg) rotateZ(' + rzDeg + 'deg)';
-  }
-
-  // left/top are the particle's CSS spawn point (px, viewport coords); mx/my
-  // is the offset reached at the animation's midpoint (the outward "pop" for
-  // a burst particle, a partial fall for a rain particle); ex/ey is the
-  // offset at animation end - its magnitude is also this particle's travel
-  // distance, feeding confettiDurationMs above. `remaining` is a shared
-  // {count} for the whole layer - the layer's own empty wrapper div is
-  // removed once every particle inside it has removed itself (self-
-  // cleaning, no orphaned nodes left for a rematch to stack onto - D-74).
-  //
-  // Driven by Element.animate() (Web Animations API) with plain numbers
-  // baked into each keyframe's transform string, NOT a declarative
-  // @keyframes rule reading CSS custom properties (M26's original
-  // 2026-10-13 build). Real-device testing found that version froze mid-
-  // flight and jumped to near-finished right before landing, and cutting
-  // particle count/speed didn't help - the classic signature of a
-  // transform animation running on the MAIN thread instead of the
-  // compositor, which happens when the animated transform's value depends
-  // on var(--custom-property) (the browser can't hand an animation off to
-  // the compositor without first resolving the cascade every frame). WAAPI
-  // with literal, pre-resolved numbers has no such dependency and is the
-  // standard fix for exactly this class of many-simultaneous-particles
-  // jank - see DECISIONS.md for the full writeup.
-  function addConfettiParticle(layer, left, top, mx, my, ex, ey, remaining) {
-    var piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    piece.style.left = left + 'px';
-    piece.style.top = top + 'px';
-    piece.style.background = THEME.playerColors[Math.floor(Math.random() * THEME.playerColors.length)];
-    layer.appendChild(piece);
-
-    var rx = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540);
-    var rz = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540);
-    var anim = piece.animate([
-      { offset: 0, transform: confettiTransform(0, 0, 0, 0), opacity: 1 },
-      { offset: 0.2, transform: confettiTransform(mx, my, rx * 0.25, rz * 0.25), opacity: 1 },
-      { offset: 0.85, opacity: 1 },
-      { offset: 1, transform: confettiTransform(ex, ey, rx, rz), opacity: 0 }
-    ], {
+  // x0/y0 is this particle's spawn point (px, viewport coords, absolute -
+  // burst particles all share the winner's origin, rain particles each
+  // have their own x along a band plus the shared top-of-screen y). mx/my
+  // is the offset reached at 20% progress (a burst's outward "pop", or a
+  // rain piece's partial fall); ex/ey is the offset at 100% - its
+  // magnitude is also this particle's travel distance, feeding
+  // confettiDurationMs. rx/rz are the total rotation reached by 100%.
+  // `done` is flipped by the draw loop once this particle's progress
+  // reaches 1 - checked there to know when every particle (and so the
+  // whole canvas) can be torn down (self-cleaning, no orphaned canvases
+  // left for a rematch to stack onto - D-74).
+  function makeConfettiParticle(x0, y0, mx, my, ex, ey) {
+    return {
+      x0: x0, y0: y0, mx: mx, my: my, ex: ex, ey: ey,
+      rx: (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540),
+      rz: (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540),
+      color: THEME.playerColors[Math.floor(Math.random() * THEME.playerColors.length)],
       duration: confettiDurationMs(Math.sqrt(ex * ex + ey * ey)),
       delay: Math.round(Math.random() * 250),
-      easing: 'ease-out',
-      fill: 'forwards'
-    });
-    anim.onfinish = function () {
-      piece.remove();
-      remaining.count--;
-      if (remaining.count <= 0) layer.remove();
+      done: false
     };
+  }
+
+  // Cubic ease-out, close enough to the CSS keyword of the same name for a
+  // visual flourish - applied to raw [0,1] progress before everything else
+  // below, same order WAAPI applies an options-level `easing` in.
+  function confettiEaseOut(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+  function confettiLerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  // Hand-evaluated equivalent of the old WAAPI keyframe shape (0% -> 20% ->
+  // 85% -> 100%): position/rotation interpolate in two segments, 0%-20%
+  // then 20%-100% straight through (85% never broke that curve - it only
+  // ever specified opacity), while opacity holds flat at 1 until 85% then
+  // drops to 0 by 100%.
+  function confettiStateAt(p, eased) {
+    var x, y, rxDeg, rzDeg;
+    if (eased <= 0.2) {
+      var t1 = eased / 0.2;
+      x = confettiLerp(0, p.mx, t1);
+      y = confettiLerp(0, p.my, t1);
+      rxDeg = confettiLerp(0, p.rx * 0.25, t1);
+      rzDeg = confettiLerp(0, p.rz * 0.25, t1);
+    } else {
+      var t2 = (eased - 0.2) / 0.8;
+      x = confettiLerp(p.mx, p.ex, t2);
+      y = confettiLerp(p.my, p.ey, t2);
+      rxDeg = confettiLerp(p.rx * 0.25, p.rx, t2);
+      rzDeg = confettiLerp(p.rz * 0.25, p.rz, t2);
+    }
+    var opacity = eased <= 0.85 ? 1 : confettiLerp(1, 0, (eased - 0.85) / 0.15);
+    return { x: x, y: y, rxDeg: rxDeg, rzDeg: rzDeg, opacity: opacity };
+  }
+
+  // rotateX has no real depth on a flat 2D canvas - faked by vertically
+  // squashing the piece by |cos(rxDeg)|, the standard cheap trick for a
+  // "tumbling paper" read without actual 3D (floored so it never fully
+  // flattens to a zero-height line, which would look like a flicker).
+  function drawConfettiPiece(ctx, originX, originY, state, color) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, state.opacity));
+    ctx.translate(originX + state.x, originY + state.y);
+    ctx.rotate(state.rzDeg * Math.PI / 180);
+    ctx.scale(1, Math.max(0.08, Math.abs(Math.cos(state.rxDeg * Math.PI / 180))));
+    ctx.fillStyle = color;
+    ctx.fillRect(-4, -7, 8, 14);
+    ctx.restore();
+  }
+
+  function makeConfettiCanvas(modifierClass, vw, vh) {
+    var dpr = window.devicePixelRatio || 1;
+    var canvas = document.createElement('canvas');
+    canvas.className = 'confetti-canvas ' + modifierClass;
+    canvas.width = vw * dpr;
+    canvas.height = vh * dpr;
+    document.body.appendChild(canvas);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { canvas: canvas, ctx: ctx };
+  }
+
+  // Single rAF loop drives both layers together. During a particle's own
+  // delay window its raw progress clamps to 0 (eased state = spawn point,
+  // full opacity) - same "static pop-in, then move" look the WAAPI delay
+  // option gave for free. Stops itself and tears down both canvases the
+  // moment every particle across both layers has reached progress 1.
+  function runConfettiLoop(burst, burstParticles, rain, rainParticles, fireStartTime) {
+    var active = burstParticles.length + rainParticles.length;
+    if (active === 0) {
+      if (burst) burst.canvas.remove();
+      if (rain) rain.canvas.remove();
+      return;
+    }
+
+    function drawLayer(layer, particles) {
+      if (!layer) return;
+      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      particles.forEach(function (p) {
+        if (p.done) return;
+        var t = Math.max(0, Math.min(1, (performance.now() - fireStartTime - p.delay) / p.duration));
+        var state = confettiStateAt(p, confettiEaseOut(t));
+        drawConfettiPiece(layer.ctx, p.x0, p.y0, state, p.color);
+        if (t >= 1) { p.done = true; active--; }
+      });
+    }
+
+    function tick() {
+      drawLayer(burst, burstParticles);
+      drawLayer(rain, rainParticles);
+      if (active > 0) {
+        requestAnimationFrame(tick);
+      } else {
+        if (burst) burst.canvas.remove();
+        if (rain) rain.canvas.remove();
+      }
+    }
+    requestAnimationFrame(tick);
   }
 
   // originEl's LIVE getBoundingClientRect() decides the spawn point - not a
@@ -2542,6 +2616,7 @@
     var rect = originEl.getBoundingClientRect();
     var originX = rect.left + rect.width / 2;
     var originY = rect.top + rect.height / 2;
+    var vw = window.innerWidth;
     var vh = window.innerHeight;
 
     // M26/D-74: Dev-tunable total (see config.js), hard-capped regardless
@@ -2551,13 +2626,13 @@
     var burstCount = Math.round(total * 0.6);
     var rainCount = total - burstCount;
 
-    // Burst (behind the winner, z-index below - see .confetti-layer--burst):
-    // explodes outward in a random direction, then falls/tumbles the rest
-    // of the way off the bottom of the screen regardless of that initial
-    // direction (a constant downward "gravity" term swamps any upward pop).
-    var burstLayer = spawnConfettiLayer('confetti-layer--burst');
-    if (burstCount === 0) { burstLayer.remove(); }
-    var burstRemaining = { count: burstCount };
+    // Burst (behind the winner, z-index below - see .confetti-canvas--
+    // burst): explodes outward in a random direction, then falls/tumbles
+    // the rest of the way off the bottom of the screen regardless of that
+    // initial direction (a constant downward "gravity" term swamps any
+    // upward pop).
+    var burst = burstCount > 0 ? makeConfettiCanvas('confetti-canvas--burst', vw, vh) : null;
+    var burstParticles = [];
     for (var i = 0; i < burstCount; i++) {
       var angle = Math.random() * Math.PI * 2;
       var dist = 50 + Math.random() * 90;
@@ -2566,22 +2641,23 @@
       var fall = vh - originY + 100;
       var ex = mx + (Math.random() * 60 - 30);
       var ey = my + fall;
-      addConfettiParticle(burstLayer, originX, originY, mx, my, ex, ey, burstRemaining);
+      burstParticles.push(makeConfettiParticle(originX, originY, mx, my, ex, ey));
     }
 
     // Rain (in front of the winner, z-index above - see
-    // .confetti-layer--rain): spawns off the top edge in a band roughly
+    // .confetti-canvas--rain): spawns off the top edge in a band roughly
     // centered on the winner's x, tumbles straight down past them.
-    var rainLayer = spawnConfettiLayer('confetti-layer--rain');
-    if (rainCount === 0) { rainLayer.remove(); }
-    var rainRemaining = { count: rainCount };
+    var rain = rainCount > 0 ? makeConfettiCanvas('confetti-canvas--rain', vw, vh) : null;
+    var rainParticles = [];
     var rainTop = -20;
     for (var j = 0; j < rainCount; j++) {
-      var rainLeft = originX + (Math.random() * 220 - 110);
+      var rainX0 = originX + (Math.random() * 220 - 110);
       var rainFall = vh - rainTop + 80;
       var drift = Math.random() * 40 - 20;
-      addConfettiParticle(rainLayer, rainLeft, rainTop, drift * 0.3, rainFall * 0.2, drift, rainFall, rainRemaining);
+      rainParticles.push(makeConfettiParticle(rainX0, rainTop, drift * 0.3, rainFall * 0.2, drift, rainFall));
     }
+
+    runConfettiLoop(burst, burstParticles, rain, rainParticles, performance.now());
   }
 
   // Normal end (checkGameEnd guarantees finishedOrder.length >= 1 by the

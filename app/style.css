@@ -1418,41 +1418,29 @@ button.secondary:active { background: var(--bg-subtle); }
   transform: translateX(-50%);
 }
 
-/* M26/D-74: winner confetti. JS (app.js's fireConfetti) spawns one
-   .confetti-piece per particle into one of these two fixed, full-viewport,
-   click-through layers - burst sits behind the winner banner (z-index 1
-   vs .results-winner's 2), rain sits in front (z-index 3). perspective on
-   the layer (not the piece) gives every particle inside it a shared
-   vanishing point, so the rotateX/rotateZ tumble below reads as a 3D paper
-   flutter rather than a flat spin. */
-.confetti-layer {
+/* M26/D-74: winner confetti. Third technique for this feature (2026-10-13,
+   see DECISIONS.md): the DOM-particle approach (first a declarative
+   @keyframes reading CSS custom properties, then the Web Animations API
+   with literal numbers) froze on real mobile devices in both cases -
+   compositing up to 150 simultaneous perspective+rotateX/rotateZ-
+   transformed DOM layers is itself expensive on a mobile GPU, independent
+   of which JS API computed the transform values. Rendering moved to two
+   fixed, full-viewport, click-through <canvas> layers instead - burst
+   sits behind the winner banner (z-index 1 vs .results-winner's 2), rain
+   sits in front (z-index 3) - with app.js's fireConfetti drawing every
+   particle itself each frame via a single shared requestAnimationFrame
+   loop (runConfettiLoop) rather than letting the browser manage N
+   separately-composited DOM nodes. One compositor layer per canvas
+   regardless of particle count. */
+.confetti-canvas {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  perspective: 500px;
 }
-.confetti-layer--burst { z-index: 1; }
-.confetti-layer--rain { z-index: 3; }
-
-/* Each piece is positioned at its JS-computed spawn point (left/top) and
-   animated via app.js's addConfettiParticle, which calls the piece's own
-   .animate() (Web Animations API) with plain numeric transform/opacity
-   keyframes computed in JS - not a declarative @keyframes rule reading
-   CSS custom properties, as M26 originally shipped (2026-10-13 revision,
-   see DECISIONS.md: a real-device test found that version janked badly -
-   froze, then jumped near-finished - because a transform driven by
-   var(--custom-property) generally can't run on the compositor thread,
-   forcing a full style recompute on the MAIN thread every frame for every
-   particle; WAAPI with literal numbers avoids that entirely). No
-   animation-* properties needed here as a result - will-change is still a
-   valid hint regardless of which engine drives the animation. */
-.confetti-piece {
-  position: absolute;
-  width: 8px;
-  height: 14px;
-  border-radius: 1px;
-  will-change: transform, opacity;
-}
+.confetti-canvas--burst { z-index: 1; }
+.confetti-canvas--rain { z-index: 3; }
 
 .results-list {
   list-style: none;
