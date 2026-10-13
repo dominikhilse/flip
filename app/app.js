@@ -136,6 +136,9 @@
   var settingsFromPlayBtn = document.getElementById('settings-from-play');
 
   var finishListEl = document.getElementById('finish-list');
+  // M26/D-74: the podium's winner-element rect (queried, not a new id on
+  // the existing markup - see fireConfetti) that the confetti burst reads.
+  var resultsWinnerBannerEl = document.querySelector('#screen-end .results-winner');
   var resultsWinnerNameEl = document.getElementById('results-winner-name');
   var resultsWinnerAvatarEl = document.getElementById('results-winner-avatar');
   var endNewGameBtn = document.getElementById('end-new-game');
@@ -2399,6 +2402,100 @@
     });
   }
 
+  // ---- M26/D-74: winner confetti ----
+  // One-shot, JS-spawned DOM particles animated by a single shared
+  // @keyframes (style.css's confetti-fly) - no library, no canvas. Fires
+  // whenever a real winner exists (M21 cases 1 & 2); never on case 3 (the
+  // nobody-shut timeout), honoring D-02/D-64's no-fabricated-champion rule
+  // - callers gate that, this function only needs an element to frame.
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  var CONFETTI_BURST_COUNT = 36;
+  var CONFETTI_RAIN_COUNT = 24;
+
+  function spawnConfettiLayer(modifierClass) {
+    var layer = document.createElement('div');
+    layer.className = 'confetti-layer ' + modifierClass;
+    document.body.appendChild(layer);
+    return layer;
+  }
+
+  // left/top are the particle's CSS spawn point (px, viewport coords); mx/my
+  // is the offset reached at the animation's midpoint (the outward "pop" for
+  // a burst particle, a partial fall for a rain particle); ex/ey is the
+  // offset at animation end. `remaining` is a shared {count} for the whole
+  // layer - the layer's own empty wrapper div is removed once every particle
+  // inside it has removed itself (self-cleaning, no orphaned nodes left for
+  // a rematch to stack onto - see D-74).
+  function addConfettiParticle(layer, left, top, mx, my, ex, ey, remaining) {
+    var piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = left + 'px';
+    piece.style.top = top + 'px';
+    piece.style.background = THEME.playerColors[Math.floor(Math.random() * THEME.playerColors.length)];
+    piece.style.setProperty('--mx', mx + 'px');
+    piece.style.setProperty('--my', my + 'px');
+    piece.style.setProperty('--ex', ex + 'px');
+    piece.style.setProperty('--ey', ey + 'px');
+    piece.style.setProperty('--rx', ((Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540)) + 'deg');
+    piece.style.setProperty('--rz', ((Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540)) + 'deg');
+    piece.style.animationDuration = Math.round(1100 + Math.random() * 600) + 'ms';
+    piece.style.animationDelay = Math.round(Math.random() * 250) + 'ms';
+    piece.addEventListener('animationend', function () {
+      piece.remove();
+      remaining.count--;
+      if (remaining.count <= 0) layer.remove();
+    });
+    layer.appendChild(piece);
+  }
+
+  // originEl's LIVE getBoundingClientRect() decides the spawn point - not a
+  // fixed coordinate, since the winner element sits differently on the
+  // podium (#screen-end) vs the timeout-finisher banner (#screen-timeout),
+  // and moves with screen size (same live-rect pattern as M19's
+  // toast-travel). No-op under prefers-reduced-motion (suppressed entirely,
+  // not just toned down - simplest reading of the locked "suppress or
+  // heavily tone down" requirement).
+  function fireConfetti(originEl) {
+    if (!originEl || prefersReducedMotion()) return;
+    var rect = originEl.getBoundingClientRect();
+    var originX = rect.left + rect.width / 2;
+    var originY = rect.top + rect.height / 2;
+    var vh = window.innerHeight;
+
+    // Burst (behind the winner, z-index below - see .confetti-layer--burst):
+    // explodes outward in a random direction, then falls/tumbles the rest
+    // of the way off the bottom of the screen regardless of that initial
+    // direction (a constant downward "gravity" term swamps any upward pop).
+    var burstLayer = spawnConfettiLayer('confetti-layer--burst');
+    var burstRemaining = { count: CONFETTI_BURST_COUNT };
+    for (var i = 0; i < CONFETTI_BURST_COUNT; i++) {
+      var angle = Math.random() * Math.PI * 2;
+      var dist = 50 + Math.random() * 90;
+      var mx = Math.cos(angle) * dist;
+      var my = Math.sin(angle) * dist;
+      var fall = vh - originY + 100;
+      var ex = mx + (Math.random() * 60 - 30);
+      var ey = my + fall;
+      addConfettiParticle(burstLayer, originX, originY, mx, my, ex, ey, burstRemaining);
+    }
+
+    // Rain (in front of the winner, z-index above - see
+    // .confetti-layer--rain): spawns off the top edge in a band roughly
+    // centered on the winner's x, tumbles straight down past them.
+    var rainLayer = spawnConfettiLayer('confetti-layer--rain');
+    var rainRemaining = { count: CONFETTI_RAIN_COUNT };
+    var rainTop = -20;
+    for (var j = 0; j < CONFETTI_RAIN_COUNT; j++) {
+      var rainLeft = originX + (Math.random() * 220 - 110);
+      var rainFall = vh - rainTop + 80;
+      var drift = Math.random() * 40 - 20;
+      addConfettiParticle(rainLayer, rainLeft, rainTop, drift * 0.3, rainFall * 0.2, drift, rainFall, rainRemaining);
+    }
+  }
+
   // Normal end (checkGameEnd guarantees finishedOrder.length >= 1 by the
   // time this is reached - see its own `if (finishedCount === 0) return
   // false` gate) - a real, earned winner, continuous rank numbering
@@ -2423,6 +2520,12 @@
   function endGame() {
     renderEnd();
     showScreen('end');
+    // M26/D-74: fired AFTER showScreen, not inside renderEnd() - the
+    // winner banner is still display:none (the shared `[hidden]` rule)
+    // until the screen is actually shown, and getBoundingClientRect() on a
+    // display:none element returns a zero rect. Case 1 always has >=1
+    // finisher (renderEnd's own comment), so this is unconditional.
+    fireConfetti(resultsWinnerBannerEl);
   }
 
   // After a completed game, a different player should start the next one
@@ -2540,6 +2643,11 @@
 
     renderTimeoutRanking();
     showScreen('timeout');
+    // M26/D-74: case 2 only (a real finisher cut short by the clock) -
+    // case 3 (no winner) must stay confetti-less (D-02/D-64's
+    // no-fabricated-champion rule). Fired after showScreen, same
+    // display:none reasoning as endGame() above.
+    if (winner) fireConfetti(timeoutWinnerBannerEl);
   }
 
   var CHALLENGE_TICK_MS = 250;

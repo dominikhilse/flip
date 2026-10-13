@@ -1382,6 +1382,11 @@ button.secondary:active { background: var(--bg-subtle); }
   align-items: center;
   gap: 0.5rem;
   margin: 0.3rem 0 1.4rem;
+  /* M26/D-74: an explicit stacking position so the confetti burst (behind,
+     z-index 1) and rain (in front, z-index 3) layers sandwich it correctly
+     - see .confetti-layer below. */
+  position: relative;
+  z-index: 2;
 }
 .results-winner svg { width: 1.6rem; height: 1.6rem; }
 .results-winner-name {
@@ -1412,6 +1417,58 @@ button.secondary:active { background: var(--bg-subtle); }
   width: 150%;
   transform: translateX(-50%);
 }
+
+/* M26/D-74: winner confetti. JS (app.js's fireConfetti) spawns one
+   .confetti-piece per particle into one of these two fixed, full-viewport,
+   click-through layers - burst sits behind the winner banner (z-index 1
+   vs .results-winner's 2), rain sits in front (z-index 3). perspective on
+   the layer (not the piece) gives every particle inside it a shared
+   vanishing point, so the rotateX/rotateZ tumble below reads as a 3D paper
+   flutter rather than a flat spin. */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  perspective: 500px;
+}
+.confetti-layer--burst { z-index: 1; }
+.confetti-layer--rain { z-index: 3; }
+
+/* Each piece is positioned at its JS-computed spawn point (left/top) and
+   animated purely via transform/opacity, driven by four JS-randomized
+   custom properties: --mx/--my (offset reached at the animation's
+   midpoint - a burst's outward "pop", or a rain piece's partial fall) and
+   --ex/--ey (offset at animation end - always carries the piece well past
+   the bottom of the viewport, see fireConfetti). --rx/--rz are the total
+   rotation reached by the end, also JS-randomized per piece. One shared
+   keyframe set for both burst and rain pieces - only the vars differ. */
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 14px;
+  border-radius: 1px;
+  will-change: transform, opacity;
+  animation-name: confetti-fly;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+@keyframes confetti-fly {
+  0% { transform: translate(0, 0) rotateX(0deg) rotateZ(0deg); opacity: 1; }
+  20% {
+    transform: translate(var(--mx), var(--my)) rotateX(calc(var(--rx) * 0.25)) rotateZ(calc(var(--rz) * 0.25));
+    opacity: 1;
+  }
+  85% { opacity: 1; }
+  100% { transform: translate(var(--ex), var(--ey)) rotateX(var(--rx)) rotateZ(var(--rz)); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Belt-and-braces: app.js's fireConfetti already checks this media query
+     and skips spawning entirely, so this rule should never have anything
+     to catch in practice - kept as a hard backstop in case a piece is ever
+     spawned some other way. */
+  .confetti-piece { animation: none; opacity: 0; }
+}
+
 .results-list {
   list-style: none;
   padding: 0;
