@@ -2663,14 +2663,16 @@
     return particles;
   }
 
-  // A point guaranteed to land somewhere comfortably inside the current
-  // viewport (not pinned to an edge, so a burst from it has room to be
-  // seen before falling off) - used fresh for random1/random2 every fire.
+  // Lands somewhere comfortably inside the current viewport (not pinned to
+  // an edge, so a burst from it has room to be seen before falling off).
+  // confettiRandomInViewY is split out so random2 (see fireConfetti) can
+  // reuse it for an independently-random y while deriving its x from
+  // random1 instead of calling the full point version.
+  function confettiRandomInViewY(vh) {
+    return vh * 0.12 + Math.random() * vh * 0.55;
+  }
   function confettiRandomInViewPoint(vw, vh) {
-    return {
-      x: vw * 0.15 + Math.random() * vw * 0.7,
-      y: vh * 0.12 + Math.random() * vh * 0.55
-    };
+    return { x: vw * 0.15 + Math.random() * vw * 0.7, y: confettiRandomInViewY(vh) };
   }
 
   // M26/D-74: four spawn points (2026-10-13 revision - was two, burst+
@@ -2701,7 +2703,13 @@
     }
 
     var random1 = confettiRandomInViewPoint(vw, vh);
-    var random2 = confettiRandomInViewPoint(vw, vh);
+    // random2 (2026-10-13 tweak): x is random1's x reflected through the
+    // winner's own x (C + (C - P), the standard point-mirror formula) -
+    // since the winner is horizontally centered on screen in practice,
+    // this reads as "mirrored across the screen center" without
+    // hardcoding vw/2, so it still tracks wherever the winner actually
+    // sits. y stays independently random, same distribution as random1's.
+    var random2 = { x: originX + (originX - random1.x), y: confettiRandomInViewY(vh) };
 
     var burstParticles = []
       .concat(burstParticlesAt(originX, originY, countFor('avatar'), delayFor('avatar'), vh))

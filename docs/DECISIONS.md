@@ -2428,3 +2428,23 @@ UI - a tab click + direct DOM read, not just a synthetic event); confirmed the r
 all-spawns-zero, and a single-spawn-nonzero (burst-side all zero, top alone populated, exercising the
 null-burst-canvas branch) edge cases all still behave correctly; confirmed full self-cleaning (0 canvases)
 after a real animation run to completion. Zero console errors throughout.
+
+### 2026-10-13 — M26 confetti: random2's x mirrors random1's x through the winner, not independently random
+
+Small follow-up to the four-spawn-points entry above, which described random1/random2 as both
+independently random - that's now only true for random1. Explicit request: random2's x is random1's x
+reflected through the winner's own x (`originX + (originX - random1.x)`, the standard point-mirror formula
+C+(C-P)); its y stays independently random, same distribution as before. Confirmed with Dominik this is
+already the simplest form of the reflection he asked for - no hardcoded `vw/2` needed, since the winner
+element is horizontally centered on screen in practice (flex `align-items: center`), so mirroring through
+`originX` already reads as "mirrored across the screen center" without baking that assumption in; it still
+tracks wherever the winner actually sits if that ever changes, matching the live-position principle the
+rest of M26 already follows.
+
+**Verified** via a temporary `window.__debug` hook plus a one-line in-code capture of `originX`/
+`random1`/`random2` (both removed before commit; dev-server port rotated once more for the standing
+browser-cache reason, reverted to 8123 after): confirmed `random2.x` exactly equals
+`originX + (originX - random1.x)` to floating-point precision on a real fire; confirmed `originX` was
+exactly `vw/2` in the test viewport, so the mirror also lined up with true screen center as expected;
+confirmed `random2.y` was independently random and distinct from `random1.y`. Full self-cleaning
+reconfirmed after a complete animation run. Zero console errors.
