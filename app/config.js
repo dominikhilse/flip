@@ -91,8 +91,8 @@ window.CONFIG = {
   // starting values are a deliberately slower guess, not a measured
   // result; re-test on-device via the Dev tab and update here once a good
   // feel is found, same as every other Dev-tunable constant in this file.
-  confettiParticleCount: 20,
+  confettiParticleCount: 40,
   confettiParticleCountMax: 60,
-  confettiSpeedMinPxPerSec: 20,
-  confettiSpeedMaxPxPerSec: 60
+  confettiSpeedMinPxPerSec: 60,
+  confettiSpeedMaxPxPerSec: 120
 };
