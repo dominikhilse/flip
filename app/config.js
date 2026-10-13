@@ -108,12 +108,12 @@ window.CONFIG = {
   confettiSpeedMinPxPerSec: 60,
   confettiSpeedMaxPxPerSec: 120,
 
-  confettiSpawnAvatarCount: 14,
+  confettiSpawnAvatarCount: 40,
   confettiSpawnAvatarDelayMs: 0,
-  confettiSpawnRandom1Count: 7,
+  confettiSpawnRandom1Count: 23,
   confettiSpawnRandom1DelayMs: 90,
-  confettiSpawnRandom2Count: 7,
-  confettiSpawnRandom2DelayMs: 180,
-  confettiSpawnTopCount: 12,
-  confettiSpawnTopDelayMs: 360
+  confettiSpawnRandom2Count: 18,
+  confettiSpawnRandom2DelayMs: 140,
+  confettiSpawnTopCount: 40,
+  confettiSpawnTopDelayMs: 200
 };
