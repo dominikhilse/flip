@@ -2194,3 +2194,28 @@ after the fix, both via state inspection and a screenshot. Also ran three full a
 brute-force solver over `RULES.isValidSelection`/`isValidOneForTwoSelection` (varying placement mode and
 boost settings) to completion - one of them organically reached the `+2 laps` escalation without any forced
 racks - all three completed cleanly with zero console errors throughout.
+
+### 2026-10-13 — D-73 escalation thresholds moved from +2/+4 laps to +3/+5; overpay announcement text revised
+
+Dominik confirmed GH #10/#11 fully fixed on production and requested two changes to the M25/D-73 endgame
+escalation, independent of any bug: the two trigger points move from `+2 laps` (overpay-forced) / `+4 laps`
+(timer) to **`+3 laps`** / **`+5 laps`**, and the overpay announcement string changes from "{mode} mode is
+on — any roll can finish the match now!" to **"{mode} mode is on — every player can use it to finish the
+match now!"** (English only - the other four languages are intentionally left on the old wording for now,
+per explicit instruction; this leaves those four locales stale relative to D-71's translation-maintenance
+policy until a follow-up translation pass, not an oversight).
+
+This directly contradicts the plan's locked D-73 row and §7's "+2 laps.../+4 laps..." text (both still read
+the old thresholds) - flagging per the usual "contradicts something written in the plan" bar, for the
+orchestrator to fold into the next revision pass. Only the two numeric literals in `advanceEndPhase()`
+changed (`lapsElapsed === 2` → `=== 3`, `=== 4` → `=== 5`); the mechanism itself (force-switch to `'D'`,
+lift D-45 via `overpayForced()`, then the always-on timer) is unchanged. Updated every in-code comment that
+cited the old `+2`/`+4` wording (`app.js`, `rules.js`) so they stay consistent with the new thresholds.
+
+**Verified** via a temporary `window.__debug` hook (removed before commit): drove a forced two-player match
+through 12 turns and confirmed the overpay force now lands exactly at `lapsElapsed === 3` (not 2) and the
+timer at `=== 5` (not 4); separately confirmed the turn-card banner's live DOM text reads the new English
+string exactly ("Overpay mode is on — every player can use it to finish the match now!") the moment the
+escalation fires. Ran two full automated games via the same brute-force-solver technique as the entry above
+(winner-only + boosts; all-places + no boosts) to completion - the second organically re-reached the new
+`+3 laps` threshold without any forced racks - both completed cleanly with zero console errors.

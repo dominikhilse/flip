@@ -69,7 +69,7 @@
   // overpay mode (§3.5). openValues are the player's open tiles BEFORE this
   // move, used only to detect a selection that would shut the whole rack.
   // allowInexactWholeRack (M25/D-73, revised 2026-10-12): once the endgame
-  // escalation's +2-laps step has fired, D-45's whole-rack-must-be-exact
+  // escalation's +3-laps step has fired, D-45's whole-rack-must-be-exact
   // rule is lifted for the rest of the match - a whole-rack selection is
   // then just treated like any other D-mode selection (sum <= total).
   function isValidSelection(openValues, selectedValues, total, overpayMode, allowInexactWholeRack) {

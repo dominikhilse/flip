@@ -873,7 +873,7 @@
     if (!game.pendingSettings) return;
     if (game.turnIndex !== firstActiveSeatIndex()) return;
     Object.assign(game, game.pendingSettings.changes);
-    // M25/D-73: the endgame escalation's +2-laps overpay force is one-way -
+    // M25/D-73: the endgame escalation's +3-laps overpay force is one-way -
     // a queued Rules change (overpayMode back to 'A', say) must not be able
     // to undo it.
     if (game.endPhase && game.endPhase.overpayForced) game.overpayMode = 'D';
@@ -1297,14 +1297,10 @@
     return total;
   }
 
-  // M25/D-73: whether this match's endgame escalation has lifted D-48's
-  // "a boost-spent move may never close the whole rack" restriction - true
-  // from the moment the +2-laps step fires, for the rest of the match
-  // (one-way, never reset - see advanceEndPhase).
   // M25/D-73 (revised 2026-10-12 - see DECISIONS.md): whether this match's
   // endgame escalation has force-switched the table to overpayMode 'D' and
   // lifted D-45's whole-rack-exactness requirement - true from the moment
-  // the +2-laps step fires, for the rest of the match (one-way).
+  // the +3-laps step fires, for the rest of the match (one-way).
   function overpayForced() {
     return !!(game.endPhase && game.endPhase.overpayForced);
   }
@@ -1322,7 +1318,7 @@
     // A boost-spent move (either type) may never be the move that shuts the
     // whole rack, even on an exact match - the game must not be completed
     // with a boost (real-device report/DECISIONS.md). Unconditional - once
-    // the endgame escalation reaches +2 laps it force-switches the whole
+    // the endgame escalation reaches +3 laps it force-switches the whole
     // table to 'D' instead (overpayForced below), which makes boostModeActive()
     // false and this branch unreachable from then on; D-48 itself is never
     // lifted anymore (see DECISIONS.md for why the original "lift D-48"
@@ -1753,19 +1749,20 @@
     }
     if (game.turnIndex !== firstActiveSeatIndex()) return;
     game.endPhase.lapsElapsed++;
-    // +2 laps (revised 2026-10-12, see DECISIONS.md): unconditional, not
-    // tied to boostEnabled or to any individual player holding a boost -
-    // force-switches the whole table to overpayMode 'D' and lifts D-45's
-    // whole-rack-exactness requirement (the `true` arg threaded through
-    // currentSelectionValid/wholeRackOverpayBlocked via overpayForced()).
-    // D-34's existing theme-inversion signal fires automatically the
-    // moment overpayMode becomes 'D' - no separate trigger needed here.
-    if (game.endPhase.lapsElapsed === 2 && !game.endPhase.overpayForced) {
+    // +3 laps (thresholds moved 2->3 and 4->5, 2026-10-13, see DECISIONS.md):
+    // unconditional, not tied to boostEnabled or to any individual player
+    // holding a boost - force-switches the whole table to overpayMode 'D'
+    // and lifts D-45's whole-rack-exactness requirement (the `true` arg
+    // threaded through currentSelectionValid/wholeRackOverpayBlocked via
+    // overpayForced()). D-34's existing theme-inversion signal fires
+    // automatically the moment overpayMode becomes 'D' - no separate
+    // trigger needed here.
+    if (game.endPhase.lapsElapsed === 3 && !game.endPhase.overpayForced) {
       game.endPhase.overpayForced = true;
       game.overpayMode = 'D';
       game.endPhase.announce = 'overpay';
     }
-    if (game.endPhase.lapsElapsed === 4 && !game.timeChallenge) {
+    if (game.endPhase.lapsElapsed === 5 && !game.timeChallenge) {
       game.timeChallenge = { remainingMs: Math.max(30000, game.players.length * 10000) };
       game.endPhase.announce = 'timer';
     }
